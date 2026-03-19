@@ -52,7 +52,16 @@
 
 Вгорі праворуч — перемикач Active → ON
 
-## КРОК 6 — Протестуй
+## КРОК 6 — Імпортуй Analytics workflow
+
+1. Workflows → Import
+2. Завантаж: https://raw.githubusercontent.com/kapytt2020-jpg/ThreeWordsDaily/main/workflow_analytics.json
+3. Знайди ноду "📤 Надіслати звіт адміну"
+4. Встав свій Telegram chat_id в поле chatId
+   (щоб дізнатись свій chat_id — напиши @userinfobot)
+5. Активуй workflow
+
+## КРОК 7 — Протестуй
 
 Напиши боту @Clickecombot команду `/start`
 Якщо відповів — все працює ✅

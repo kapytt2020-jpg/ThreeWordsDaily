@@ -1,0 +1,154 @@
+{
+  "name": "ThreeWordsDaily — Analytics Bot",
+  "nodes": [
+    {
+      "id": "schedule-monday",
+      "name": "⏰ Щопонеділка 10:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * 1" }]
+        }
+      }
+    },
+    {
+      "id": "competitors-list",
+      "name": "📋 Список конкурентів",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "const competitors = [\n  { username: 'englishforukrainians', name: 'English for Ukrainians' },\n  { username: 'greenforestschool', name: 'Green Forest School' },\n  { username: 'cambridge_ua', name: 'Cambridge UA' },\n  { username: 'english_with_ann', name: 'English with Ann' },\n  { username: 'learn_english_ua', name: 'Learn English UA' },\n  { username: 'speak_english_ua', name: 'Speak English UA' },\n  { username: 'englishwithmax', name: 'English with Max' },\n  { username: 'duolingo_ua', name: 'Duolingo UA' }\n];\nreturn competitors.map(c => ({ json: c }));"
+      }
+    },
+    {
+      "id": "fetch-tgstat",
+      "name": "🔍 Збір даних з tgstat.io",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://tgstat.io/channel/@{{ $json.username }}",
+        "options": {
+          "response": { "response": { "responseFormat": "text" } }
+        }
+      }
+    },
+    {
+      "id": "parse-stats",
+      "name": "📊 Парсинг статистики",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "parameters": {
+        "jsCode": "const html = $input.first().json;\nconst channelName = $('📋 Список конкурентів').item.json.name;\nconst username = $('📋 Список конкурентів').item.json.username;\n\n// Парсимо підписників\nconst subsMatch = html.data?.match(/([\\d\\s,]+)\\s*(?:subscribers|підписників)/i);\nconst subscribers = subsMatch ? subsMatch[1].replace(/[\\s,]/g,'') : 'N/A';\n\n// Парсимо ріст\nconst growthMatch = html.data?.match(/([+-]?[\\d,]+)\\s*(?:за місяць|monthly|per month)/i);\nconst growth = growthMatch ? growthMatch[1] : 'N/A';\n\n// Парсимо ER\nconst erMatch = html.data?.match(/([\\d.]+)%?\\s*(?:ER|engagement)/i);\nconst er = erMatch ? erMatch[1] : 'N/A';\n\nreturn [{ json: {\n  username,\n  name: channelName,\n  subscribers,\n  monthly_growth: growth,\n  engagement_rate: er,\n  url: `https://t.me/${username}`,\n  checked_at: new Date().toISOString()\n}}];"
+      }
+    },
+    {
+      "id": "fetch-recent-posts",
+      "name": "📰 Останні пости конкурента",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 0],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://t.me/s/{{ $json.username }}",
+        "options": {
+          "response": { "response": { "responseFormat": "text" } }
+        }
+      }
+    },
+    {
+      "id": "parse-posts",
+      "name": "🧠 Аналіз типів контенту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 0],
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data || '';\nconst stats = $('📊 Парсинг статистики').item.json;\n\n// Витягуємо тексти постів\nconst postMatches = html.match(/<div class=\"tgme_widget_message_text[^>]*>([\\s\\S]*?)<\\/div>/g) || [];\nconst posts = postMatches.slice(0, 10).map(p => \n  p.replace(/<[^>]+>/g, ' ').replace(/\\s+/g,' ').trim().slice(0, 200)\n).filter(p => p.length > 20);\n\n// Визначаємо типи контенту\nconst hasQuiz = posts.some(p => /quiz|тест|питан|question/i.test(p));\nconst hasVocab = posts.some(p => /word|слово|vocabulary|vocab/i.test(p));\nconst hasGrammar = posts.some(p => /grammar|граматик/i.test(p));\nconst hasMeme = posts.some(p => /meme|мем|funny|joke/i.test(p));\nconst hasAudio = html.includes('voice') || html.includes('audio');\n\nreturn [{ json: {\n  ...stats,\n  content_types: {\n    quiz: hasQuiz,\n    vocabulary: hasVocab,\n    grammar: hasGrammar,\n    meme: hasMeme,\n    audio: hasAudio\n  },\n  recent_posts_preview: posts.slice(0, 3),\n  posts_count: posts.length\n}}];"
+      }
+    },
+    {
+      "id": "collect-all",
+      "name": "📦 Збір всіх даних",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [1320, 0],
+      "parameters": {
+        "aggregate": "aggregateAllItemData"
+      }
+    },
+    {
+      "id": "ai-analysis",
+      "name": "🤖 AI — Аналіз і рекомендації",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1540, 0],
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list" },
+        "messages": {
+          "values": [{
+            "content": "=Ти аналітик Telegram каналів. Проаналізуй дані конкурентів і дай практичні рекомендації для каналу @ThreeWordsDailyChat.\n\nДані конкурентів:\n{{ JSON.stringify($json, null, 2) }}\n\nНаш канал: @ThreeWordsDailyChat\n- Формат: 3 слова на день + AI бот\n- Аудиторія: українці що вчать англійську\n\nДай відповідь у форматі:\n1. 🏆 ТОП-3 конкуренти (хто найсильніший і чому)\n2. 📈 Що вони роблять краще за нас\n3. 💡 3 конкретні ідеї що скопіювати/адаптувати\n4. ⚡ Що ми робимо краще за них\n5. 🎯 Головна рекомендація на цей тиждень\n\nВідповідай українською, конкретно і коротко."
+          }]
+        }
+      },
+      "credentials": { "openAiApi": { "id": "openai-cred", "name": "openAiApi" } }
+    },
+    {
+      "id": "format-report",
+      "name": "📊 Форматування звіту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 0],
+      "parameters": {
+        "jsCode": "const aiAnalysis = $('🤖 AI — Аналіз і рекомендації').item.json.message?.content || '';\nconst allData = $('📦 Збір всіх даних').item.json;\nconst date = new Date().toLocaleDateString('uk-UA');\n\n// Топ по підписниках\nconst channels = Array.isArray(allData) ? allData : [allData];\nconst sorted = channels\n  .filter(c => c.subscribers && c.subscribers !== 'N/A')\n  .sort((a,b) => parseInt(b.subscribers||0) - parseInt(a.subscribers||0));\n\nlet statsTable = '📊 *Дані конкурентів:*\\n';\nsorted.forEach(c => {\n  const types = c.content_types || {};\n  const typeList = Object.entries(types).filter(([,v])=>v).map(([k])=>k).join(', ') || 'невідомо';\n  statsTable += `\\n• @${c.username}: ${c.subscribers} підп. | ER: ${c.engagement_rate}% | Контент: ${typeList}`;\n});\n\nconst report = `🔍 *ЩОТИЖНЕВИЙ ЗВІТ КОНКУРЕНТІВ*\\n📅 ${date}\\n\\n${statsTable}\\n\\n---\\n\\n${aiAnalysis}`;\n\nreturn [{ json: { report } }];"
+      }
+    },
+    {
+      "id": "send-report",
+      "name": "📤 Надіслати звіт адміну",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1980, 0],
+      "parameters": {
+        "chatId": "YOUR_ADMIN_CHAT_ID",
+        "text": "={{ $json.report }}",
+        "additionalFields": { "parse_mode": "Markdown" }
+      },
+      "credentials": { "telegramApi": { "id": "telegram-cred", "name": "telegramApi" } }
+    },
+    {
+      "id": "save-to-static",
+      "name": "💾 Зберегти дані конкурентів",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 200],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.competitors) staticData.competitors = {};\nif (!staticData.competitorHistory) staticData.competitorHistory = [];\n\nconst allData = $('📦 Збір всіх даних').item.json;\nconst channels = Array.isArray(allData) ? allData : [allData];\n\n// Зберігаємо поточний стан\nchannels.forEach(c => {\n  if (c.username) staticData.competitors[c.username] = {\n    ...c,\n    updated_at: new Date().toISOString()\n  };\n});\n\n// Зберігаємо в історію\nstaticData.competitorHistory.push({\n  date: new Date().toISOString().split('T')[0],\n  data: channels\n});\n\n// Залишаємо тільки 12 тижнів\nif (staticData.competitorHistory.length > 12) {\n  staticData.competitorHistory = staticData.competitorHistory.slice(-12);\n}\n\nreturn [{ json: { saved: true, count: channels.length } }];"
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Щопонеділка 10:00": { "main": [[{ "node": "📋 Список конкурентів", "type": "main", "index": 0 }]] },
+    "📋 Список конкурентів": { "main": [[{ "node": "🔍 Збір даних з tgstat.io", "type": "main", "index": 0 }]] },
+    "🔍 Збір даних з tgstat.io": { "main": [[{ "node": "📊 Парсинг статистики", "type": "main", "index": 0 }]] },
+    "📊 Парсинг статистики": { "main": [[{ "node": "📰 Останні пости конкурента", "type": "main", "index": 0 }]] },
+    "📰 Останні пости конкурента": { "main": [[{ "node": "🧠 Аналіз типів контенту", "type": "main", "index": 0 }]] },
+    "🧠 Аналіз типів контенту": { "main": [[{ "node": "📦 Збір всіх даних", "type": "main", "index": 0 }]] },
+    "📦 Збір всіх даних": {
+      "main": [[
+        { "node": "🤖 AI — Аналіз і рекомендації", "type": "main", "index": 0 },
+        { "node": "💾 Зберегти дані конкурентів", "type": "main", "index": 0 }
+      ]]
+    },
+    "🤖 AI — Аналіз і рекомендації": { "main": [[{ "node": "📊 Форматування звіту", "type": "main", "index": 0 }]] },
+    "📊 Форматування звіту": { "main": [[{ "node": "📤 Надіслати звіт адміну", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "analytics" }]
+}
