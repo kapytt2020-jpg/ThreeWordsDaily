@@ -1,4 +1,6 @@
 browser/sessions/
+credentials.local.json
+*.local.json
 __pycache__/
 *.pyc
 .env
