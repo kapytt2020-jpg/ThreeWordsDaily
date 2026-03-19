@@ -9,7 +9,7 @@
 1. Зліва меню → Credentials → Add Credential
 2. Тип: Telegram API
 3. Назва: `telegramApi`
-4. Token: `8350734666:AAGcNbrSnv3dWS6bhbWDebBjEWh04wlA5sA`
+4. Token: `8350734666:AAFhKT7Pdq1PLTE3erIs5y_o3v2eOW4mXZs`
 5. Save
 
 ### Telegram (@YourBot_test_bot)
