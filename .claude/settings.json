@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:humanrights-online.org)",
+      "WebFetch(domain:helpukrainescotland.com)",
+      "WebFetch(domain:telegramgrouplinks.com)",
+      "WebFetch(domain:moltbook.com)"
+    ]
+  }
+}

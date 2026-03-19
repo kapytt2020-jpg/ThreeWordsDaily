@@ -9,9 +9,10 @@ from pathlib import Path
 from openai import AsyncOpenAI
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Poll
 from telegram.error import Forbidden
+from telegram import ChatMemberUpdated
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
-    CallbackQueryHandler, filters, ContextTypes
+    CallbackQueryHandler, ChatMemberHandler, filters, ContextTypes
 )
 
 # ─── CONFIG ────────────────────────────────────────────────
@@ -586,6 +587,35 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     extra  = ("\n\n🎖 <b>Нове досягнення:</b> " + " ".join(badges)) if badges else ""
     await update.message.reply_html(reply + extra)
 
+# ─── WELCOME NEW MEMBERS ───────────────────────────────────
+async def handle_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    result: ChatMemberUpdated = update.chat_member
+    if not result: return
+    old_status = result.old_chat_member.status
+    new_status = result.new_chat_member.status
+    # тільки нові учасники (не боти)
+    if old_status in ("left","kicked") and new_status in ("member","restricted"):
+        user = result.new_chat_member.user
+        if user.is_bot: return
+        upsert_user(user.id, user.username or "", user.first_name or "")
+        kb = InlineKeyboardMarkup([[
+            InlineKeyboardButton("👋 Познайомитись з Максом", url=f"https://t.me/{BOT_USER}?start=hi"),
+            InlineKeyboardButton("📊 Мій профіль", callback_data="my_stats"),
+        ]])
+        await ctx.bot.send_message(
+            result.chat.id,
+            f"🎉 <b>{user.first_name}</b>, ласкаво просимо до <b>@ThreeWordsDailyChat</b>!\n\n"
+            "Тут щодня:\n"
+            "⏰ <b>9:00</b> — нове слово або правило\n"
+            "🧠 <b>11:00</b> — quiz\n"
+            "☀️ <b>13:00</b> — цікавий факт\n"
+            "🌙 <b>19:00</b> — повторення\n\n"
+            "🎮 Заробляй XP, будуй серії, потрапляй в ТОП!\n"
+            "Напиши Максу в особисті щоб почати 👇",
+            parse_mode="HTML", reply_markup=kb
+        )
+        log.info(f"👋 Новий учасник: {user.first_name} ({user.id})")
+
 # ─── SCHEDULER ─────────────────────────────────────────────
 async def post_group(app, text: str, kb=None):
     await app.bot.send_message(GROUP_ID, text, parse_mode="HTML",
@@ -606,9 +636,22 @@ async def daily_admin_report(app):
     except Exception as e:
         log.error(f"Admin report: {e}")
 
+async def send_group_quiz(app):
+    data = await gen_quiz()
+    await app.bot.send_poll(
+        GROUP_ID,
+        question="🧠 " + data["question"],
+        options=data["options"], type=Poll.QUIZ,
+        correct_option_id=data["correct"],
+        explanation=data["explanation"], is_anonymous=False,
+    )
+    bump("quizzes")
+
 async def run_post(app, key, gen_fn, keyboard):
     if key == "rep":
         await gen_fn(app)
+    elif key == "qz":
+        await send_group_quiz(app)
     elif key == "tip":
         await post_group(app, random.choice(TIPS), keyboard)
     else:
@@ -618,11 +661,12 @@ async def run_post(app, key, gen_fn, keyboard):
 
 async def scheduler(app):
     TASKS = [
-        (9,  0, "am",  lambda: gen(MORNING), kb_post()),
-        (13, 0, "mid", lambda: gen(MIDDAY),  None),
-        (15, 0, "tip", None,                 kb_tips()),
-        (19, 0, "pm",  lambda: ask_max("Вечірній пост-повторення. Тепло. Виклик на завтра + факт. 'До зустрічі вранці 👋'", 400), None),
-        (21, 0, "rep", daily_admin_report,   None),
+        (9,  0,  "am",  lambda: gen(MORNING), kb_post()),
+        (11, 0,  "qz",  None,                 None),
+        (13, 0,  "mid", lambda: gen(MIDDAY),  None),
+        (15, 0,  "tip", None,                 kb_tips()),
+        (19, 0,  "pm",  lambda: ask_max("Вечірній пост-повторення. Тепло. Виклик на завтра + факт. 'До зустрічі вранці 👋'", 400), None),
+        (21, 0,  "rep", daily_admin_report,   None),
     ]
 
     done = set()
@@ -671,12 +715,13 @@ async def main():
         app.add_handler(CommandHandler(cmd, fn))
 
     app.add_handler(CallbackQueryHandler(handle_callback))
+    app.add_handler(ChatMemberHandler(handle_new_member, ChatMemberHandler.CHAT_MEMBER))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     await app.initialize()
     await app.start()
-    await app.updater.start_polling(drop_pending_updates=True)
-    log.info("✅ Макс онлайн 🚀 | 9:00 / 13:00 / 15:00 / 19:00 / 21:00")
+    await app.updater.start_polling(drop_pending_updates=True, allowed_updates=Update.ALL_TYPES)
+    log.info("✅ Макс онлайн 🚀 | 9:00 / 11:00quiz / 13:00 / 15:00 / 19:00 / 21:00")
 
     asyncio.create_task(scheduler(app))
     await asyncio.Event().wait()

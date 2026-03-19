@@ -17,7 +17,15 @@
       "Bash(osascript:*)",
       "Skill(update-config)",
       "Bash(git:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(rsync -av --exclude='browser/sessions/' --exclude='__pycache__/' --exclude='*.pyc' /Users/usernew/Desktop/BOT/ \"/Users/usernew/Desktop/ThreeWordsDaily_BOT/\")",
+      "Bash(/Users/usernew/Desktop/BOT/requirements.txt:*)",
+      "Bash(ls -la *.session)",
+      "WebFetch(domain:collaborator.pro)",
+      "WebFetch(domain:tgstat.com)",
+      "WebFetch(domain:www.telegram-groups.com)"
     ]
   }
 }

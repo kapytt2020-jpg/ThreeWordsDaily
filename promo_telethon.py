@@ -15,18 +15,19 @@ from telethon.errors import FloodWaitError, UserBannedInChannelError, ChatWriteF
 # ======= НАЛАШТУВАННЯ =======
 API_ID = 39641928
 API_HASH = 'a2618c2bda0c4b346de9af6d6fbfc640'
-PHONE = None       # Твій номер телефону +380XXXXXXXXX
+PHONE = '+380982896457'
 
 # Цільові групи
 TARGET_GROUPS = [
-    '@english_ua_chat',
-    '@learn_english_ukraine',
-    '@englishforuachat',
-    '@speak_english_chat',
-    '@english_learning_ua',
-    '@ukrainians_abroad',
-    '@ua_learning_community',
-    '@english_with_friends_ua',
+    # ✅ Перевірені — постить успішно
+    '@ukrainians_us',           # 7,802 члени — українці в США
+    '@breakfast_english',       # English-only група
+
+    # ⚠️ Треба вступити вручну в Telegram з акаунту +380982896457
+    '@ChatUkraineUK',           # 16,437 членів — українці у Великій Британії
+    '@UA_England',              # 10,151 членів — українці в Англії
+    '@LondonUkraine',           # Лондон — чат українців
+    '@knlu_chat',               # 2,053 члени — КНЛУ (Київський лінгвістичний)
 ]
 
 # Промо тексти (ротуються)
