@@ -19,7 +19,7 @@ _creds     = json.loads(Path("credentials.local.json").read_text())
 BOT_TOKEN  = _creds["telegram_bots"]["Clickecombot"]
 OPENAI_KEY = _creds["openai_api_key"]
 GROUP_ID   = -1002680027938
-ADMIN_ID   = 7826066091       # ← свій ID з @userinfobot
+ADMIN_ID   = 1371213874       # Dre3am
 BOT_USER   = "Clickecombot"
 DB_FILE    = "users.db"
 
