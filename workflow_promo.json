@@ -1,0 +1,201 @@
+{
+  "name": "ThreeWordsDaily — Promo Bot",
+  "nodes": [
+    {
+      "id": "schedule-promo",
+      "name": "⏰ Щосереди 12:00 — Промо",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 12 * * 3" }]
+        }
+      }
+    },
+    {
+      "id": "target-groups",
+      "name": "📋 Цільові групи для постів",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "parameters": {
+        "jsCode": "// Групи де є наша аудиторія — українці що вчать англійську\nconst groups = [\n  { id: '@english_ua_chat', name: 'English UA Chat', type: 'group' },\n  { id: '@learn_english_ukraine', name: 'Learn English Ukraine', type: 'group' },\n  { id: '@englishforuachat', name: 'English for Ukrainians Chat', type: 'group' },\n  { id: '@speak_english_chat', name: 'Speak English Chat', type: 'group' },\n  { id: '@english_learning_ua', name: 'English Learning UA', type: 'group' },\n  { id: '@ukrainians_abroad', name: 'Ukrainians Abroad', type: 'group' },\n  { id: '@ua_learning_community', name: 'UA Learning Community', type: 'group' },\n  { id: '@english_with_friends_ua', name: 'English with Friends UA', type: 'group' }\n];\nreturn groups.map(g => ({ json: g }));"
+      }
+    },
+    {
+      "id": "generate-promo-text",
+      "name": "🤖 AI — Генерація промо тексту",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [220, 220],
+      "parameters": {
+        "resource": "text",
+        "operation": "message",
+        "modelId": { "__rl": true, "value": "gpt-4o-mini", "mode": "list" },
+        "messages": {
+          "values": [{
+            "content": "Напиши короткий промо пост (максимум 5 рядків) для Telegram групи про безкоштовний бот для вивчення англійської @ThreeWordsDailyChat.\n\nВимоги:\n- Починай з інтригуючого питання або факту\n- Згадай що є AI бот який відповідає на питання\n- Згадай 3 слова щодня\n- Один emoji в кінці\n- НЕ спамний стиль\n- Природньо і дружньо\n- Мовою: українська\n- В кінці: @ThreeWordsDailyChat /start\n\nЗробити 3 різні варіанти пронумеровані 1. 2. 3."
+          }]
+        }
+      },
+      "credentials": { "openAiApi": { "id": "openai-cred", "name": "openAiApi" } }
+    },
+    {
+      "id": "pick-variant",
+      "name": "🎲 Вибір варіанту тексту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 220],
+      "parameters": {
+        "jsCode": "const content = $input.first().json.message?.content || '';\n\n// Розбиваємо на варіанти\nconst variants = content.split(/\\n(?=\\d\\.)/)\n  .map(v => v.replace(/^\\d\\.\\s*/, '').trim())\n  .filter(v => v.length > 20);\n\n// Вибираємо випадковий\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.promoVariantIndex) staticData.promoVariantIndex = 0;\nconst idx = staticData.promoVariantIndex % (variants.length || 1);\nstaticData.promoVariantIndex = idx + 1;\n\nconst chosen = variants[idx] || variants[0] || content;\n\n// Додаємо UTM-подібний трекер\nconst week = new Date().toISOString().slice(0,10);\nreturn [{ json: { \n  text: chosen,\n  variant: idx + 1,\n  week,\n  source: 'promo_bot'\n}}];"
+      }
+    },
+    {
+      "id": "merge-group-text",
+      "name": "🔀 Merge групи + текст",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [660, 100],
+      "parameters": { "mode": "combine", "combinationMode": "mergeByPosition" }
+    },
+    {
+      "id": "check-cooldown",
+      "name": "⏳ Перевірка cooldown (не спамимо)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 100],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.promoHistory) staticData.promoHistory = {};\n\nconst groupId = $input.first().json.id;\nconst lastPosted = staticData.promoHistory[groupId];\nconst now = Date.now();\nconst TWO_WEEKS = 14 * 24 * 60 * 60 * 1000;\n\n// Не постимо в ту саму групу частіше ніж раз на 2 тижні\nif (lastPosted && (now - lastPosted) < TWO_WEEKS) {\n  return []; // Пропускаємо\n}\n\nreturn [$input.first()];"
+      }
+    },
+    {
+      "id": "post-to-group",
+      "name": "📣 Пост в групу",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1100, 100],
+      "parameters": {
+        "chatId": "={{ $json.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": { "parse_mode": "HTML" }
+      },
+      "credentials": { "telegramApi": { "id": "telegram-cred", "name": "telegramApi" } }
+    },
+    {
+      "id": "track-post",
+      "name": "📊 Трекінг — звідки прийшли",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 100],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.promoHistory) staticData.promoHistory = {};\nif (!staticData.promoStats) staticData.promoStats = [];\n\nconst groupId = $json.id;\nconst groupName = $json.name;\n\n// Оновлюємо час останнього посту\nstaticData.promoHistory[groupId] = Date.now();\n\n// Зберігаємо статистику\nstaticData.promoStats.push({\n  group: groupName,\n  group_id: groupId,\n  posted_at: new Date().toISOString(),\n  variant: $json.variant,\n  week: $json.week\n});\n\n// Останні 100 записів\nif (staticData.promoStats.length > 100) {\n  staticData.promoStats = staticData.promoStats.slice(-100);\n}\n\nreturn [{ json: { tracked: true, group: groupName } }];"
+      }
+    },
+    {
+      "id": "wait-between-posts",
+      "name": "⏱️ Пауза між постами (30 сек)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1100, 300],
+      "parameters": {
+        "unit": "seconds",
+        "amount": 30
+      }
+    },
+    {
+      "id": "schedule-new-member",
+      "name": "📩 Новий учасник каналу",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 400],
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "credentials": { "telegramApi": { "id": "telegram-cred", "name": "telegramApi" } }
+    },
+    {
+      "id": "detect-new-member",
+      "name": "🆕 Це новий учасник?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [220, 400],
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [{
+            "leftValue": "={{ $json.message?.new_chat_member?.id || $json.message?.new_chat_members?.[0]?.id }}",
+            "rightValue": "",
+            "operator": { "type": "string", "operation": "notEmpty" }
+          }]
+        }
+      }
+    },
+    {
+      "id": "track-source",
+      "name": "🔍 Визначити звідки прийшов",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 400],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.newMembersTracking) staticData.newMembersTracking = [];\nif (!staticData.promoStats) staticData.promoStats = [];\n\nconst member = $json.message?.new_chat_member || $json.message?.new_chat_members?.[0];\nconst chatId = $json.message?.chat?.id;\n\n// Перевіряємо чи постили в цю групу нещодавно\nconst recentPromo = staticData.promoStats.find(p => {\n  const dayAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;\n  return new Date(p.posted_at).getTime() > dayAgo;\n});\n\nconst source = recentPromo ? `promo_${recentPromo.group}` : 'organic';\n\nstaticData.newMembersTracking.push({\n  user_id: member?.id,\n  name: member?.first_name,\n  source,\n  joined_at: new Date().toISOString()\n});\n\nreturn [{ json: {\n  user_id: member?.id,\n  name: member?.first_name || 'Новачок',\n  source,\n  chat_id: chatId\n}}];"
+      }
+    },
+    {
+      "id": "report-schedule",
+      "name": "⏰ Щоп'ятниці 18:00 — Промо звіт",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 600],
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 18 * * 5" }]
+        }
+      }
+    },
+    {
+      "id": "generate-promo-report",
+      "name": "📊 Звіт промо активності",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 600],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nconst promoStats = staticData.promoStats || [];\nconst newMembers = staticData.newMembersTracking || [];\n\nconst weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString();\n\nconst weeklyPromo = promoStats.filter(p => p.posted_at > weekAgo);\nconst weeklyMembers = newMembers.filter(m => m.joined_at > weekAgo);\n\nconst sources = weeklyMembers.reduce((acc, m) => {\n  acc[m.source] = (acc[m.source] || 0) + 1;\n  return acc;\n}, {});\n\nconst sourcesText = Object.entries(sources)\n  .sort(([,a],[,b]) => b-a)\n  .map(([s,c]) => `  • ${s}: ${c} чол`)\n  .join('\\n') || '  • Немає даних';\n\nconst report = `📣 ЩОТИЖНЕВИЙ ПРОМО ЗВІТ\\n\\n` +\n  `📤 Постів в групах: ${weeklyPromo.length}\\n` +\n  `👥 Нових учасників: ${weeklyMembers.length}\\n\\n` +\n  `📍 Джерела трафіку:\\n${sourcesText}\\n\\n` +\n  `Групи де постили:\\n` +\n  weeklyPromo.map(p => `  • ${p.group}`).join('\\n');\n\nreturn [{ json: { report } }];"
+      }
+    },
+    {
+      "id": "send-promo-report",
+      "name": "📤 Надіслати промо звіт",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [440, 600],
+      "parameters": {
+        "chatId": "YOUR_ADMIN_CHAT_ID",
+        "text": "={{ $json.report }}",
+        "additionalFields": {}
+      },
+      "credentials": { "telegramApi": { "id": "telegram-cred", "name": "telegramApi" } }
+    }
+  ],
+  "connections": {
+    "⏰ Щосереди 12:00 — Промо": { "main": [[{ "node": "📋 Цільові групи для постів", "type": "main", "index": 0 }]] },
+    "📋 Цільові групи для постів": { "main": [[{ "node": "🔀 Merge групи + текст", "type": "main", "index": 0 }]] },
+    "🤖 AI — Генерація промо тексту": { "main": [[{ "node": "🎲 Вибір варіанту тексту", "type": "main", "index": 0 }]] },
+    "🎲 Вибір варіанту тексту": { "main": [[{ "node": "🔀 Merge групи + текст", "type": "main", "index": 1 }]] },
+    "🔀 Merge групи + текст": { "main": [[{ "node": "⏳ Перевірка cooldown (не спамимо)", "type": "main", "index": 0 }]] },
+    "⏳ Перевірка cooldown (не спамимо)": { "main": [[{ "node": "📣 Пост в групу", "type": "main", "index": 0 }]] },
+    "📣 Пост в групу": {
+      "main": [[
+        { "node": "📊 Трекінг — звідки прийшли", "type": "main", "index": 0 },
+        { "node": "⏱️ Пауза між постами (30 сек)", "type": "main", "index": 0 }
+      ]]
+    },
+    "📩 Новий учасник каналу": { "main": [[{ "node": "🆕 Це новий учасник?", "type": "main", "index": 0 }]] },
+    "🆕 Це новий учасник?": { "main": [[{ "node": "🔍 Визначити звідки прийшов", "type": "main", "index": 0 }]] },
+    "⏰ Щоп'ятниці 18:00 — Промо звіт": { "main": [[{ "node": "📊 Звіт промо активності", "type": "main", "index": 0 }]] },
+    "📊 Звіт промо активності": { "main": [[{ "node": "📤 Надіслати промо звіт", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "promo" }]
+}
