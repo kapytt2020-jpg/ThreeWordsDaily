@@ -3501,7 +3501,7 @@
         224
       ],
       "id": "fbc97cc5-3331-4bcc-a8d5-52eae3a89093",
-      "name": "💾 Save User to Static Data"
+      "name": "💾 Save User — Static + Sheets"
     },
     {
       "parameters": {
@@ -3515,6 +3515,113 @@
       ],
       "id": "f38a0730-c67a-4508-80ae-27c19fd1f7c1",
       "name": "Code in JavaScript"
+    },
+    {
+      "id": "sheets-sync",
+      "name": "📊 Sync to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        300
+      ],
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "14F-C1iOLIuTRoNUpluZATYMzVtNbfWSFUcrRgijHhiQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Users"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [
+            "user_id"
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred",
+          "name": "googleSheetsOAuth2Api"
+        }
+      }
+    },
+    {
+      "id": "sheets-read-user",
+      "name": "📖 Read User from Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        100
+      ],
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "14F-C1iOLIuTRoNUpluZATYMzVtNbfWSFUcrRgijHhiQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Users"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "user_id",
+              "lookupValue": "={{ $json.user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred",
+          "name": "googleSheetsOAuth2Api"
+        }
+      }
+    },
+    {
+      "id": "sheets-analytics",
+      "name": "📊 Save Analytics to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        500
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "14F-C1iOLIuTRoNUpluZATYMzVtNbfWSFUcrRgijHhiQ"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Competitors"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-cred",
+          "name": "googleSheetsOAuth2Api"
+        }
+      }
     }
   ],
   "pinData": {},
