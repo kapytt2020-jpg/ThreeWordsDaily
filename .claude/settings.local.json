@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"clickecom\\\\|Clickecom\\\\|5[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]:\" ~/Desktop/ 2>/dev/null --include=\"*.txt\" --include=\"*.json\" --include=\"*.env\" | head -20)",
+      "Bash(python3 -c \"\nimport json\nwith open\\('/tmp/workflow_fixed.json'\\) as f:\n    wf = json.load\\(f\\)\nprint\\('Settings:', json.dumps\\(wf.get\\('settings', {}\\), indent=2\\)\\)\n\")",
+      "Bash(pip3 show:*)",
+      "Bash(curl -s http://localhost:9222/json/version)",
+      "Bash(pkill -f \"Google Chrome\")",
+      "Bash(open -a \"Google Chrome\" --args --remote-debugging-port=9222 --user-data-dir=\"/Users/usernew/Library/Application Support/Google/Chrome\")",
+      "Bash(kill -9 515)",
+      "Bash(pkill -9 -f \"Google Chrome\")",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -m playwright install chromium)",
+      "Bash(python3 -m playwright install chrome)",
+      "Bash(python3:*)",
+      "Bash(pkill -f \"agent.py\")",
+      "Bash(osascript:*)",
+      "Skill(update-config)",
+      "Bash(git:*)",
+      "Bash(gh auth:*)"
+    ]
+  }
+}

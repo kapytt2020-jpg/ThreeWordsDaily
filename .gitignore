@@ -1,0 +1,6 @@
+browser/sessions/
+__pycache__/
+*.pyc
+.env
+credentials.py
+*.json.bak
