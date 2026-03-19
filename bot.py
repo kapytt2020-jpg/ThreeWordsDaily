@@ -390,6 +390,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/save слово — зберегти слово у словник (+5 XP)\n"
         "/review — повторити збережені слова (+10 XP)\n"
         "/mywords — мій словник\n"
+        "/invite — реферальне посилання (+25 XP за друга)\n"
         "/stats — твій профіль і прогрес\n"
         "/top — лідерборд ТОП-10\n"
         "/notips — вимкнути поради\n"
@@ -461,6 +462,23 @@ async def cmd_mywords(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"📚 <b>Твій словник ({total} слів):</b>\n━━━━━━━━━━━━━━━\n"
         + "\n".join(lines)
         + "\n\n/review — повторити | /save — додати")
+
+async def cmd_invite(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    u = update.effective_user
+    try:
+        link = await ctx.bot.create_chat_invite_link(
+            GROUP_ID, name=f"ref_{u.id}", creates_join_request=False)
+        await update.message.reply_html(
+            f"🔗 <b>Твоє реферальне посилання:</b>\n"
+            f"{link.invite_link}\n\n"
+            f"Коли хтось приєднається через нього — ти отримаєш <b>+25 XP</b> 🚀\n"
+            f"Ділись з друзями!"
+        )
+    except Exception as e:
+        log.error(f"invite link: {e}")
+        await update.message.reply_html(
+            f"📲 Запрошуй друзів:\n<b>https://t.me/ThreeWordsDailyChat</b>\n\n"
+            f"(Щоб отримувати XP за запрошення — бот має бути адміном групи)")
 
 async def cmd_notips(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     with db() as c: c.execute("UPDATE users SET tips_on=0 WHERE user_id=?", (update.effective_user.id,))
@@ -591,30 +609,52 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def handle_new_member(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     result: ChatMemberUpdated = update.chat_member
     if not result: return
-    old_status = result.old_chat_member.status
-    new_status = result.new_chat_member.status
-    # тільки нові учасники (не боти)
-    if old_status in ("left","kicked") and new_status in ("member","restricted"):
-        user = result.new_chat_member.user
-        if user.is_bot: return
-        upsert_user(user.id, user.username or "", user.first_name or "")
-        kb = InlineKeyboardMarkup([[
-            InlineKeyboardButton("👋 Познайомитись з Максом", url=f"https://t.me/{BOT_USER}?start=hi"),
-            InlineKeyboardButton("📊 Мій профіль", callback_data="my_stats"),
-        ]])
-        await ctx.bot.send_message(
-            result.chat.id,
-            f"🎉 <b>{user.first_name}</b>, ласкаво просимо до <b>@ThreeWordsDailyChat</b>!\n\n"
-            "Тут щодня:\n"
-            "⏰ <b>9:00</b> — нове слово або правило\n"
-            "🧠 <b>11:00</b> — quiz\n"
-            "☀️ <b>13:00</b> — цікавий факт\n"
-            "🌙 <b>19:00</b> — повторення\n\n"
-            "🎮 Заробляй XP, будуй серії, потрапляй в ТОП!\n"
-            "Напиши Максу в особисті щоб почати 👇",
-            parse_mode="HTML", reply_markup=kb
-        )
-        log.info(f"👋 Новий учасник: {user.first_name} ({user.id})")
+    # рекомендований паттерн з GitHub (python-telegram-bot/examples/chatmemberbot.py)
+    old_is_member, new_is_member = result.difference().get("is_member", (None, None))
+    if old_is_member is None or new_is_member is None:
+        # fallback через статус
+        old_is_member = result.old_chat_member.status in ("left","kicked")
+        new_is_member = result.new_chat_member.status in ("member","restricted","administrator")
+        if not (old_is_member and new_is_member): return
+    elif old_is_member or not new_is_member:
+        return
+    user = result.new_chat_member.user
+    if user.is_bot: return
+    upsert_user(user.id, user.username or "", user.first_name or "")
+
+    # реферальна система: якщо хтось запросив — +25 XP тому хто запросив
+    referrer_note = ""
+    if result.invite_link and result.invite_link.creator:
+        ref = result.invite_link.creator
+        if not ref.is_bot and ref.id != user.id:
+            add_xp(ref.id, 25)
+            referrer_note = f"\n\n👥 <i>Запрошений через посилання</i>"
+            try:
+                await ctx.bot.send_message(
+                    ref.id,
+                    f"🎉 <b>{user.first_name}</b> приєднався за твоїм посиланням!\n+25 XP тобі 🚀",
+                    parse_mode="HTML"
+                )
+            except Exception:
+                pass
+
+    kb = InlineKeyboardMarkup([[
+        InlineKeyboardButton("👋 Написати Максу", url=f"https://t.me/{BOT_USER}?start=hi"),
+        InlineKeyboardButton("🏆 Лідерборд",      callback_data="leaderboard"),
+    ]])
+    await ctx.bot.send_message(
+        result.chat.id,
+        f"🎉 <b>{user.first_name}</b>, ласкаво просимо до <b>@ThreeWordsDailyChat</b>!\n\n"
+        "Тут щодня:\n"
+        "⏰ <b>9:00</b> — нове слово або правило\n"
+        "🧠 <b>11:00</b> — quiz\n"
+        "☀️ <b>13:00</b> — цікавий факт\n"
+        "🌙 <b>19:00</b> — повторення\n\n"
+        "🎮 Заробляй XP, будуй серії, потрапляй в ТОП!\n"
+        "Напиши Максу в особисті щоб почати 👇" + referrer_note,
+        parse_mode="HTML", reply_markup=kb
+    )
+    log.info(f"👋 Новий учасник: {user.first_name} ({user.id})")
 
 # ─── SCHEDULER ─────────────────────────────────────────────
 async def post_group(app, text: str, kb=None):
@@ -711,6 +751,7 @@ async def main():
         ("word", cmd_word), ("quiz", cmd_quiz), ("help", cmd_help),
         ("notips", cmd_notips), ("tips", cmd_tips_on), ("admin", cmd_admin),
         ("save", cmd_save), ("review", cmd_review), ("mywords", cmd_mywords),
+        ("invite", cmd_invite),
     ]:
         app.add_handler(CommandHandler(cmd, fn))
 
