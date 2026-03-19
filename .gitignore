@@ -1,6 +1,11 @@
 browser/sessions/
 credentials.local.json
 *.local.json
+.env
+tools/session*
+tools/poster_history.json
+tools/analytics_result.json
+__pycache__/
 __pycache__/
 *.pyc
 .env
