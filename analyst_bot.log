@@ -1,5 +1,0 @@
-2026-03-19 10:18:55,975 [Analyst] HTTP Request: POST https://api.telegram.org/bot8681431935:AAGGFw6AnGbs23_Wb2wRqZ4GM0WutK93wM0/getMe "HTTP/1.1 200 OK"
-2026-03-19 10:18:55,977 [Analyst] Application started
-2026-03-19 10:18:56,095 [Analyst] HTTP Request: POST https://api.telegram.org/bot8681431935:AAGGFw6AnGbs23_Wb2wRqZ4GM0WutK93wM0/deleteWebhook "HTTP/1.1 200 OK"
-2026-03-19 10:18:56,096 [Analyst] ✅ @YourBot_prod_bot (Analyst) онлайн
-2026-03-19 10:19:06,448 [Analyst] HTTP Request: POST https://api.telegram.org/bot8681431935:AAGGFw6AnGbs23_Wb2wRqZ4GM0WutK93wM0/getUpdates "HTTP/1.1 200 OK"
