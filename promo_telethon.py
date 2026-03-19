@@ -13,8 +13,8 @@ from telethon import TelegramClient
 from telethon.errors import FloodWaitError, UserBannedInChannelError, ChatWriteForbiddenError
 
 # ======= НАЛАШТУВАННЯ =======
-API_ID = None      # Отримай на my.telegram.org → App API
-API_HASH = None    # Отримай на my.telegram.org → App API
+API_ID = 39641928
+API_HASH = None    # ⚠️ ВСТАВИТИ api_hash з my.telegram.org
 PHONE = None       # Твій номер телефону +380XXXXXXXXX
 
 # Цільові групи
