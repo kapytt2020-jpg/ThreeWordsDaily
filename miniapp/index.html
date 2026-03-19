@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>ThreeWordsDaily</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">📚</span>
+        <span class="logo-text">ThreeWords<b>Daily</b></span>
+      </div>
+      <div class="header-right">
+        <div class="streak-badge" id="streakBadge">
+          🔥 <span id="streakCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="lesson" onclick="switchTab('lesson')">📚 Урок</button>
+      <button class="tab" data-tab="tasks" onclick="switchTab('tasks')">✅ Завдання</button>
+      <button class="tab" data-tab="top" onclick="switchTab('top')">🏆 Топ</button>
+      <button class="tab" data-tab="profile" onclick="switchTab('profile')">👤 Профіль</button>
+    </nav>
+
+    <!-- TAB: LESSON -->
+    <div id="tab-lesson" class="tab-content active">
+
+      <!-- XP Bar -->
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-label">
+          <span>⭐ XP: <b id="xpCount">0</b></span>
+          <span id="rankLabel">🌱 Новачок</span>
+        </div>
+        <div class="xp-bar">
+          <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Word Cards -->
+      <div class="section-title">Слова дня</div>
+      <div id="wordCards" class="word-cards">
+        <div class="loading-spinner">
+          <div class="spinner"></div>
+          <p>Завантажую урок...</p>
+        </div>
+      </div>
+
+      <!-- Idiom -->
+      <div class="section-title">💬 Idiom дня</div>
+      <div id="idiomCard" class="idiom-card">
+        <div class="loading-spinner"><div class="spinner"></div></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn btn-primary" onclick="startQuiz()">🧠 Тест</button>
+        <button class="btn btn-secondary" onclick="markLearned()">✅ Вивчив</button>
+      </div>
+
+      <!-- Quiz Block (hidden by default) -->
+      <div id="quizBlock" class="quiz-block hidden">
+        <div class="section-title">🧠 Тест</div>
+        <div id="quizQuestion" class="quiz-question"></div>
+        <div id="quizAnswers" class="quiz-answers"></div>
+      </div>
+    </div>
+
+    <!-- TAB: TASKS -->
+    <div id="tab-tasks" class="tab-content hidden">
+      <div class="section-title">Щоденні завдання</div>
+      <div id="tasksList" class="tasks-list"></div>
+
+      <div class="section-title" style="margin-top:20px">Нагороди</div>
+      <div class="rewards-grid" id="rewardsGrid"></div>
+    </div>
+
+    <!-- TAB: TOP -->
+    <div id="tab-top" class="tab-content hidden">
+      <div class="section-title">🏆 Топ тижня</div>
+      <div id="leaderboard" class="leaderboard"></div>
+    </div>
+
+    <!-- TAB: PROFILE -->
+    <div id="tab-profile" class="tab-content hidden">
+      <div class="profile-card" id="profileCard"></div>
+
+      <div class="section-title" style="margin-top:16px">Вивчені слова</div>
+      <div id="learnedWords" class="learned-words"></div>
+
+      <div class="section-title" style="margin-top:16px">Вибери тему</div>
+      <div class="topic-grid" id="topicGrid"></div>
+
+      <div class="section-title" style="margin-top:16px">Вибери рівень</div>
+      <div class="level-grid" id="levelGrid"></div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

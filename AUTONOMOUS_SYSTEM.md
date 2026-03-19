@@ -1,129 +1,226 @@
-# ThreeWordsDaily — Autonomous Learning System
+# ThreeWordsDaily — Autonomous Bot System
 
-## Мета
-
-Система автономно генерує, планує, аналізує та просуває контент для 📚 вивчення англійської мови без ручного втручання.
-
-## Архітектура
-
-### 1️⃣ **Основний бот (@ThreeWordsDailyChat)**
-Щодня надсилає контент в 3 часи:
-- **08:00** — Слово дня + приклад
-- **14:00** — Граматичне пояснення  
-- **20:00** — Mini-story або практика
-
-### 2️⃣ **Content Planner (workflow_content_planner.json)**
-**Коли:** Кожну неділю в 23:00
-**Що робить:**
-- Аналізує які контент отримав найбільше реакцій
-- AI генерує план на наступний тиждень
-- Зберігає в Google Sheets таблицю `content_plan`
-
-**План містить:**
-```
-День | Час | Тип | Тема | Слова | AI-промпт | Статус
-------|------|------|------|------|-----------|-------
-Пн | 08:00 | word | Business | entrepreneur | "Генерувати слово для бізнесу" | planned
-Пн | 14:00 | grammar | Present Perfect | - | "Present Perfect для дій які почались у минулому" | planned
-Пн | 20:00 | story | Job interview | present, career | "Story про інтерв'ю з 10 новими словами" | planned
-```
-
-### 3️⃣ **Workflow Execution (workflow_main_extended.json)**
-Кожного дня:
-1. Читає з таблиці `content_plan` що генерувати
-2. Генерує контент через OpenAI GPT-4
-3. Надсилає в чат користувачам
-4. Логує реакції (👍 ❤️ 😀)
-
-### 4️⃣ **Analytics Weekly (workflow_analytics.json)**
-**Коли:** Кожну неділю в 10:00
-**Збирає:**
-- Нові користувачі: +15 на тиждень
-- Retention (7 днів): 62%
-- Топ слова за реакціями
-- Streak статистика (максимум 120 днів)
-- Таблиця `analytics` в Google Sheets
-
-### 5️⃣ **Autonomous Promo (workflow_promo_autonomous.json)**
-**Коли:** Автоматично кожні 3 дні
-**База груп:**
-```
-Група | ID | Розмір | Статус | Дата_останньої_реклами
--------|-----|--------|--------|----------------------
-Python_Lovers | 12345 | 2500 | ok | 2024-03-15
-English_Learners | 67890 | 1200 | banned | 2024-02-20
-```
-
-**Як працює:**
-- AI генерує текст залежно від типу групи (контент/дослідження/ігрова)
-- Надсилає **Poll** (опитування) замість тексту — менше банів  
-- Логує результат (sent/banned/error)
-- Оновлює статус групи
-
-## Типи контенту
-
-### Щодня (3 основні сеанси)
-| Час | Тип | Приклад | OpenAI Prompt |
-|------|------|---------|---------------|
-| 08:00 | **Word + Dialog** | *"entrepreneur"*  Приклад: "She's an entrepreneur" | Generate a common English word at CEFR A1-B2 level with 2 example dialogues |
-| 14:00 | **Grammar Rule** | Present Perfect explanation (1 хв читання) | Explain one English grammar rule in 5 sentences for B1 learners |
-| 20:00 | **Mini-Story** | Story використовуючи 5 слів тижня | Write a 100-word story using these 5 words: {words} |
-
-### П'ятниця
-| Тип | Опис |
-|------|------|
-| **Fun Fact** | Цікавий факт про англійську мову |
-| **Quiz** | 5 запитань на слова тижня |
-
-## Google Sheets Структура
-
-### Таблиця 1: `content_plan` 
-```
-День | Час | Тип | Тема | Слова | AI_Prompt | Контент | Статус | Reactions
-```
-
-### Таблиця 2: `analytics`
-```
-Дата | Нові_юзери | Retention_7d | Топ_слово | Engagement | Quiz_пройденo
-```
-
-### Таблиця 3: `groups_promo`
-```
-Група_ID | Назва | Розмір | Статус | Дата_останньої | Результат
-```
-
-## n8n Workflows
-
-| Workflow | Тригер | Функція |
-|----------|--------|---------|
-| **workflow_main_extended.json** | Cron: 08:00, 14:00, 20:00 | Генерує & надсилає контент |
-| **workflow_content_planner.json** | Cron: Неділя 23:00 | Планує контент на тиждень |
-| **workflow_analytics.json** | Cron: Неділя 10:00 | Збирає аналітику |
-| **workflow_promo_autonomous.json** | Cron: Кожні 72 години | Автоматична реклама |
-
-## Credentials потребу
-
-```
-✅ telegramApi — токен @Clickecombot
-✅ openAiApi — n8n free OpenAI API credits
-✅ googleSheetsOAuth2Api — доступ до Google Sheets
-```
-
-## Запуск системи
-
-1. Імпортуй 4 workflow JSON файли в n8n
-2. Активуй все
-3. Чекай неділю 23:00 — перший план буде згенерований
-4. Понеділок 08:00 — перший контент автоматично надійде
-
-## Примітки
-
-- Кожна Неділя → новий тиждень контенту
-- AI автоматично аналізує реакції і підлаштовує складність
-- Прово не спаму — користуємо Poll замість тексту
-- Все логується в Google Sheets — легко監視
+> Повністю автономна система: боти самі планують, генерують, аналізують і просувають контент.
 
 ---
 
-**Статус:** 🚀 Готово до запуску
-**Дата:** 19.03.2026
+## Архітектура системи
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                   TELEGRAM ECOSYSTEM                    │
+│                                                         │
+│  @ThreeWordsDailyChat    @YourBot_prod_bot              │
+│       (канал)              (бот-вчитель)                │
+│          │                      │                       │
+│          └──────────┬───────────┘                       │
+│                     ▼                                   │
+│            [Mini App WebApp]                            │
+│         Урок / Quiz / Tasks / Top                       │
+└─────────────────────────────────────────────────────────┘
+                      │
+         ┌────────────┼────────────┐
+         ▼            ▼            ▼
+    [n8n Cloud]  [Python Bot]  [Telethon]
+    Автоматизація  bot_main.py  promo_telethon.py
+         │
+    ┌────┴─────────────────────────────┐
+    │  content_planner.py (неділя 23:00)│
+    │  analytics.py      (неділя 20:00) │
+    │  content_extra.py  (щодня)        │
+    └───────────────────────────────────┘
+         │
+    [OpenAI GPT-4] → [Google Sheets DB]
+```
+
+---
+
+## Файлова структура
+
+```
+ThreeWordsDaily_BOT/
+├── bot_main.py              # Головний Python бот (повний UX)
+├── content_extra.py         # Додатковий контент (idiom, story, quiz)
+├── content_planner.py       # AI планувальник на тиждень
+├── analytics.py             # Тижнева аналітика → адмін
+├── promo_telethon.py        # Промо polls в групах (anti-ban)
+├── .env                     # Токени та API ключі
+├── credentials.local.json   # Токени всіх ботів
+├── miniapp/
+│   ├── index.html           # Telegram Mini App
+│   ├── style.css            # Темна тема, gamification UI
+│   └── app.js               # Логіка: уроки, quiz, streak, leaderboard
+├── workflow_main.json        # n8n: основний workflow
+├── workflow_promo.json       # n8n: авто промо
+├── workflow_analytics.json   # n8n: аналітика
+├── CONTENT_STYLE.md          # Аналіз 001k.Trade → наші шаблони
+└── AUTONOMOUS_SYSTEM.md      # Цей файл
+```
+
+---
+
+## Боти та їх ролі
+
+| Бот | Токен | Роль |
+|-----|-------|------|
+| `@YourBot_prod_bot` | `8681431935:...` | Головний бот-вчитель, Mini App |
+| `@YourBot_test_bot` | `8639302828:...` | Тестування |
+| `@SpeakBetterrbot` | `8625727121:...` | PR бот, відповіді на згадки |
+| `@YourBrand_group_teacher_bot` | `8619703324:...` | Вчитель в групах |
+| User акаунт `+380982896457` | Telethon | Промо від людини |
+
+---
+
+## Завдання системи
+
+### ✅ Завдання 1 — Контент поза 3 словами (`content_extra.py`)
+```
+09:00  3 слова (n8n)
+13:00  Idiom дня + діалог
+19:00  Mini-story зі словами тижня
+Пт 17:00  Fun fact про англійську
+Нд 18:00  Weekly quiz (5 polls)
+```
+
+### ✅ Завдання 2 — Автономне планування (`content_planner.py`)
+- Запуск: кожна неділя о 23:00
+- Аналізує використані слова та реакції
+- AI генерує план на наступний тиждень
+- Надсилає адміну на затвердження
+- Google Sheets: таблиця `content_plan`
+
+### ✅ Завдання 3 — Аналітика (`analytics.py`)
+- Запуск: кожна неділя о 20:00
+- Збирає: нових юзерів, retention 7d, streaks, топ-3
+- AI дає інсайти та оцінку тижня
+- Надсилає звіт адміну
+- Google Sheets: таблиця `analytics`
+
+### ✅ Завдання 4 — Автономна реклама (`promo_telethon.py`)
+- Відправляє **Quiz Poll** замість тексту (менше банів)
+- 5 різних poll тем, ротація
+- Правильна відповідь → пояснення + лінк на бот
+- Пауза 45-90 сек між групами
+
+### ✅ Завдання 5 — Mini App (`miniapp/`)
+- Telegram WebApp всередині бота
+- Tabs: Урок / Завдання / Топ / Профіль
+- Gamification: XP, streak, ранги, нагороди
+- Задачі: щоденні з нагородами
+- Leaderboard: топ тижня
+- Персоналізація: рівень + тема
+
+---
+
+## Розклад автозапуску (cron)
+
+```bash
+# Додати в crontab (crontab -e):
+
+# Idiom дня о 13:00
+0 13 * * * cd ~/Desktop/ThreeWordsDaily_BOT && python3 content_extra.py
+
+# Mini-story о 19:00
+0 19 * * * cd ~/Desktop/ThreeWordsDaily_BOT && python3 content_extra.py
+
+# Fun fact (п'ятниця 17:00)
+0 17 * * 5 cd ~/Desktop/ThreeWordsDaily_BOT && python3 content_extra.py
+
+# Weekly quiz (неділя 18:00)
+0 18 * * 0 cd ~/Desktop/ThreeWordsDaily_BOT && python3 content_extra.py
+
+# Аналітика (неділя 20:00)
+0 20 * * 0 cd ~/Desktop/ThreeWordsDaily_BOT && python3 analytics.py
+
+# Контент-план (неділя 23:00)
+0 23 * * 0 cd ~/Desktop/ThreeWordsDaily_BOT && python3 content_planner.py
+
+# Промо (понеділок, середа, п'ятниця о 11:00)
+0 11 * * 1,3,5 cd ~/Desktop/BOT && python3 promo_telethon.py
+```
+
+---
+
+## Env змінні (`.env`)
+
+```env
+OPENAI_API_KEY=sk-proj-...
+TELEGRAM_BOT_TOKEN=8681431935:...
+TELEGRAM_CHAT_ID=-1002680027938
+ADMIN_CHAT_ID=6923740900
+SHEETS_API_URL=                    # n8n webhook або Apps Script
+```
+
+---
+
+## Mini App — деплой
+
+### Варіант A — Vercel (рекомендовано, безкоштовно):
+```bash
+cd miniapp
+npx vercel --prod
+# Отримаєш URL типу: https://threewordsapp.vercel.app
+```
+
+### Варіант B — GitHub Pages:
+```bash
+# Просто пуш в /docs папку і включи GitHub Pages
+```
+
+### Після деплою — підключити до бота:
+```bash
+# В BotFather:
+/setmenubutton → URL твого Mini App → "📚 Урок дня"
+```
+
+---
+
+## Контент стиль (001k.Trade аналіз)
+
+Детально в `CONTENT_STYLE.md`. Коротко:
+
+| Принцип | Опис |
+|---------|------|
+| **Коротко** | 1-3 речення максимум |
+| **Дані + думка** | Факт/слово + особистий коментар |
+| **Insider tone** | "ми", "я знайшов", "спробуй" |
+| **Мінімум CTA** | Кнопка, не текст "клікни" |
+| **Емодзі** | 1-2, підсилюють, не прикрашають |
+
+---
+
+## Масштабування
+
+### Фаза 1 (зараз): UA аудиторія
+- `@ThreeWordsDailyChat` + `@YourBot_prod_bot`
+- Мова інтерфейсу: українська
+
+### Фаза 2: RU аудиторія
+- `/start` → вибір мови 🇺🇦 / 🇷🇺
+- Окремий канал: `@ThreeWordsDailyRU`
+- Той самий бот, `bot_main.py` з `lang` параметром
+
+### Фаза 3: EN аудиторія (глобал)
+- Той самий підхід для вивчення іспанської / французької
+- Масштабована архітектура вже готова
+
+---
+
+## Статус
+
+| Компонент | Статус |
+|-----------|--------|
+| `bot_main.py` | ✅ Готово, тестовано |
+| `promo_telethon.py` (polls) | ✅ Готово |
+| `content_extra.py` | ✅ Готово, тестовано |
+| `content_planner.py` | ✅ Готово, тестовано |
+| `analytics.py` | ✅ Готово, тестовано |
+| `miniapp/` | ✅ Готово, потрібен деплой |
+| n8n local | ✅ Встановлено v2.8.4 |
+| Google Sheets інтеграція | ⏳ Потрібен SHEETS_API_URL |
+| Mini App деплой | ⏳ Потрібен Vercel/GitHub Pages |
+| Cron автозапуск | ⏳ Потрібно налаштувати |
+
+---
+
+*Оновлено: Березень 2026*

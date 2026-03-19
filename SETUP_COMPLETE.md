@@ -22,7 +22,7 @@
 
 | Назва | Тип | Значення |
 |-------|-----|---------|
-| telegramApi | Telegram API | 8350734666:AAFhKT7Pdq1PLTE3erIs5y_o3v2eOW4mXZs |
+| telegramApi | Telegram API | 8350734666:AAGcNbrSnv3dWS6bhbWDebBjEWh04wlA5sA |
 | openAiApi | OpenAI API | sk-proj-Yr9pSoWtYCL2Jmb... |
 | googleSheetsOAuth2Api | Google Sheets OAuth2 | Через OAuth login |
 
