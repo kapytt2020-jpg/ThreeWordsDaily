@@ -35,6 +35,7 @@ async def ask(text):
         return f"Приєднуйся до нашої групи! 👉 {GROUP_LINK}"
 
 async def cmd_start(update, ctx):
+    if update.effective_chat.type != "private": return
     await update.message.reply_html(
         "👋 Привіт! Хочеш вчити англійську?\n\n"
         "Щодня нові слова + AI пояснення — безкоштовно! 🎯",
@@ -42,6 +43,7 @@ async def cmd_start(update, ctx):
 
 async def handle_msg(update, ctx):
     if not update.message or not update.message.text or update.effective_user.is_bot: return
+    if update.effective_chat.type != "private": return
     reply = await ask(update.message.text)
     await update.message.reply_html(reply, reply_markup=KB)
 

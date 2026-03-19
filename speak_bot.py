@@ -45,6 +45,7 @@ KB = InlineKeyboardMarkup([[
 ]])
 
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type != "private": return
     await update.message.reply_html(
         "👋 <b>Привіт!</b>\n\n"
         "Я допомагаю з вивченням англійської 😊\n\n"
@@ -56,6 +57,7 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 async def handle_msg(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text: return
     if update.effective_user.is_bot: return
+    if update.effective_chat.type != "private": return
     reply = await ask(update.message.text)
     await update.message.reply_html(reply, reply_markup=KB)
 

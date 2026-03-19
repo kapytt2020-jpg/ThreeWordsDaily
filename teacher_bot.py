@@ -51,6 +51,7 @@ async def ask_lex(text: str) -> str:
         return "Хм, давай спробуємо ще раз 😅"
 
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    if update.effective_chat.type != "private": return
     await update.message.reply_html(
         "👋 Привіт! Я Лекс — граматичний асистент групи.\n\n"
         "Запитуй про:\n"

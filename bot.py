@@ -59,6 +59,10 @@ def init_db():
             quizzes  INTEGER DEFAULT 0
         );
         """)
+        # migrate: add new_u if missing (old DB)
+        cols = {r[1] for r in c.execute("PRAGMA table_info(daily_stats)")}
+        if "new_u" not in cols:
+            c.execute("ALTER TABLE daily_stats ADD COLUMN new_u INTEGER DEFAULT 0")
 
 def bump(col: str):
     today = str(date.today())
@@ -515,34 +519,51 @@ async def daily_admin_report(app):
     except Exception as e:
         log.error(f"Admin report: {e}")
 
+async def run_post(app, key, gen_fn, keyboard):
+    if key == "rep":
+        await gen_fn(app)
+    elif key == "tip":
+        await post_group(app, random.choice(TIPS), keyboard)
+    else:
+        text = await gen_fn()
+        await post_group(app, text, keyboard)
+    log.info(f"✅ {key} пост відправлено")
+
 async def scheduler(app):
+    TASKS = [
+        (9,  0, "am",  lambda: gen(MORNING), kb_post()),
+        (13, 0, "mid", lambda: gen(MIDDAY),  None),
+        (15, 0, "tip", None,                 kb_tips()),
+        (19, 0, "pm",  lambda: ask_max("Вечірній пост-повторення. Тепло. Виклик на завтра + факт. 'До зустрічі вранці 👋'", 400), None),
+        (21, 0, "rep", daily_admin_report,   None),
+    ]
+
     done = set()
+    now  = datetime.now()
+    d    = str(now.date())
+
+    # catch up: якщо бот запустився після запланованого часу — відправляємо пропущені пости
+    for hh, mm, key, gen_fn, keyboard in TASKS:
+        tag = f"{key}_{d}"
+        scheduled_mins = hh * 60 + mm
+        current_mins   = now.hour * 60 + now.minute
+        if scheduled_mins <= current_mins < scheduled_mins + 60 and tag not in done:
+            try:
+                await run_post(app, key, gen_fn, keyboard)
+                done.add(tag)
+            except Exception as e:
+                log.error(f"catchup {key}: {e}")
+
     while True:
         now = datetime.now()
         d, h, m = str(now.date()), now.hour, now.minute
 
-        tasks = [
-            (9,  0, "am",  lambda: gen(MORNING), kb_post()),
-            (13, 0, "mid", lambda: gen(MIDDAY),  None),
-            (15, 0, "tip", lambda: asyncio.coroutine(lambda: random.choice(TIPS))(), kb_tips()),
-            (19, 0, "pm",  lambda: ask_max("Вечірній пост-повторення. Тепло. Виклик на завтра + факт. 'До зустрічі вранці 👋'", 400), None),
-            (21, 0, "rep", daily_admin_report, None),
-        ]
-
-        for hh, mm, key, gen_fn, keyboard in tasks:
+        for hh, mm, key, gen_fn, keyboard in TASKS:
             tag = f"{key}_{d}"
             if h == hh and m == mm and tag not in done:
                 try:
-                    if key == "rep":
-                        await gen_fn(app)
-                    else:
-                        if key == "tip":
-                            text = random.choice(TIPS)
-                        else:
-                            text = await gen_fn()
-                        await post_group(app, text, keyboard)
+                    await run_post(app, key, gen_fn, keyboard)
                     done.add(tag)
-                    log.info(f"✅ {key} пост відправлено")
                 except Exception as e:
                     log.error(f"{key}: {e}")
 
