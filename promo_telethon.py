@@ -14,7 +14,7 @@ from telethon.errors import FloodWaitError, UserBannedInChannelError, ChatWriteF
 
 # ======= НАЛАШТУВАННЯ =======
 API_ID = 39641928
-API_HASH = None    # ⚠️ ВСТАВИТИ api_hash з my.telegram.org
+API_HASH = 'a2618c2bda0c4b346de9af6d6fbfc640'
 PHONE = None       # Твій номер телефону +380XXXXXXXXX
 
 # Цільові групи
