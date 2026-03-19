@@ -76,11 +76,16 @@ def init_db():
                 dt TEXT PRIMARY KEY, messages INTEGER DEFAULT 0,
                 new_u INTEGER DEFAULT 0, quizzes INTEGER DEFAULT 0)""")
 
-def bump(col: str):
+def bump(col: str, conn=None):
     today = str(date.today())
-    with db() as c:
+    def _bump(c):
         c.execute("INSERT OR IGNORE INTO daily_stats(dt) VALUES(?)", (today,))
         c.execute(f"UPDATE daily_stats SET {col}={col}+1 WHERE dt=?", (today,))
+    if conn:
+        _bump(conn)
+    else:
+        with db() as c:
+            _bump(c)
 
 def get_user(uid: int) -> dict | None:
     with db() as c:
@@ -96,7 +101,7 @@ def upsert_user(uid: int, username: str, first_name: str):
         if not ex:
             c.execute("INSERT INTO users(user_id,username,first_name,last_active) VALUES(?,?,?,?)",
                       (uid, username, first_name, today))
-            bump("new_u")
+            bump("new_u", c)
         else:
             last, streak, lives = ex
             if last and last != today:
