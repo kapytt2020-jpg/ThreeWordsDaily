@@ -58,6 +58,15 @@ def init_db():
             new_u    INTEGER DEFAULT 0,
             quizzes  INTEGER DEFAULT 0
         );
+        CREATE TABLE IF NOT EXISTS saved_words (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id   INTEGER,
+            word      TEXT,
+            definition TEXT,
+            saved_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+            reviews   INTEGER DEFAULT 0,
+            UNIQUE(user_id, word)
+        );
         """)
         # migrate: add new_u if missing (old DB)
         cols = {r[1] for r in c.execute("PRAGMA table_info(daily_stats)")}
@@ -273,6 +282,8 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "🎮 <b>Тут в особистих:</b>\n"
         "/word — слово зараз (+15 XP)\n"
         "/quiz — тест\n"
+        "/save слово — зберегти у словник\n"
+        "/review — повторити словник\n"
         "/stats — твій прогрес\n"
         "/top — хто кращий 😄\n\n"
         "Це легше ніж здається! 💪" + extra,
@@ -367,12 +378,80 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "📚 <b>Команди</b>\n━━━━━━━━━━━━━━━\n"
         "/word — слово прямо зараз (+15 XP)\n"
         "/quiz — quiz з варіантами\n"
+        "/save слово — зберегти слово у словник (+5 XP)\n"
+        "/review — повторити збережені слова (+10 XP)\n"
+        "/mywords — мій словник\n"
         "/stats — твій профіль і прогрес\n"
         "/top — лідерборд ТОП-10\n"
         "/notips — вимкнути поради\n"
         "/tips — увімкнути поради\n\n"
         "💬 Або просто пиши питання про англійську!"
     )
+
+async def cmd_save(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    u = update.effective_user
+    word = " ".join(ctx.args).strip() if ctx.args else ""
+    if not word:
+        await update.message.reply_html("✏️ Використання: <code>/save слово</code>\nНаприклад: <code>/save resilient</code>")
+        return
+    upsert_user(u.id, u.username or "", u.first_name or "")
+    msg = await update.message.reply_text("⏳ Зберігаю...")
+    definition = await ask_max(
+        f"Дай коротке визначення слова '{word}': переклад + 1 приклад. HTML. 4 рядки max.", 200)
+    with db() as c:
+        try:
+            c.execute("INSERT INTO saved_words(user_id,word,definition) VALUES(?,?,?)",
+                      (u.id, word.lower(), definition))
+            saved = True
+        except sqlite3.IntegrityError:
+            saved = False
+    if saved:
+        add_xp(u.id, 5)
+        await msg.edit_text(
+            f"✅ <b>'{word}'</b> збережено у твій словник!\n\n{definition}\n\n+5 XP 🎯",
+            parse_mode="HTML")
+    else:
+        await msg.edit_text(f"📚 <b>'{word}'</b> вже є у твоєму словнику!", parse_mode="HTML")
+
+async def cmd_review(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    u = update.effective_user
+    upsert_user(u.id, u.username or "", u.first_name or "")
+    with db() as c:
+        rows = c.execute(
+            "SELECT word, definition FROM saved_words WHERE user_id=? ORDER BY reviews ASC, RANDOM() LIMIT 5",
+            (u.id,)).fetchall()
+        total = c.execute("SELECT COUNT(*) FROM saved_words WHERE user_id=?", (u.id,)).fetchone()[0]
+    if not rows:
+        await update.message.reply_html(
+            "📚 Твій словник порожній!\n\n"
+            "Зберігай слова командою <code>/save слово</code>\n"
+            "Наприклад: <code>/save ambitious</code>")
+        return
+    lines = [f"<b>{i+1}. {w}</b>\n{d}" for i,(w,d) in enumerate(rows)]
+    await update.message.reply_html(
+        f"🔁 <b>Повторення — {len(rows)} з {total} слів:</b>\n━━━━━━━━━━━━━━━\n\n"
+        + "\n\n".join(lines)
+        + "\n\n💡 Спробуй скласти речення з кожним словом!")
+    with db() as c:
+        for word, _ in rows:
+            c.execute("UPDATE saved_words SET reviews=reviews+1 WHERE user_id=? AND word=?", (u.id, word))
+    add_xp(u.id, 10)
+
+async def cmd_mywords(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    u = update.effective_user
+    with db() as c:
+        rows = c.execute(
+            "SELECT word, reviews FROM saved_words WHERE user_id=? ORDER BY saved_at DESC LIMIT 20",
+            (u.id,)).fetchall()
+        total = c.execute("SELECT COUNT(*) FROM saved_words WHERE user_id=?", (u.id,)).fetchone()[0]
+    if not rows:
+        await update.message.reply_html("📚 Словник порожній. <code>/save слово</code> — щоб додати!")
+        return
+    lines = [f"• <b>{w}</b> {'🔥' if r>=3 else '📖'} ({r} повторень)" for w,r in rows]
+    await update.message.reply_html(
+        f"📚 <b>Твій словник ({total} слів):</b>\n━━━━━━━━━━━━━━━\n"
+        + "\n".join(lines)
+        + "\n\n/review — повторити | /save — додати")
 
 async def cmd_notips(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     with db() as c: c.execute("UPDATE users SET tips_on=0 WHERE user_id=?", (update.effective_user.id,))
@@ -579,6 +658,7 @@ async def main():
         ("start", cmd_start), ("stats", cmd_stats), ("top", cmd_top),
         ("word", cmd_word), ("quiz", cmd_quiz), ("help", cmd_help),
         ("notips", cmd_notips), ("tips", cmd_tips_on), ("admin", cmd_admin),
+        ("save", cmd_save), ("review", cmd_review), ("mywords", cmd_mywords),
     ]:
         app.add_handler(CommandHandler(cmd, fn))
 
