@@ -68,10 +68,13 @@ def init_db():
             UNIQUE(user_id, word)
         );
         """)
-        # migrate: add new_u if missing (old DB)
+        # migrate: recreate daily_stats if old schema (used 'date' instead of 'dt')
         cols = {r[1] for r in c.execute("PRAGMA table_info(daily_stats)")}
-        if "new_u" not in cols:
-            c.execute("ALTER TABLE daily_stats ADD COLUMN new_u INTEGER DEFAULT 0")
+        if cols and "dt" not in cols:
+            c.execute("DROP TABLE daily_stats")
+            c.execute("""CREATE TABLE daily_stats (
+                dt TEXT PRIMARY KEY, messages INTEGER DEFAULT 0,
+                new_u INTEGER DEFAULT 0, quizzes INTEGER DEFAULT 0)""")
 
 def bump(col: str):
     today = str(date.today())
