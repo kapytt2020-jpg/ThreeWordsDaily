@@ -584,6 +584,40 @@ function onCompanionTap() {
   if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred(haptic);
 }
 
+// ===== IDLE BEHAVIOR SYSTEM (Crash-style CSS class cycling) =====
+const BEHAVIORS = [
+  { cls:'idle-look',    dur:2200 },
+  { cls:'idle-stretch', dur:2000 },
+  { cls:'idle-bounce',  dur:2000 },
+  { cls:'idle-proud',   dur:2200 },
+  { cls:'idle-wobble',  dur:1800 },
+  { cls:'idle-glance',  dur:2400 },
+  { cls:'idle-shake',   dur:1600 },
+];
+const COMBAT_BEHAVIORS = [
+  { cls:'idle-surge',   dur:2000 },
+  { cls:'idle-intim',   dur:2500 },
+  { cls:'idle-look',    dur:2200 },
+  { cls:'idle-wobble',  dur:1800 },
+];
+var _cssIdleGen = 0;
+
+function runCycle(el, seq, offset) {
+  var myGen = ++_cssIdleGen;
+  var i = (offset || 0) % seq.length;
+  var current = '';
+  function tick() {
+    if (_cssIdleGen !== myGen) return; // cancelled by stopIdleAnimation
+    if (current) el.classList.remove(current);
+    var s = seq[i];
+    current = s.cls;
+    el.classList.add(s.cls);
+    i = (i + 1) % seq.length;
+    setTimeout(tick, s.dur + 400);
+  }
+  setTimeout(tick, (offset || 0) * 700);
+}
+
 // ===== IDLE ANIMATION LOOP =====
 var idleLoop = null;
 const IDLE_REACTIONS = {
@@ -608,6 +642,7 @@ const IDLE_REACTIONS = {
 
 function startIdleAnimation() {
   stopIdleAnimation();
+  // JS effect loop (existing system)
   function scheduleNext() {
     var delay = 5000 + Math.random() * 5000;
     idleLoop = setTimeout(function() {
@@ -618,16 +653,35 @@ function startIdleAnimation() {
       var entry = pool[Math.floor(Math.random() * pool.length)];
       var rect = art.getBoundingClientRect();
       executeReaction(entry, art, rect.left + rect.width/2, rect.top + rect.height/2);
-      // idle speech only rarely
       if (Math.random() < 0.35) updateLexiSpeech(entry.sp[Math.floor(Math.random()*entry.sp.length)]);
       scheduleNext();
     }, delay);
   }
   scheduleNext();
+  // CSS class cycling (preview6 idle personality system)
+  var art = document.getElementById('lexiArt');
+  if (art) {
+    var wrap = art.querySelector('[class*="-wrap"]');
+    if (wrap) {
+      var charId = state.petCharacter || '';
+      var combatChars = ['vex', 'seraph', 'ronin'];
+      var humanChars  = ['kaito', 'yuki'];
+      var seq;
+      if (combatChars.indexOf(charId) >= 0) {
+        seq = COMBAT_BEHAVIORS;
+      } else if (humanChars.indexOf(charId) >= 0) {
+        seq = [BEHAVIORS[0], BEHAVIORS[3], BEHAVIORS[5], BEHAVIORS[6], BEHAVIORS[1]];
+      } else {
+        seq = BEHAVIORS;
+      }
+      runCycle(wrap, seq, 0);
+    }
+  }
 }
 
 function stopIdleAnimation() {
   if (idleLoop) { clearTimeout(idleLoop); idleLoop = null; }
+  _cssIdleGen++; // invalidate any running CSS cycle
 }
 
 function animateLexi(anim) {
@@ -1279,6 +1333,8 @@ function buildCompanionHTML(stageIdx, arch) {
     nova: buildNovaHTML, luna: buildLunaHTML, rex: buildRexHTML,
     sunny: buildSunnyHTML, biscuit: buildBiscuitHTML, ronin: buildRoninHTML,
     apex: buildApexHTML, bolt: buildBoltHTML,
+    astro: buildAstroHTML, kaito: buildKaitoHTML, yuki: buildYukiHTML,
+    vex: buildVexHTML, seraph: buildSeraphHTML,
   };
   const charId = state.petCharacter;
   if (charId && charBuilders[charId]) return charBuilders[charId](stageIdx);
@@ -2564,6 +2620,104 @@ function endMemoryGame() {
     '</div>';
 }
 
+// ===== NEW CHARACTER BUILDERS (preview6: Astro, Kaito, Yuki, Vex, Seraph) =====
+
+function buildAstroHTML(s) {
+  return '<div class="comp-char" onclick="onCompanionTap()" style="transform:' + _charScale(s) + ';transform-origin:bottom center">' +
+    '<div class="astro-wrap">' +
+      '<div class="char-prop">📡</div>' +
+      '<div class="astro-glow"></div>' +
+      '<div class="astro-foot l"></div><div class="astro-foot r"></div>' +
+      '<div class="astro-arm l"></div><div class="astro-arm r"></div>' +
+      '<div class="astro-torso"></div>' +
+      '<div class="astro-head">' +
+        '<div class="astro-phone-band"></div>' +
+        '<div class="astro-phone l"></div><div class="astro-phone r"></div>' +
+        '<div class="astro-visor">' +
+          '<div class="astro-visor-eyes">' +
+            '<div class="astro-visor-eye"></div>' +
+            '<div class="astro-visor-eye"></div>' +
+          '</div>' +
+          '<div class="astro-visor-smile"></div>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildKaitoHTML(s) {
+  return '<div class="comp-char" onclick="onCompanionTap()" style="transform:' + _charScale(s) + ';transform-origin:bottom center">' +
+    '<div class="kaito-wrap">' +
+      '<div class="char-prop" style="font-size:14px">🎧</div>' +
+      '<div class="kaito-jacket"></div>' +
+      '<div class="kaito-neck"></div>' +
+      '<div class="kaito-head">' +
+        '<div class="kaito-hair"></div>' +
+        '<div class="kaito-hair-side"></div>' +
+        '<div class="kaito-ear l"></div><div class="kaito-ear r"></div>' +
+        '<div class="kaito-brow l"></div><div class="kaito-brow r"></div>' +
+        '<div class="kaito-eye l"></div><div class="kaito-eye r"></div>' +
+        '<div class="kaito-nose"></div>' +
+        '<div class="kaito-mouth"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildYukiHTML(s) {
+  return '<div class="comp-char" onclick="onCompanionTap()" style="transform:' + _charScale(s) + ';transform-origin:bottom center">' +
+    '<div class="yuki-wrap">' +
+      '<div class="char-prop" style="font-size:14px">🌸</div>' +
+      '<div class="yuki-jacket"></div>' +
+      '<div class="yuki-neck"></div>' +
+      '<div class="yuki-head">' +
+        '<div class="yuki-hair-back"></div>' +
+        '<div class="yuki-hair-top"></div>' +
+        '<div class="yuki-hair-bang"></div>' +
+        '<div class="yuki-ear l"></div><div class="yuki-ear r"></div>' +
+        '<div class="yuki-lash l"></div><div class="yuki-lash r"></div>' +
+        '<div class="yuki-brow l"></div><div class="yuki-brow r"></div>' +
+        '<div class="yuki-eye l"></div><div class="yuki-eye r"></div>' +
+        '<div class="yuki-nose"></div>' +
+        '<div class="yuki-lips"></div>' +
+        '<div class="yuki-blush l"></div><div class="yuki-blush r"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildVexHTML(s) {
+  const glowSize = s >= 4 ? '0 0 40px rgba(220,0,0,0.9),0 0 80px rgba(150,0,0,0.45),0 8px 24px rgba(0,0,0,0.7)' : '0 0 30px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7)';
+  return '<div class="comp-char" onclick="onCompanionTap()" style="transform:' + _charScale(s) + ';transform-origin:bottom center">' +
+    '<div class="vex-wrap">' +
+      '<div class="vex-aura"></div>' +
+      '<div class="vex-horn l"></div><div class="vex-horn r"></div>' +
+      '<div class="vex-body" style="box-shadow:' + glowSize + '">' +
+        '<div class="vex-brow l"></div><div class="vex-brow r"></div>' +
+        '<div class="vex-eye l"><div class="vex-slit"></div></div>' +
+        '<div class="vex-eye r"><div class="vex-slit"></div></div>' +
+        '<div class="vex-scar"></div>' +
+        '<div class="vex-collar"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function buildSeraphHTML(s) {
+  return '<div class="comp-char" onclick="onCompanionTap()" style="transform:' + _charScale(s) + ';transform-origin:bottom center">' +
+    '<div class="seraph-wrap">' +
+      '<div class="seraph-halo"></div>' +
+      '<div class="seraph-wing l"></div><div class="seraph-wing r"></div>' +
+      '<div class="seraph-body">' +
+        '<div class="seraph-mark"></div>' +
+        '<div class="seraph-brow l"></div><div class="seraph-brow r"></div>' +
+        '<div class="seraph-eye l"></div><div class="seraph-eye r"></div>' +
+        '<div class="seraph-collar"></div>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
 // ===== CHARACTER DEFINITIONS =====
 const CHARACTERS = [
   { id:'lumix',   name:'Люмікс',   icon:'🔮', desc:'Магічний дух',   archetype:'spirit', color:'#9333ea' },
@@ -2573,6 +2727,11 @@ const CHARACTERS = [
   { id:'ember',   name:'Ембер',    icon:'🐉', desc:'Вогняний дракон',archetype:'beast',  color:'#ef4444' },
   { id:'mist',    name:'Міст',     icon:'🌙', desc:'Місячний дух',   archetype:'spirit', color:'#38bdf8' },
   { id:'marco',   name:'Марко',    icon:'🌍', desc:'Мандрівник',     archetype:'buddy',  color:'#f59e0b' },
+  { id:'astro',   name:'Астро',    icon:'🚀', desc:'Космічний робот', archetype:'buddy',  color:'#60a5fa' },
+  { id:'kaito',   name:'Кайто',    icon:'🎧', desc:'Крутий хлопець', archetype:'spirit', color:'#1e293b' },
+  { id:'yuki',    name:'Юкі',      icon:'🌸', desc:'Модна дівчина',  archetype:'spirit', color:'#4a1942' },
+  { id:'vex',     name:'Векс',     icon:'😈', desc:'Темний воїн',    archetype:'beast',  color:'#cc0000' },
+  { id:'seraph',  name:'Серафім',  icon:'😇', desc:'Світлий воїн',   archetype:'spirit', color:'#d97706' },
   { id:'bruno',   name:'Бруно',    icon:'🐻', desc:'Ведмідь з рюкзаком', archetype:'beast', color:'#92400e' },
   { id:'crash',   name:'Креш',     icon:'🌀', desc:'Бандикут',       archetype:'beast',  color:'#fb923c' },
   { id:'nova',    name:'Нова',     icon:'⭐', desc:'Темний герой',    archetype:'spirit', color:'#6d28d9' },
@@ -2691,6 +2850,8 @@ function renderArchetypeSelect() {
     nova: buildNovaHTML, luna: buildLunaHTML, rex: buildRexHTML,
     sunny: buildSunnyHTML, biscuit: buildBiscuitHTML, ronin: buildRoninHTML,
     apex: buildApexHTML, bolt: buildBoltHTML,
+    astro: buildAstroHTML, kaito: buildKaitoHTML, yuki: buildYukiHTML,
+    vex: buildVexHTML, seraph: buildSeraphHTML,
   };
   const charHTML = CHARACTERS.map(function(c) {
     const artHTML = charArtBuilders[c.id] ? charArtBuilders[c.id](1) : '<span style="font-size:28px">' + c.icon + '</span>';

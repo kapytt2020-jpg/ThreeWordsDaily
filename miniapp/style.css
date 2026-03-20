@@ -3910,3 +3910,232 @@ main#main {
   background:rgba(180,160,140,0.5);
   right:8px;
 }
+
+/* ============================================================
+   SHARED FLOAT + GLOW KEYFRAMES (used by preview6 characters)
+============================================================ */
+@keyframes f1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+@keyframes f2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes f3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes glow { 0%,100%{opacity:0.65} 50%{opacity:1} }
+
+/* ============================================================
+   IDLE BEHAVIOR ANIMATIONS (from preview6)
+   Applied to any .xxx-wrap element via runCycle() in app.js
+============================================================ */
+@keyframes idleLook {
+  0%   { transform:translateY(0) rotate(0deg); }
+  18%  { transform:translateY(-4px) rotate(-10deg); }
+  38%  { transform:translateY(-4px) rotate(10deg); }
+  55%  { transform:translateY(-4px) rotate(-5deg); }
+  72%  { transform:translateY(-3px) rotate(5deg); }
+  88%  { transform:translateY(-2px) rotate(-2deg); }
+  100% { transform:translateY(0) rotate(0deg); }
+}
+@keyframes idleStretch {
+  0%   { transform:translateY(0) scaleY(1) scaleX(1); }
+  25%  { transform:translateY(-10px) scaleY(1.18) scaleX(0.86); }
+  50%  { transform:translateY(-12px) scaleY(1.22) scaleX(0.84); }
+  70%  { transform:translateY(-8px) scaleY(1.1) scaleX(0.93); }
+  84%  { transform:translateY(-2px) scaleY(0.92) scaleX(1.08); }
+  94%  { transform:translateY(0) scaleY(1.03) scaleX(0.98); }
+  100% { transform:translateY(0) scaleY(1) scaleX(1); }
+}
+@keyframes idleBounce {
+  0%,100% { transform:translateY(0) scaleY(1) scaleX(1); }
+  12%  { transform:translateY(-12px) scaleY(1.1) scaleX(0.92); }
+  22%  { transform:translateY(0) scaleY(0.9) scaleX(1.1); }
+  34%  { transform:translateY(-9px) scaleY(1.08) scaleX(0.94); }
+  44%  { transform:translateY(0) scaleY(0.94) scaleX(1.06); }
+  56%  { transform:translateY(-6px) scaleY(1.05) scaleX(0.96); }
+  66%  { transform:translateY(0) scaleY(0.97) scaleX(1.03); }
+  80%  { transform:translateY(-3px) scaleY(1.02) scaleX(0.99); }
+}
+@keyframes idleProud {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  20%  { transform:translateY(-6px) rotate(-4deg) scaleX(1.05); }
+  40%  { transform:translateY(-10px) rotate(0) scaleX(1.08); }
+  60%  { transform:translateY(-8px) rotate(4deg) scaleX(1.05); }
+  78%  { transform:translateY(-4px) rotate(2deg) scaleX(1.02); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleWobble {
+  0%   { transform:rotate(0deg) translateY(0); }
+  10%  { transform:rotate(-18deg) translateY(-4px); }
+  22%  { transform:rotate(14deg) translateY(-2px); }
+  34%  { transform:rotate(-11deg) translateY(-1px); }
+  46%  { transform:rotate(9deg) translateY(0); }
+  58%  { transform:rotate(-6deg); }
+  70%  { transform:rotate(4deg); }
+  82%  { transform:rotate(-2deg); }
+  92%  { transform:rotate(1deg); }
+  100% { transform:rotate(0deg); }
+}
+@keyframes idleGlance {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  15%  { transform:translateY(-3px) rotate(6deg) scaleX(0.97); }
+  40%  { transform:translateY(-4px) rotate(6deg) scaleX(0.97); }
+  65%  { transform:translateY(-3px) rotate(3deg); }
+  82%  { transform:translateY(-1px) rotate(1deg); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleShake {
+  0%,100% { transform:translateX(0) translateY(-4px); }
+  15% { transform:translateX(-5px) translateY(-5px) rotate(-3deg); }
+  30% { transform:translateX(5px) translateY(-4px) rotate(3deg); }
+  45% { transform:translateX(-4px) translateY(-5px) rotate(-2deg); }
+  60% { transform:translateX(4px) translateY(-4px) rotate(2deg); }
+  75% { transform:translateX(-2px) translateY(-4px); }
+}
+@keyframes idleSurge {
+  0%   { transform:translateY(0) scale(1); filter:brightness(1); }
+  25%  { transform:translateY(-6px) scale(1.06); filter:brightness(1.3); }
+  50%  { transform:translateY(-8px) scale(1.1); filter:brightness(1.5); }
+  75%  { transform:translateY(-5px) scale(1.05); filter:brightness(1.2); }
+  100% { transform:translateY(0) scale(1); filter:brightness(1); }
+}
+@keyframes idleIntim {
+  0%   { transform:translateY(0) scale(1) rotate(0); }
+  30%  { transform:translateY(-3px) scale(1.04) rotate(-2deg); }
+  60%  { transform:translateY(-5px) scale(1.07) rotate(0); }
+  80%  { transform:translateY(-4px) scale(1.05) rotate(2deg); }
+  100% { transform:translateY(0) scale(1) rotate(0); }
+}
+.idle-look    { animation:idleLook    2.2s ease-in-out 1 forwards !important; }
+.idle-stretch { animation:idleStretch 2.0s ease-in-out 1 forwards !important; }
+.idle-bounce  { animation:idleBounce  2.0s ease-in-out 1 forwards !important; }
+.idle-proud   { animation:idleProud   2.2s ease-in-out 1 forwards !important; }
+.idle-wobble  { animation:idleWobble  1.8s ease-in-out 1 forwards !important; }
+.idle-glance  { animation:idleGlance  2.4s ease-in-out 1 forwards !important; }
+.idle-shake   { animation:idleShake   1.6s ease-in-out 1 forwards !important; }
+.idle-surge   { animation:idleSurge   2.0s ease-in-out 1 forwards !important; }
+.idle-intim   { animation:idleIntim   2.5s ease-in-out 1 forwards !important; }
+
+/* Prop element that floats during certain idles */
+.char-prop {
+  position:absolute; opacity:0; pointer-events:none; transition:opacity 0.3s;
+  bottom:80%; left:50%; transform:translateX(-50%);
+  font-size:16px; filter:drop-shadow(0 0 6px rgba(200,180,255,0.8));
+}
+@keyframes propFloat {
+  0%,100% { transform:translateX(-50%) translateY(0) scale(1); }
+  50% { transform:translateX(-50%) translateY(-14px) scale(0.9); }
+}
+.idle-bounce .char-prop,
+.idle-proud .char-prop { opacity:1; animation:propFloat 0.6s ease-in-out infinite; }
+
+/* ============================================================
+   SHARED ANIMATIONS for new characters
+============================================================ */
+@keyframes combatPulse {
+  0%,100% { box-shadow:0 0 28px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7); }
+  50% { box-shadow:0 0 40px rgba(220,0,0,0.9),0 0 80px rgba(150,0,0,0.45),0 8px 24px rgba(0,0,0,0.7); }
+}
+@keyframes seraphGlow {
+  0%,100% { box-shadow:0 0 24px rgba(255,200,0,0.5),0 0 50px rgba(255,160,0,0.2),0 8px 22px rgba(0,0,0,0.5); }
+  50% { box-shadow:0 0 40px rgba(255,220,0,0.9),0 0 80px rgba(255,180,0,0.45),0 8px 22px rgba(0,0,0,0.5); }
+}
+@keyframes hairDrift {
+  0%,100% { transform:rotate(0); }
+  50% { transform:rotate(1.5deg); }
+}
+
+/* ============================================================
+   ASTRO — Space Robot (Soft tier)
+============================================================ */
+.astro-wrap { position:relative;width:96px;height:126px;animation:f3 3.3s ease-in-out infinite;animation-delay:0.5s; }
+.astro-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(96,165,250,0.32) 0%,transparent 70%);border-radius:50%;animation:glow 2.8s ease-in-out infinite; }
+.astro-foot { position:absolute;bottom:0;width:20px;height:12px;background:radial-gradient(ellipse at 40% 30%,#f0f9ff,#bfdbfe);border-radius:4px;z-index:1; }
+.astro-foot.l { left:16px; } .astro-foot.r { right:16px; }
+.astro-arm { position:absolute;bottom:22px;width:14px;height:32px;background:radial-gradient(ellipse at 40% 28%,#dbeafe,#93c5fd);border-radius:6px;z-index:1; }
+.astro-arm.l { left:4px;transform:rotate(6deg); } .astro-arm.r { right:4px;transform:rotate(-6deg); }
+.astro-torso { position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:62px;height:48px;background:radial-gradient(ellipse at 30% 22%,rgba(255,255,255,0.5) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#f8faff 0%,#dbeafe 22%,#bfdbfe 50%,#93c5fd 74%,#60a5fa 100%);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 12px rgba(96,165,250,0.3),inset 0 -6px 14px rgba(30,60,120,0.3);z-index:2; }
+.astro-head { position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:72px;height:66px;background:radial-gradient(ellipse at 28% 20%,rgba(255,255,255,0.6) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#f8faff 0%,#e0f2ff 20%,#c3dffe 48%,#93c5fd 72%,#60a5fa 100%);border-radius:20px;box-shadow:0 0 22px rgba(96,165,250,0.55),0 6px 18px rgba(0,0,0,0.5),inset 0 -8px 18px rgba(30,60,120,0.35);z-index:3; }
+.astro-phone { position:absolute;top:22%;width:16px;height:22px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:6px;box-shadow:0 0 8px rgba(59,130,246,0.5);z-index:2; }
+.astro-phone.l { left:-6px; } .astro-phone.r { right:-6px; }
+.astro-phone-band { position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:80px;height:12px;border:3px solid rgba(59,130,246,0.5);border-bottom:none;border-radius:6px 6px 0 0;z-index:2; }
+.astro-visor { position:absolute;top:18%;left:50%;transform:translateX(-50%);width:54px;height:38px;background:#04101f;border-radius:14px;border:2px solid rgba(96,165,250,0.5);box-shadow:inset 0 0 14px rgba(96,165,250,0.35),0 0 12px rgba(96,165,250,0.45);z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px; }
+.astro-visor-eyes { display:flex;gap:12px; }
+.astro-visor-eye { width:14px;height:10px;border-radius:3px;background:linear-gradient(135deg,#93c5fd,#60a5fa);box-shadow:0 0 8px rgba(96,165,250,0.9);position:relative; }
+.astro-visor-eye::before { content:'';position:absolute;top:1px;left:1px;width:4px;height:3px;background:rgba(255,255,255,0.65);border-radius:1px; }
+.astro-visor-smile { width:22px;height:5px;border-bottom:2px solid rgba(147,197,253,0.8);border-radius:0 0 50% 50%; }
+
+/* ============================================================
+   HUMAN FAMILY — Kaito (Cool) + Yuki (Fashion)
+============================================================ */
+.kaito-wrap { position:relative;width:92px;height:128px;animation:f2 4s ease-in-out infinite; }
+.kaito-jacket { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:80px;height:38px;background:linear-gradient(to bottom,#1e293b,#0f172a);border-radius:10px 10px 0 0;box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.kaito-jacket::before { content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:18px;height:14px;background:linear-gradient(to bottom,#334155,#1e293b);border-radius:0 0 4px 4px; }
+.kaito-neck { position:absolute;bottom:34px;left:50%;transform:translateX(-50%);width:20px;height:18px;background:radial-gradient(ellipse at 40% 30%,#f0c896,#c47840);border-radius:4px; }
+.kaito-head { position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:70px;height:76px;background:radial-gradient(ellipse at 40% 32%,#ffe8c8 0%,#f0c090 22%,#d4884a 62%,#a05e30 100%);border-radius:46% 46% 42% 42%/50% 50% 44% 44%;box-shadow:0 4px 18px rgba(0,0,0,0.4),inset 0 -6px 16px rgba(80,40,10,0.25); }
+.kaito-head::before { content:'';position:absolute;top:10%;left:16%;width:29%;height:21%;background:radial-gradient(ellipse,rgba(255,255,255,0.55) 0%,transparent 100%);border-radius:50%;transform:rotate(-14deg); }
+.kaito-hair { position:absolute;top:-5px;left:-2px;right:-2px;height:38px;background:linear-gradient(160deg,#0f0800 0%,#1a1000 50%,#100900 100%);border-radius:50% 50% 0 0;z-index:3; }
+.kaito-hair-side { position:absolute;top:8px;right:-6px;width:24px;height:28px;background:linear-gradient(135deg,#0f0800,#1a1000);border-radius:0 40% 60% 0;z-index:2;animation:hairDrift 4s ease-in-out infinite;transform-origin:top left; }
+.kaito-ear { position:absolute;top:46%;width:12px;height:16px;background:radial-gradient(ellipse at 40% 30%,#f0c896,#c47840);border-radius:50%; }
+.kaito-ear.l { left:-5px; } .kaito-ear.r { right:-5px; }
+.kaito-brow { position:absolute;top:32%;height:2.5px;background:#1a0a02;border-radius:1px; }
+.kaito-brow.l { left:12px;width:20px;transform:rotate(-5deg); }
+.kaito-brow.r { right:12px;width:20px;transform:rotate(5deg); }
+.kaito-eye { position:absolute;top:39%;width:22px;height:14px;background:radial-gradient(ellipse at 42% 35%,#3d2010,#0f0600 65%);border-radius:40% 40% 52% 52%;box-shadow:0 1px 4px rgba(0,0,0,0.5); }
+.kaito-eye.l { left:10px; } .kaito-eye.r { right:10px; }
+.kaito-eye::before { content:'';position:absolute;top:12%;left:58%;width:5px;height:5px;background:rgba(255,255,255,0.65);border-radius:50%; }
+.kaito-nose { position:absolute;bottom:38%;left:50%;transform:translateX(-50%);width:10px;height:5px;border-bottom:2px solid rgba(100,50,10,0.35);border-radius:0 0 50% 50%; }
+.kaito-mouth { position:absolute;bottom:26%;left:50%;transform:translateX(-50%) translateX(3px);width:20px;height:8px;border-bottom:2px solid rgba(100,50,10,0.5);border-radius:0 0 80% 30%; }
+
+.yuki-wrap { position:relative;width:92px;height:128px;animation:f1 3.8s ease-in-out infinite;animation-delay:0.5s; }
+.yuki-jacket { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:76px;height:36px;background:linear-gradient(to bottom,#4a1942,#2d0e28);border-radius:10px 10px 0 0;box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.yuki-neck { position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:18px;height:16px;background:radial-gradient(ellipse at 40% 30%,#fce8d8,#e8b48a);border-radius:4px; }
+.yuki-head { position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:68px;height:78px;background:radial-gradient(ellipse at 38% 30%,#fff0e8 0%,#fcd8bc 22%,#e8a878 60%,#c07040 100%);border-radius:46% 46% 40% 40%/52% 52% 42% 42%;box-shadow:0 4px 18px rgba(0,0,0,0.35),inset 0 -6px 16px rgba(60,30,10,0.2); }
+.yuki-hair-back { position:absolute;top:-8px;left:-8px;right:-16px;bottom:-20px;background:linear-gradient(170deg,#1a0f05,#0d0800);border-radius:50% 50% 30% 30%;z-index:0; }
+.yuki-hair-top { position:absolute;top:-8px;left:-2px;right:-2px;height:36px;background:linear-gradient(160deg,#100a02,#1a1004);border-radius:50% 50% 0 0;z-index:3; }
+.yuki-hair-bang { position:absolute;top:14px;left:-4px;width:22px;height:24px;background:linear-gradient(130deg,#100a02,#1a1004);border-radius:0 30% 60% 0;z-index:4; }
+.yuki-ear { position:absolute;top:48%;width:11px;height:15px;background:radial-gradient(ellipse at 40% 30%,#fcd8bc,#c07040);border-radius:50%;z-index:2; }
+.yuki-ear.l { left:-4px;z-index:0; } .yuki-ear.r { right:-4px; }
+.yuki-brow { position:absolute;top:30%;height:2px;border-radius:1px;background:#1a0a02; }
+.yuki-brow.l { left:12px;width:20px;transform:rotate(-7deg); }
+.yuki-brow.r { right:12px;width:20px;transform:rotate(7deg); }
+.yuki-eye { position:absolute;top:38%;width:22px;height:15px;background:radial-gradient(ellipse at 40% 33%,#3a1a3a,#0a0208 70%);border-radius:38% 38% 54% 54%;box-shadow:0 1px 5px rgba(0,0,0,0.6); }
+.yuki-eye.l { left:10px; } .yuki-eye.r { right:10px; }
+.yuki-eye::before { content:'';position:absolute;top:12%;left:14%;width:6px;height:6px;background:rgba(255,255,255,0.7);border-radius:50%; }
+.yuki-eye::after { content:'';position:absolute;top:14%;right:16%;width:3px;height:3px;background:rgba(255,255,255,0.45);border-radius:50%; }
+.yuki-lash { position:absolute;top:36%;height:2px;border-radius:1px;background:rgba(10,2,8,0.8); }
+.yuki-lash.l { left:10px;width:22px;transform:rotate(-2deg); }
+.yuki-lash.r { right:10px;width:22px;transform:rotate(2deg); }
+.yuki-nose { position:absolute;bottom:36%;left:50%;transform:translateX(-50%);width:9px;height:4px;border-bottom:1.5px solid rgba(80,40,10,0.3);border-radius:0 0 50% 50%; }
+.yuki-lips { position:absolute;bottom:24%;left:50%;transform:translateX(-50%);width:18px;height:7px;background:rgba(180,60,80,0.4);border-radius:50% 50% 60% 60%; }
+.yuki-blush { position:absolute;top:56%;width:14px;height:7px;background:rgba(255,130,130,0.18);border-radius:50%;filter:blur(2px); }
+.yuki-blush.l { left:6px; } .yuki-blush.r { right:6px; }
+
+/* ============================================================
+   COMBAT FAMILY — Vex (Dark Warrior) + Seraph (Light Warrior)
+============================================================ */
+.vex-wrap { position:relative;width:92px;height:116px;animation:f2 4.5s ease-in-out infinite; }
+.vex-aura { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(160,0,0,0.2) 0%,transparent 70%);border-radius:50%;animation:glow 2.5s ease-in-out infinite; }
+.vex-horn { position:absolute;top:-22px;width:13px;height:34px;background:linear-gradient(to top,#3d0000,#750000 60%,#a00000 100%);clip-path:polygon(28% 0%,0% 100%,100% 100%);filter:drop-shadow(0 0 6px rgba(180,0,0,0.5)); }
+.vex-horn.l { left:15px;transform:rotate(-6deg); } .vex-horn.r { right:15px;transform:rotate(6deg); }
+.vex-body { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:82px;height:96px;background:radial-gradient(ellipse at 34% 24%,#400008 0%,#1a0004 30%,#0d0002 65%,#050001 100%);border-radius:36% 36% 44% 44%/32% 32% 48% 48%;box-shadow:0 0 30px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7),inset 0 -12px 26px rgba(0,0,0,0.65);animation:combatPulse 3s ease-in-out infinite; }
+.vex-body::before { content:'';position:absolute;inset:0;border-radius:inherit;border:1.5px solid transparent;border-right-color:rgba(255,40,0,0.3);border-bottom-color:rgba(255,20,0,0.15); }
+.vex-body::after { content:'';position:absolute;top:7%;left:13%;width:25%;height:17%;background:radial-gradient(ellipse,rgba(255,80,40,0.22) 0%,transparent 100%);border-radius:50%;transform:rotate(-14deg); }
+.vex-brow { position:absolute;top:31%;height:3.5px;background:rgba(0,0,0,0.8);border-radius:1px; }
+.vex-brow.l { left:10px;width:26px;transform:rotate(-14deg);transform-origin:right center; }
+.vex-brow.r { right:10px;width:26px;transform:rotate(14deg);transform-origin:left center; }
+.vex-eye { position:absolute;top:41%;width:26px;height:7px;background:linear-gradient(to right,#cc0000,#ff5500,#cc0000);border-radius:50%;box-shadow:0 0 14px rgba(255,50,0,0.95),0 0 28px rgba(200,0,0,0.5);display:flex;align-items:center;justify-content:center; }
+.vex-eye.l { left:10px; } .vex-eye.r { right:10px; }
+.vex-slit { width:3px;height:200%;background:rgba(0,0,0,0.65);border-radius:1px; }
+.vex-scar { position:absolute;top:36%;left:53%;width:2px;height:22px;background:linear-gradient(to bottom,rgba(255,60,0,0.55),rgba(200,0,0,0.15));border-radius:1px;transform:rotate(4deg); }
+.vex-collar { position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:50px;height:16px;background:linear-gradient(to bottom,#1a0004,#0d0002);border-radius:4px 4px 0 0;border-top:2px solid rgba(180,0,0,0.35); }
+
+.seraph-wrap { position:relative;width:96px;height:116px;animation:f1 4s ease-in-out infinite;animation-delay:0.4s; }
+.seraph-halo { position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:54px;height:12px;border:2.5px solid rgba(255,215,0,0.7);border-radius:50%;box-shadow:0 0 10px rgba(255,200,0,0.6),0 0 20px rgba(255,160,0,0.3);animation:glow 2s ease-in-out infinite; }
+.seraph-wing { position:absolute;top:16%;width:22px;height:52px;background:linear-gradient(to top,rgba(253,230,138,0.15),rgba(255,255,255,0.55));clip-path:polygon(15% 0%,100% 15%,90% 100%,0% 75%);filter:drop-shadow(0 0 6px rgba(255,200,0,0.4)); }
+.seraph-wing.l { left:-4px;transform:scaleX(-1); } .seraph-wing.r { right:-4px; }
+.seraph-body { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:78px;height:92px;background:radial-gradient(ellipse at 36% 26%,#fffef5 0%,#fef9e0 14%,#fde68a 36%,#d97706 68%,#92400e 100%);border-radius:42% 42% 46% 46%/44% 44% 48% 48%;animation:seraphGlow 3s ease-in-out infinite; }
+.seraph-body::before { content:'';position:absolute;top:8%;left:14%;width:28%;height:20%;background:radial-gradient(ellipse,rgba(255,255,255,0.75) 0%,transparent 100%);border-radius:50%;transform:rotate(-16deg); }
+.seraph-mark { position:absolute;top:14%;left:50%;transform:translateX(-50%);width:10px;height:10px;background:radial-gradient(ellipse at 40% 35%,#fff176,#f59e0b);clip-path:polygon(50% 0%,0% 100%,100% 100%);filter:drop-shadow(0 0 4px rgba(255,200,0,0.7)); }
+.seraph-brow { position:absolute;top:33%;height:3px;border-radius:1px;background:rgba(80,40,0,0.65); }
+.seraph-brow.l { left:11px;width:22px;transform:rotate(-10deg);transform-origin:right center; }
+.seraph-brow.r { right:11px;width:22px;transform:rotate(10deg);transform-origin:left center; }
+.seraph-eye { position:absolute;top:41%;width:24px;height:9px;background:radial-gradient(ellipse at 42% 32%,#fffde7,#fbbf24 40%,#d97706 80%);border-radius:50%;box-shadow:0 0 12px rgba(255,200,0,0.9),0 0 24px rgba(255,160,0,0.45); }
+.seraph-eye.l { left:11px; } .seraph-eye.r { right:11px; }
+.seraph-eye::before { content:'';position:absolute;top:5%;left:30%;width:40%;height:90%;background:rgba(80,40,0,0.35);border-radius:50%; }
+.seraph-collar { position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:46px;height:14px;background:linear-gradient(to bottom,#d97706,#92400e);border-radius:4px 4px 0 0;border-top:2px solid rgba(255,215,0,0.5);box-shadow:0 0 8px rgba(255,200,0,0.3); }
