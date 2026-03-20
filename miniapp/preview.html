@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>ThreeWordsDaily — Design Preview</title>
+<style>
+:root {
+  --bg: #08080f;
+  --card: #12121c;
+  --card2: #1a1a28;
+  --border: rgba(255,255,255,0.07);
+  --accent: #7c6ef5;
+  --accent2: #5ee7b0;
+  --gold: #f5c842;
+  --red: #ff5e7a;
+  --text1: #f0f0f8;
+  --text2: #8888a8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text1); font-family: -apple-system, sans-serif; overflow-x: hidden; }
+
+/* NAV */
+.nav { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border);
+  display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { padding: 14px 18px; font-size: 13px; font-weight: 600; color: var(--text2);
+  text-decoration: none; white-space: nowrap; border-bottom: 2px solid transparent; }
+.nav a.active, .nav a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* SECTIONS */
+section { padding: 24px 16px; max-width: 420px; margin: 0 auto; }
+.section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--text2); text-transform: uppercase; margin-bottom: 20px; }
+h2 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+p.sub { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 20px; }
+
+/* CARD */
+.card { background: var(--card); border-radius: 20px; border: 1px solid var(--border); padding: 20px; margin-bottom: 16px; }
+
+/* ================================================================
+   SECTION 1 — COMPANION CONCEPTS
+   ================================================================ */
+
+.companion-stage { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 32px; }
+.stage-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.stage-item { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.stage-num { font-size: 10px; font-weight: 700; color: var(--text2); }
+.stage-name { font-size: 11px; font-weight: 600; color: var(--text2); }
+
+/* ---- SPIRIT: Lumix ---- */
+.spirit-wrap { position: relative; width: 120px; height: 120px; cursor: pointer; }
+
+.spirit-body {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 70px; height: 70px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #a89cff, #5a47e8 60%, #2d1fa0);
+  box-shadow: 0 0 30px rgba(124,110,245,0.6), 0 0 60px rgba(124,110,245,0.2);
+  animation: spiritFloat 3s ease-in-out infinite;
+}
+.spirit-body::before {
+  content: '';
+  position: absolute; top: 18%; left: 20%; width: 20px; height: 12px;
+  background: rgba(255,255,255,0.9); border-radius: 50%;
+  box-shadow: 18px 0 0 rgba(255,255,255,0.9);
+  animation: spiritBlink 4s ease-in-out infinite;
+}
+.spirit-aura {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 90px; height: 90px; border-radius: 50%;
+  border: 2px solid rgba(124,110,245,0.4);
+  animation: auraExpand 2s ease-in-out infinite;
+}
+.spirit-aura2 {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 110px; height: 110px; border-radius: 50%;
+  border: 1px solid rgba(124,110,245,0.2);
+  animation: auraExpand 2s ease-in-out infinite 0.5s;
+}
+.spirit-wisp {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(180,160,255,0.8);
+  animation: wispOrbit 3s linear infinite;
+}
+.spirit-wisp:nth-child(2) { animation-delay: -1s; }
+.spirit-wisp:nth-child(3) { animation-delay: -2s; }
+.spirit-spark {
+  position: absolute; font-size: 10px;
+  animation: sparkFloat 2s ease-in-out infinite;
+}
+
+/* ---- BEAST: Fenix ---- */
+.beast-wrap { position: relative; width: 120px; height: 120px; cursor: pointer; }
+
+.beast-body {
+  position: absolute; top: 55%; left: 50%; transform: translate(-50%,-50%);
+  width: 68px; height: 62px; border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 40% 35%, #ff9a5e, #e85e20 65%, #b83a00);
+  box-shadow: 0 4px 20px rgba(232,94,32,0.4);
+  animation: beastIdle 2s ease-in-out infinite;
+}
+.beast-ear-l, .beast-ear-r {
+  position: absolute; top: 18%; width: 20px; height: 26px;
+  background: linear-gradient(160deg, #ff8040, #c8401a);
+  border-radius: 50% 50% 40% 40%;
+}
+.beast-ear-l { left: 25%; transform: rotate(-15deg); }
+.beast-ear-r { right: 25%; transform: rotate(15deg); }
+.beast-ear-l::after, .beast-ear-r::after {
+  content: ''; position: absolute; top: 4px; left: 4px;
+  width: 10px; height: 16px; background: rgba(255,160,140,0.7);
+  border-radius: 50% 50% 40% 40%;
+}
+.beast-eye-l, .beast-eye-r {
+  position: absolute; top: 45%; width: 16px; height: 16px;
+  background: radial-gradient(circle at 35% 30%, #ffe080, #e8c000);
+  border-radius: 50%; border: 2px solid #1a0800;
+}
+.beast-eye-l { left: 24%; }
+.beast-eye-r { right: 24%; }
+.beast-eye-l::after, .beast-eye-r::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 6px; height: 8px; background: #1a0800; border-radius: 50%;
+}
+.beast-nose {
+  position: absolute; top: 57%; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 7px; background: #8b2a00; border-radius: 50%;
+}
+.beast-cheek-l, .beast-cheek-r {
+  position: absolute; top: 58%; width: 14px; height: 8px;
+  background: rgba(255,140,80,0.5); border-radius: 50%;
+}
+.beast-cheek-l { left: 15%; }
+.beast-cheek-r { right: 15%; }
+.beast-tail {
+  position: absolute; bottom: 5%; right: 5%;
+  width: 30px; height: 40px;
+  background: linear-gradient(180deg, #e85e20, #ff9a5e);
+  border-radius: 50% 50% 30% 70%;
+  transform-origin: bottom center;
+  animation: tailWag 1.5s ease-in-out infinite;
+}
+
+/* ---- BUDDY: Chip ---- */
+.buddy-wrap { position: relative; width: 120px; height: 120px; cursor: pointer; }
+
+.buddy-body {
+  position: absolute; top: 52%; left: 50%; transform: translate(-50%,-50%);
+  width: 64px; height: 62px;
+  background: linear-gradient(135deg, #2a3a5e, #1a2540);
+  border-radius: 18px; border: 2px solid rgba(94,231,176,0.4);
+  box-shadow: 0 0 20px rgba(94,231,176,0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+  animation: buddyHum 2s ease-in-out infinite;
+}
+.buddy-visor {
+  position: absolute; top: 35%; left: 50%; transform: translateX(-50%);
+  width: 44px; height: 20px; border-radius: 8px;
+  background: linear-gradient(90deg, #0ff2c4 0%, #5ee7b0 30%, #40c8f0 70%, #5ee7b0 100%);
+  box-shadow: 0 0 12px rgba(94,231,176,0.8);
+  animation: visorScan 2s ease-in-out infinite;
+  overflow: hidden;
+}
+.buddy-visor-scan {
+  position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: scan 2s linear infinite;
+}
+.buddy-antenna {
+  position: absolute; top: 10%; left: 50%; transform: translateX(-50%);
+  width: 3px; height: 18px; background: rgba(94,231,176,0.7); border-radius: 2px;
+}
+.buddy-antenna::after {
+  content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%);
+  width: 8px; height: 8px; background: var(--accent2); border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent2);
+  animation: antennaBlink 1s ease-in-out infinite;
+}
+.buddy-grill {
+  position: absolute; top: 60%; left: 50%; transform: translateX(-50%);
+  width: 30px; height: 10px; border-radius: 4px;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(94,231,176,0.2);
+  display: flex; align-items: center; justify-content: space-around; padding: 0 4px;
+}
+.buddy-grill-bar {
+  width: 2px; height: 6px; background: rgba(94,231,176,0.5); border-radius: 1px;
+  animation: grillPulse 0.8s ease-in-out infinite;
+}
+.buddy-grill-bar:nth-child(2) { animation-delay: 0.2s; }
+.buddy-grill-bar:nth-child(3) { animation-delay: 0.4s; }
+.buddy-circuit {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0; border-radius: 16px; overflow: hidden; opacity: 0.15;
+}
+
+/* ---- SMALL STAGE VERSIONS ---- */
+.mini-spirit { width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #a89cff, #5a47e8); }
+.mini-beast { width: 36px; height: 36px; border-radius: 50% 50% 45% 45%;
+  background: radial-gradient(circle at 40% 35%, #ff9a5e, #e85e20); }
+.mini-buddy { width: 36px; height: 36px; border-radius: 12px;
+  background: linear-gradient(135deg, #2a3a5e, #1a2540); border: 2px solid rgba(94,231,176,0.4); }
+
+/* ================================================================
+   SECTION 2 — INTERACTION EFFECTS
+   ================================================================ */
+
+.effect-demo { position: relative; height: 200px; background: var(--card2); border-radius: 20px;
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border: 1px solid var(--border); margin-bottom: 12px; cursor: pointer; }
+.effect-label { position: absolute; bottom: 12px; left: 12px; font-size: 11px; color: var(--text2); font-weight: 600; }
+.effect-tap-hint { position: absolute; top: 12px; right: 12px; font-size: 11px; color: var(--accent);
+  font-weight: 600; background: rgba(124,110,245,0.15); padding: 4px 8px; border-radius: 8px; }
+
+.particle { position: absolute; pointer-events: none; border-radius: 50%; }
+
+/* Feed effect demo */
+.feed-demo-word {
+  position: absolute; padding: 8px 16px; border-radius: 20px;
+  background: rgba(124,110,245,0.2); border: 1px solid rgba(124,110,245,0.4);
+  font-size: 14px; font-weight: 700; color: var(--accent); cursor: grab;
+  left: 30px; top: 50%; transform: translateY(-50%);
+}
+.feed-demo-pet {
+  position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
+  font-size: 40px;
+}
+.xp-pulse {
+  position: absolute; font-size: 18px; font-weight: 800; color: var(--gold);
+  pointer-events: none; opacity: 0;
+}
+
+/* Level up */
+.levelup-demo-pet { font-size: 48px; z-index: 2; position: relative; }
+.confetti-piece { position: absolute; width: 8px; height: 8px; border-radius: 2px; pointer-events: none; opacity: 0; }
+
+/* Streak */
+.streak-glow { position: absolute; width: 120px; height: 120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,200,66,0.3), transparent 70%); opacity: 0; }
+
+/* ================================================================
+   SECTION 3 — GAMES MENU
+   ================================================================ */
+
+.games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.game-card { background: var(--card); border-radius: 18px; border: 1px solid var(--border);
+  padding: 16px 14px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+.game-card:active { transform: scale(0.97); }
+.game-card.locked { opacity: 0.5; }
+.game-card.locked::after { content: '🔒'; position: absolute; top: 10px; right: 10px; font-size: 14px; }
+.game-card.hot::after { content: 'HOT'; position: absolute; top: 8px; right: 8px; font-size: 9px;
+  font-weight: 800; background: var(--red); color: #fff; padding: 2px 6px; border-radius: 8px; }
+.game-icon { font-size: 28px; margin-bottom: 8px; }
+.game-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.game-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
+.game-xp { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 700;
+  color: var(--gold); margin-top: 8px; background: rgba(245,200,66,0.1); padding: 2px 7px;
+  border-radius: 8px; }
+.game-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+.game-card.type-blue::before { background: linear-gradient(90deg, #5e7bf5, #7c6ef5); }
+.game-card.type-green::before { background: linear-gradient(90deg, #5ee7b0, #40c8f0); }
+.game-card.type-gold::before { background: linear-gradient(90deg, #f5c842, #f5a030); }
+.game-card.type-red::before { background: linear-gradient(90deg, #ff5e7a, #ff8040); }
+
+/* Companion-linked badge */
+.game-companion { position: absolute; bottom: 10px; right: 10px; font-size: 16px; opacity: 0.5; }
+
+/* ================================================================
+   ANIMATIONS
+   ================================================================ */
+@keyframes spiritFloat {
+  0%,100% { transform: translate(-50%,-50%) translateY(0) scale(1); }
+  50% { transform: translate(-50%,-50%) translateY(-8px) scale(1.04); }
+}
+@keyframes spiritBlink {
+  0%,90%,100% { opacity: 1; transform: scaleY(1); }
+  92% { opacity: 0.2; transform: scaleY(0.1); }
+}
+@keyframes auraExpand {
+  0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%,-50%) scale(1.1); opacity: 0.2; }
+}
+@keyframes wispOrbit {
+  from { transform: rotate(0deg) translateX(52px) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(52px) rotate(-360deg); }
+}
+@keyframes sparkFloat {
+  0%,100% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+  50% { transform: translateY(-12px) rotate(180deg); opacity: 0.3; }
+}
+@keyframes beastIdle {
+  0%,100% { transform: translate(-50%,-50%) rotate(-2deg); }
+  50% { transform: translate(-50%,-50%) rotate(2deg); }
+}
+@keyframes tailWag {
+  0%,100% { transform: rotate(-15deg); }
+  50% { transform: rotate(15deg); }
+}
+@keyframes buddyHum {
+  0%,100% { transform: translate(-50%,-50%) scale(1); box-shadow: 0 0 20px rgba(94,231,176,0.15); }
+  50% { transform: translate(-50%,-50%) scale(1.02); box-shadow: 0 0 30px rgba(94,231,176,0.3); }
+}
+@keyframes visorScan {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+@keyframes scan {
+  from { left: -100%; }
+  to { left: 200%; }
+}
+@keyframes antennaBlink {
+  0%,100% { opacity: 1; box-shadow: 0 0 8px var(--accent2); }
+  50% { opacity: 0.3; box-shadow: 0 0 2px var(--accent2); }
+}
+@keyframes grillPulse {
+  0%,100% { height: 3px; }
+  50% { height: 7px; }
+}
+
+/* Tap burst */
+@keyframes burstOut {
+  from { transform: translate(-50%,-50%) scale(0.5); opacity: 1; }
+  to { transform: translate(-50%,-50%) scale(2.5); opacity: 0; }
+}
+/* Feed absorption */
+@keyframes flyToTarget {
+  from { transform: translateX(0) translateY(-50%); opacity: 1; }
+  to { transform: translateX(100px) translateY(-50%) scale(0.3); opacity: 0; }
+}
+@keyframes absorb {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@keyframes xpFloat {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-50px); }
+}
+/* Level up */
+@keyframes confettiDrop {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(180px) rotate(720deg); opacity: 0; }
+}
+@keyframes levelFlash {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(2) saturate(2); }
+}
+/* Streak */
+@keyframes streakBurst {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* Companion tap reaction */
+@keyframes companionTap {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.88) rotate(-5deg); }
+  60% { transform: scale(1.15) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Buttons */
+.btn { display: block; width: 100%; padding: 14px; border-radius: 14px; border: none;
+  font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.15s; }
+.btn:active { transform: scale(0.97); }
+.btn-purple { background: var(--accent); color: #fff; }
+.btn-green { background: var(--accent2); color: #0d1a14; }
+.btn-outline { background: transparent; color: var(--text1); border: 1.5px solid var(--border); }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; border: 1px solid; margin: 4px; }
+.chip-purple { color: var(--accent); border-color: rgba(124,110,245,0.4); background: rgba(124,110,245,0.1); }
+.chip-green { color: var(--accent2); border-color: rgba(94,231,176,0.4); background: rgba(94,231,176,0.1); }
+.chip-gold { color: var(--gold); border-color: rgba(245,200,66,0.4); background: rgba(245,200,66,0.1); }
+
+.tag-new { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px;
+  font-weight: 800; background: var(--accent); color: #fff; margin-left: 6px; vertical-align: middle; }
+
+/* APPROVED button */
+.approve-bar { padding: 16px; background: var(--card2); border-top: 1px solid var(--border);
+  position: sticky; bottom: 0; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="#companions" class="active" onclick="setActive(this)">🐾 Companions</a>
+  <a href="#effects" onclick="setActive(this)">✨ Effects</a>
+  <a href="#games" onclick="setActive(this)">🎮 Games</a>
+  <a href="#rewards" onclick="setActive(this)">🏆 Rewards</a>
+</div>
+
+<!-- ================================================================
+     SECTION 1: COMPANION CONCEPTS
+     ================================================================ -->
+<section id="companions">
+  <div class="section-label">Design Preview · Step 1 of 4</div>
+  <h2>Companion Concepts</h2>
+  <p class="sub">Three original character classes. Each has a unique silhouette, personality, and evolution path. Tap any companion to see the tap reaction.</p>
+
+  <!-- SPIRIT -->
+  <div class="card" style="background: linear-gradient(135deg, #12121c, #1a1528)">
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div class="spirit-wrap" id="spiritMain" onclick="tapReaction('spiritMain')">
+        <div class="spirit-aura2"></div>
+        <div class="spirit-aura"></div>
+        <div class="spirit-body" id="spiritBody">
+          <div class="spirit-wisp" id="sw1"></div>
+          <div class="spirit-wisp" id="sw2"></div>
+          <div class="spirit-wisp" id="sw3"></div>
+        </div>
+        <div class="spirit-spark" style="top:10%;left:60%;animation-delay:0s">✦</div>
+        <div class="spirit-spark" style="top:70%;left:15%;animation-delay:0.8s">✧</div>
+        <div class="spirit-spark" style="top:20%;right:10%;animation-delay:1.5s">✦</div>
+      </div>
+      <div style="flex:1;padding-top:8px">
+        <div style="font-size:18px;font-weight:800;margin-bottom:4px">Spirit <span style="color:var(--accent)">· Lumix</span></div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Магічний дух знань. Мудрий, таємничий, завжди підбадьорить. Розцвітає від нових ідіом та складних слів.</div>
+        <div>
+          <span class="chip chip-purple">✦ Sparkle burst</span>
+          <span class="chip chip-purple">🌀 Wisp orbit</span>
+          <span class="chip chip-purple">💜 Aura pulse</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600">EVOLUTION PATH (6 stages)</div>
+      <div class="stage-row">
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#666,#444)"></div><div class="stage-name">🥚</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#c8bcff,#7060f0)"></div><div class="stage-name">Малюк</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#a89cff,#5a47e8);box-shadow:0 0 10px rgba(124,110,245,0.5)"></div><div class="stage-name">Дух</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#c8a0ff,#8040e8);box-shadow:0 0 15px rgba(160,64,232,0.6)"></div><div class="stage-name" style="color:var(--gold)">Мудрець</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item" style="opacity:0.5">
+          <div style="width:36px;height:36px;border-radius:50%;background:radial-gradient(circle,#ffd080,#c850f0);box-shadow:0 0 20px rgba(200,80,240,0.7)"></div>
+          <div class="stage-name">Легенда</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BEAST -->
+  <div class="card" style="background: linear-gradient(135deg, #12121c, #1e140a)">
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div class="beast-wrap" id="beastMain" onclick="tapReaction('beastMain')">
+        <div class="beast-ear-l"></div>
+        <div class="beast-ear-r"></div>
+        <div class="beast-body" id="beastBody">
+          <div class="beast-eye-l"></div>
+          <div class="beast-eye-r"></div>
+          <div class="beast-nose"></div>
+          <div class="beast-cheek-l"></div>
+          <div class="beast-cheek-r"></div>
+        </div>
+        <div class="beast-tail"></div>
+      </div>
+      <div style="flex:1;padding-top:8px">
+        <div style="font-size:18px;font-weight:800;margin-bottom:4px">Beast <span style="color:#ff7040">· Fenix</span></div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Дикий і енергійний. Обожнює активні ігри та квізи. Ображається, якщо пропускаєш дні. Хвіст завжди в русі.</div>
+        <div>
+          <span class="chip" style="color:#ff7040;border-color:rgba(255,112,64,0.4);background:rgba(255,112,64,0.1)">🔥 Fire burst</span>
+          <span class="chip" style="color:#ff7040;border-color:rgba(255,112,64,0.4);background:rgba(255,112,64,0.1)">🦊 Tail wag</span>
+          <span class="chip" style="color:#ff7040;border-color:rgba(255,112,64,0.4);background:rgba(255,112,64,0.1)">💥 Paw slam</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600">EVOLUTION PATH (6 stages)</div>
+      <div class="stage-row">
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#666,#444)"></div><div class="stage-name">🥚</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#ffb080,#e07030)"></div><div class="stage-name">Кошеня</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:34px;height:34px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#ff9a5e,#e85e20);box-shadow:0 0 10px rgba(232,94,32,0.5)"></div><div class="stage-name">Лисиця</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:36px;height:36px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle at 40% 35%,#ffa060,#c83010);box-shadow:0 0 15px rgba(200,48,16,0.6)"></div><div class="stage-name" style="color:var(--gold)">Вовк</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item" style="opacity:0.5"><div style="width:36px;height:36px;border-radius:50% 50% 45% 45%;background:radial-gradient(circle,#ff8040,#800000);box-shadow:0 0 20px rgba(200,32,0,0.7)"></div><div class="stage-name">Дракон</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUDDY -->
+  <div class="card" style="background: linear-gradient(135deg, #12121c, #0a1420)">
+    <div style="display:flex;gap:20px;align-items:flex-start">
+      <div class="buddy-wrap" id="buddyMain" onclick="tapReaction('buddyMain')">
+        <div class="buddy-antenna"></div>
+        <div class="buddy-body" id="buddyBody">
+          <div class="buddy-visor">
+            <div class="buddy-visor-scan"></div>
+          </div>
+          <div class="buddy-grill">
+            <div class="buddy-grill-bar"></div>
+            <div class="buddy-grill-bar"></div>
+            <div class="buddy-grill-bar"></div>
+            <div class="buddy-grill-bar"></div>
+            <div class="buddy-grill-bar"></div>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;padding-top:8px">
+        <div style="font-size:18px;font-weight:800;margin-bottom:4px">Buddy <span style="color:var(--accent2)">· Chip</span></div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:10px">Цифровий компаньйон з аналітичним розумом. Аналізує твій прогрес, дає точні поради. Апгрейдується від кожного пройденого рівня.</div>
+        <div>
+          <span class="chip chip-green">⚡ Circuit flash</span>
+          <span class="chip chip-green">📊 Data scan</span>
+          <span class="chip chip-green">🔋 Power surge</span>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;font-weight:600">EVOLUTION PATH (6 stages)</div>
+      <div class="stage-row">
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#666,#444)"></div><div class="stage-name">🥚</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#2a3a5e,#1a2540);border:1.5px solid rgba(94,231,176,0.4)"></div><div class="stage-name">Chip v1</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:34px;height:34px;border-radius:12px;background:linear-gradient(135deg,#2a4070,#1a3050);border:2px solid rgba(94,231,176,0.6);box-shadow:0 0 10px rgba(94,231,176,0.3)"></div><div class="stage-name">Chip v2</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item"><div style="width:36px;height:36px;border-radius:14px;background:linear-gradient(135deg,#304080,#203060);border:2px solid rgba(94,231,176,0.8);box-shadow:0 0 15px rgba(94,231,176,0.5)"></div><div class="stage-name" style="color:var(--gold)">Pro</div></div>
+        <div style="align-self:center;color:var(--text2)">→</div>
+        <div class="stage-item" style="opacity:0.5"><div style="width:36px;height:36px;border-radius:16px;background:linear-gradient(135deg,#5060a0,#304080);border:2px solid #fff;box-shadow:0 0 20px rgba(150,180,255,0.8)"></div><div class="stage-name">MAX</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 2: INTERACTION EFFECTS
+     ================================================================ -->
+<section id="effects">
+  <div class="section-label">Design Preview · Step 2 of 4</div>
+  <h2>Interaction Effects</h2>
+  <p class="sub">Every key action triggers a unique reaction. Tap each demo to preview the effect. Each effect adapts to the companion's personality.</p>
+
+  <!-- TAP REACTION -->
+  <div class="effect-demo" id="tapDemo" onclick="playTapEffect()">
+    <div class="effect-label">👆 Tap companion</div>
+    <div class="effect-tap-hint">Tap me!</div>
+    <div id="tapPet" style="font-size:52px;transition:transform 0.3s;position:relative;z-index:2">🌟</div>
+    <div id="tapRings" style="position:absolute;top:50%;left:50%;width:0;height:0"></div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+    Ring burst + companion bounce + sparkle scatter. Spirit: purple rings. Beast: fire sparks. Buddy: circuit flash.
+  </div>
+
+  <!-- FEED EFFECT -->
+  <div class="effect-demo" id="feedDemo" onclick="playFeedEffect()" style="height:160px">
+    <div class="effect-label">🍎 Feed word</div>
+    <div class="effect-tap-hint">Tap me!</div>
+    <div id="feedWord" class="feed-demo-word">resilient</div>
+    <div style="position:absolute;font-size:28px;right:60px;font-size:36px" id="feedPet">🌟</div>
+    <div id="feedXP" class="xp-pulse" style="right:50px;top:30%">+5 XP</div>
+    <div id="feedPath" style="position:absolute;left:0;right:0;top:50%;height:2px;pointer-events:none"></div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+    Word chip flies to companion → companion absorbs it (scale pulse) → XP floats up → word disappears. Absorption style matches companion class.
+  </div>
+
+  <!-- LEVEL UP -->
+  <div class="effect-demo" id="levelDemo" onclick="playLevelEffect()">
+    <div class="effect-label">⬆️ Level up / Evolution</div>
+    <div class="effect-tap-hint">Tap me!</div>
+    <div id="levelPet" class="levelup-demo-pet">🥚</div>
+    <div id="confettiContainer"></div>
+    <div id="levelBurst" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);opacity:0;pointer-events:none"></div>
+    <div id="levelText" style="position:absolute;bottom:30px;font-size:18px;font-weight:800;opacity:0;color:var(--gold)">ЕВОЛЮЦІЯ!</div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+    Flash → confetti burst → companion morphs → ring expand → "ЕВОЛЮЦІЯ!" text appears. Full-screen overlay in production.
+  </div>
+
+  <!-- STREAK REWARD -->
+  <div class="effect-demo" id="streakDemo" onclick="playStreakEffect()">
+    <div class="effect-label">🔥 Streak reward</div>
+    <div class="effect-tap-hint">Tap me!</div>
+    <div class="streak-glow" id="streakGlow"></div>
+    <div id="streakNum" style="font-size:52px;font-weight:900;color:var(--gold);position:relative;z-index:2">7</div>
+    <div id="streakLabel" style="position:absolute;bottom:20px;font-size:13px;font-weight:700;color:var(--gold);opacity:0">🔥 7-Day Streak!</div>
+  </div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6">
+    Golden aura radiates from center → streak number pulses → fire particles → "X-Day Streak!" label appears. Special animation on Day 3, 7, 30.
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,rgba(124,110,245,0.1),rgba(12,12,28,1))">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎵 Sound-ready states</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.6">Всі анімації мають чіткі visual cues для майбутнього додавання звуку: вібрація + колір + рух синхронізовані. Telegram HapticFeedback API вже підключено до кожної дії.</div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 3: GAMES MENU
+     ================================================================ -->
+<section id="games">
+  <div class="section-label">Design Preview · Step 3 of 4</div>
+  <h2>Games Menu</h2>
+  <p class="sub">Окрема вкладка ігор. Кожна гра дає XP, підживлює companion і зараховується в streak. Ігри розблоковуються з еволюцією.</p>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
+    <button class="chip chip-purple" style="white-space:nowrap;cursor:pointer">Всі ігри</button>
+    <button class="chip" style="white-space:nowrap;cursor:pointer;color:var(--text2);border-color:var(--border);background:transparent">Слова</button>
+    <button class="chip" style="white-space:nowrap;cursor:pointer;color:var(--text2);border-color:var(--border);background:transparent">Речення</button>
+    <button class="chip" style="white-space:nowrap;cursor:pointer;color:var(--text2);border-color:var(--border);background:transparent">Швидкість</button>
+    <button class="chip" style="white-space:nowrap;cursor:pointer;color:var(--text2);border-color:var(--border);background:transparent">Пам'ять</button>
+  </div>
+
+  <div class="games-grid">
+    <div class="game-card type-blue hot">
+      <div class="game-icon">⚡</div>
+      <div class="game-name">Fast Tap Quiz</div>
+      <div class="game-desc">5 слів за 30 сек. Швидко тапай правильне!</div>
+      <div class="game-xp">⭐ +30 XP</div>
+      <div class="game-companion">🌟</div>
+    </div>
+    <div class="game-card type-green">
+      <div class="game-icon">🃏</div>
+      <div class="game-name">Match Pairs</div>
+      <div class="game-desc">Знайди пари: слово + переклад. Flip-card механіка.</div>
+      <div class="game-xp">⭐ +20 XP</div>
+      <div class="game-companion">🌟</div>
+    </div>
+    <div class="game-card type-gold">
+      <div class="game-icon">🔤</div>
+      <div class="game-name">Build Sentence</div>
+      <div class="game-desc">Перетягни слова в правильному порядку.</div>
+      <div class="game-xp">⭐ +25 XP</div>
+      <div class="game-companion">🦊</div>
+    </div>
+    <div class="game-card type-red">
+      <div class="game-icon">🧠</div>
+      <div class="game-name">Memory Cards</div>
+      <div class="game-desc">Запам'ятай і відтвори. Тренує довготривалу пам'ять.</div>
+      <div class="game-xp">⭐ +20 XP</div>
+      <div class="game-companion">🤖</div>
+    </div>
+    <div class="game-card type-blue">
+      <div class="game-icon">🎯</div>
+      <div class="game-name">Guess the Word</div>
+      <div class="game-desc">Підказки → назви слово. 3 спроби.</div>
+      <div class="game-xp">⭐ +15 XP</div>
+      <div class="game-companion">🌟</div>
+    </div>
+    <div class="game-card type-green">
+      <div class="game-icon">🔀</div>
+      <div class="game-name">Synonym Hunt</div>
+      <div class="game-desc">Знайди синонім серед 4 слів. Розширяє словник.</div>
+      <div class="game-xp">⭐ +15 XP</div>
+      <div class="game-companion">🤖</div>
+    </div>
+    <div class="game-card type-gold locked">
+      <div class="game-icon">⚔️</div>
+      <div class="game-name">Word Battle</div>
+      <div class="game-desc">PvP режим. Змагайся з іншими у реальному часі!</div>
+      <div class="game-xp">⭐ +50 XP</div>
+    </div>
+    <div class="game-card type-red locked">
+      <div class="game-icon">🌊</div>
+      <div class="game-name">Daily Challenge</div>
+      <div class="game-desc">Щоденний виклик. Обмежений час. Топ нагороди.</div>
+      <div class="game-xp">⭐ +100 XP</div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;padding:14px;background:var(--card);border-radius:16px;border:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:24px">🔒</div>
+      <div>
+        <div style="font-size:13px;font-weight:700">Word Battle · Daily Challenge</div>
+        <div style="font-size:12px;color:var(--text2)">Розблокуються на еволюції Мудрець (30 слів)</div>
+      </div>
+      <div style="margin-left:auto">
+        <div style="font-size:11px;color:var(--accent);font-weight:700">27/30 слів</div>
+        <div style="width:60px;height:4px;background:rgba(124,110,245,0.2);border-radius:2px;margin-top:4px">
+          <div style="width:90%;height:100%;background:var(--accent);border-radius:2px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;padding:14px;background:var(--card);border-radius:16px;border:1px solid var(--border)">
+    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px">COMPANION TRAINING GAME</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:36px">🌟</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px">Тренуй Лексика!</div>
+        <div style="font-size:12px;color:var(--text2)">Companion-специфічна гра. Spirit: заклинання слів. Beast: полювання на здобич. Buddy: декодування даних.</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;padding:10px;background:rgba(124,110,245,0.1);border-radius:10px;font-size:12px;color:var(--accent)">
+      ✦ Companion training дає 2x XP для companion evolution (не загальний XP)
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     SECTION 4: REWARDS
+     ================================================================ -->
+<section id="rewards">
+  <div class="section-label">Design Preview · Step 4 of 4</div>
+  <h2>Rewards System</h2>
+  <p class="sub">Динамічна система нагород. Не просто бейджики — справжні ігрові предмети: скіни, буsti, аксесуари.</p>
+
+  <!-- Active rewards -->
+  <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">🔥 АКТИВНІ BOOST'И</div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px">
+    <div style="min-width:120px;background:linear-gradient(135deg,rgba(245,200,66,0.15),rgba(12,12,28,1));border:1px solid rgba(245,200,66,0.3);border-radius:16px;padding:14px;text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">⚡</div>
+      <div style="font-size:12px;font-weight:700">2x XP</div>
+      <div style="font-size:10px;color:var(--text2)">Ще 2 год</div>
+    </div>
+    <div style="min-width:120px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;opacity:0.6">
+      <div style="font-size:28px;margin-bottom:4px">🛡️</div>
+      <div style="font-size:12px;font-weight:700">Streak Shield</div>
+      <div style="font-size:10px;color:var(--text2)">Не активний</div>
+    </div>
+    <div style="min-width:120px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;opacity:0.6">
+      <div style="font-size:28px;margin-bottom:4px">🎯</div>
+      <div style="font-size:12px;font-weight:700">Focus Mode</div>
+      <div style="font-size:10px;color:var(--text2)">Не активний</div>
+    </div>
+  </div>
+
+  <!-- Skins -->
+  <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">✨ СКІНИ КОМПАНЬЙОНА</div>
+  <div style="display:flex;gap:10px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px">
+    <div style="min-width:90px;text-align:center">
+      <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#a89cff,#5a47e8);box-shadow:0 0 20px rgba(124,110,245,0.5);border:3px solid var(--accent);margin:0 auto 8px"></div>
+      <div style="font-size:11px;font-weight:700">Base</div>
+      <div style="font-size:9px;color:var(--accent)">Активний</div>
+    </div>
+    <div style="min-width:90px;text-align:center">
+      <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#a0c0ff);box-shadow:0 0 20px rgba(160,192,255,0.5);margin:0 auto 8px"></div>
+      <div style="font-size:11px;font-weight:700">Ice</div>
+      <div style="font-size:9px;color:var(--text2)">30 слів</div>
+    </div>
+    <div style="min-width:90px;text-align:center;opacity:0.5">
+      <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffd080,#e08020);box-shadow:0 0 20px rgba(224,128,32,0.5);margin:0 auto 8px"></div>
+      <div style="font-size:11px;font-weight:700">Gold</div>
+      <div style="font-size:9px;color:var(--text2)">🔒 50 уроків</div>
+    </div>
+    <div style="min-width:90px;text-align:center;opacity:0.5">
+      <div style="width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ff80f0,#8020c0);box-shadow:0 0 20px rgba(128,32,192,0.5);margin:0 auto 8px"></div>
+      <div style="font-size:11px;font-weight:700">Cosmic</div>
+      <div style="font-size:9px;color:var(--text2)">🔒 Легенда</div>
+    </div>
+  </div>
+
+  <!-- Accessories -->
+  <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">🎩 АКСЕСУАРИ</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    <div style="text-align:center;padding:12px;background:var(--card);border-radius:14px;border:2px solid var(--accent)">
+      <div style="font-size:22px">👑</div><div style="font-size:10px;font-weight:700;margin-top:4px">Корона</div>
+    </div>
+    <div style="text-align:center;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border);opacity:0.5">
+      <div style="font-size:22px">🔮</div><div style="font-size:10px;font-weight:700;margin-top:4px">Орб</div>
+    </div>
+    <div style="text-align:center;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border);opacity:0.5">
+      <div style="font-size:22px">⚡</div><div style="font-size:10px;font-weight:700;margin-top:4px">Аура</div>
+    </div>
+    <div style="text-align:center;padding:12px;background:var(--card);border-radius:14px;border:1px solid var(--border);opacity:0.5">
+      <div style="font-size:22px">🌙</div><div style="font-size:10px;font-weight:700;margin-top:4px">Кільця</div>
+    </div>
+  </div>
+
+  <!-- Upcoming -->
+  <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">📈 НАСТУПНЕ РОЗБЛОКУВАННЯ</div>
+  <div style="background:var(--card);border-radius:16px;border:1px solid var(--border);padding:16px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="font-size:32px">🎮</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700">Word Battle Mode</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:8px">PvP гра проти інших учнів</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="flex:1;height:6px;background:rgba(124,110,245,0.2);border-radius:3px">
+            <div style="width:90%;height:100%;background:var(--accent);border-radius:3px"></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">27/30 слів</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STICKY APPROVE BAR -->
+<div class="approve-bar">
+  <div style="font-size:12px;color:var(--text2);margin-bottom:8px;text-align:center">
+    Переглянь кожну секцію і дай ОК на реалізацію 👆
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-outline" style="flex:1" onclick="requestChanges()">✏️ Зміни</button>
+    <button class="btn btn-purple" style="flex:2" onclick="approveAll()">✅ Approve — реалізувати!</button>
+  </div>
+</div>
+
+<script>
+function setActive(el) {
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Tap reaction
+function tapReaction(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = 'companionTap 0.4s ease forwards';
+
+  // Create burst rings
+  const rings = document.getElementById('tapRings');
+  rings.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const r = document.createElement('div');
+    r.style.cssText = `position:absolute;width:${(i+1)*40}px;height:${(i+1)*40}px;
+      border-radius:50%;border:2px solid rgba(124,110,245,${0.6-i*0.15});
+      transform:translate(-50%,-50%) scale(0);animation:burstOut ${0.4+i*0.15}s ease ${i*0.1}s forwards;`;
+    rings.appendChild(r);
+  }
+
+  // Particles
+  const demo = document.getElementById('tapDemo');
+  const rect = demo.getBoundingClientRect();
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    const angle = (i / 8) * 360;
+    const size = 4 + Math.random() * 6;
+    p.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:50%;
+      background:${i%2?'#7c6ef5':'#5ee7b0'};
+      top:50%;left:50%;
+      animation:none;transition:all 0.6s ease-out;`;
+    demo.appendChild(p);
+    p.offsetHeight;
+    const dist = 40 + Math.random() * 40;
+    const rad = (angle * Math.PI) / 180;
+    p.style.transform = `translate(calc(-50% + ${Math.cos(rad)*dist}px), calc(-50% + ${Math.sin(rad)*dist}px))`;
+    p.style.opacity = '0';
+    setTimeout(() => p.remove(), 800);
+  }
+  setTimeout(() => { el.style.animation = ''; }, 500);
+}
+
+// Feed effect
+let feedPlaying = false;
+function playFeedEffect() {
+  if (feedPlaying) return;
+  feedPlaying = true;
+  const word = document.getElementById('feedWord');
+  const pet = document.getElementById('feedPet');
+  const xpEl = document.getElementById('feedXP');
+
+  word.style.transition = 'all 0.5s ease-in';
+  word.style.transform = 'translateX(100px) translateY(-50%) scale(0.3)';
+  word.style.opacity = '0';
+
+  setTimeout(() => {
+    pet.style.transition = 'transform 0.2s';
+    pet.style.transform = 'scale(1.4)';
+    setTimeout(() => { pet.style.transform = 'scale(1)'; }, 200);
+
+    xpEl.style.animation = 'xpFloat 1s ease forwards';
+    xpEl.style.opacity = '1';
+
+    setTimeout(() => {
+      word.style.transition = 'none';
+      word.style.transform = 'translateX(0) translateY(-50%)';
+      word.style.opacity = '1';
+      setTimeout(() => {
+        word.style.transition = '';
+        xpEl.style.animation = '';
+        xpEl.style.opacity = '0';
+        feedPlaying = false;
+      }, 200);
+    }, 1200);
+  }, 500);
+}
+
+// Level up effect
+let levelPlaying = false;
+function playLevelEffect() {
+  if (levelPlaying) return;
+  levelPlaying = true;
+
+  const pet = document.getElementById('levelPet');
+  const container = document.getElementById('confettiContainer');
+  const burst = document.getElementById('levelBurst');
+  const text = document.getElementById('levelText');
+  const demo = document.getElementById('levelDemo');
+
+  // Flash
+  pet.style.filter = 'brightness(3)';
+  setTimeout(() => { pet.style.filter = ''; pet.textContent = '🐣'; }, 200);
+
+  // Confetti
+  container.innerHTML = '';
+  const colors = ['#7c6ef5','#5ee7b0','#f5c842','#ff5e7a','#fff'];
+  for (let i = 0; i < 20; i++) {
+    const c = document.createElement('div');
+    c.style.cssText = `position:absolute;width:8px;height:8px;border-radius:2px;
+      background:${colors[i%colors.length]};
+      left:${20+Math.random()*60}%;top:30%;opacity:0;
+      animation:confettiDrop ${0.8+Math.random()*0.8}s ease ${Math.random()*0.3}s forwards;`;
+    container.appendChild(c);
+  }
+
+  // Burst ring
+  burst.style.animation = 'burstOut 0.6s ease forwards';
+
+  // Text
+  setTimeout(() => {
+    text.style.transition = 'opacity 0.3s';
+    text.style.opacity = '1';
+  }, 300);
+
+  setTimeout(() => {
+    pet.textContent = '🥚';
+    container.innerHTML = '';
+    burst.style.animation = '';
+    text.style.opacity = '0';
+    levelPlaying = false;
+  }, 2500);
+}
+
+// Streak effect
+let streakPlaying = false;
+function playStreakEffect() {
+  if (streakPlaying) return;
+  streakPlaying = true;
+
+  const glow = document.getElementById('streakGlow');
+  const num = document.getElementById('streakNum');
+  const label = document.getElementById('streakLabel');
+
+  glow.style.animation = 'streakBurst 0.8s ease forwards';
+  num.style.transition = 'transform 0.3s, text-shadow 0.3s';
+  num.style.transform = 'scale(1.4)';
+  num.style.textShadow = '0 0 30px rgba(245,200,66,0.8)';
+
+  setTimeout(() => {
+    num.style.transform = 'scale(1)';
+    num.style.textShadow = '';
+    label.style.transition = 'opacity 0.3s';
+    label.style.opacity = '1';
+  }, 300);
+
+  setTimeout(() => {
+    glow.style.animation = '';
+    label.style.opacity = '0';
+    streakPlaying = false;
+  }, 2000);
+}
+
+function approveAll() {
+  alert('✅ Відправлено! Починаю реалізацію всіх трьох систем:\n\n1. Companion CSS art (Spirit/Beast/Buddy)\n2. Interaction effects engine\n3. Games menu з 8 іграми\n4. Rewards screen з скінами та аксесуарами');
+}
+
+function requestChanges() {
+  alert('📝 Напиши конкретно що змінити:\n• Companion design (форма, колір, аура)\n• Effect style (частки, кольори, швидкість)\n• Games (які прибрати/додати)\n• Rewards (що важливіше показати)');
+}
+
+// Auto-scroll nav on scroll
+document.addEventListener('scroll', () => {
+  const sections = ['companions','effects','games','rewards'];
+  const links = document.querySelectorAll('.nav a');
+  sections.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top <= 100 && rect.bottom > 100) {
+      links.forEach(l => l.classList.remove('active'));
+      links[i].classList.add('active');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

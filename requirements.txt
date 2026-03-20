@@ -1,16 +1,20 @@
-# Core bot framework
+# Core
 python-telegram-bot==21.9
+aiosqlite==0.20.0
+python-dotenv==1.0.1
+openai>=1.0.0
 
-# User account automation (posting in groups as real user)
+# Scheduling
+APScheduler==3.10.4
+pytz==2024.1
+
+# HTTP
+aiohttp==3.11.11
+httpx==0.27.0
+aiofiles==24.1.0
+
+# Telethon (promo agent only)
 telethon==1.38.1
 
-# RSS auto-posting
-feedparser==6.0.11
-aiohttp==3.11.11
-
-# Browser automation
-playwright==1.58.0
-
 # Utilities
-python-dotenv==1.0.1
-aiofiles==24.1.0
+python-dateutil==2.9.0

@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ThreeWordsDaily — 40 Companion Catalog</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d0d11;--card:#1a1a24;--card2:#20202e;--border:rgba(255,255,255,0.07);
+  --text:#f0f0ff;--text2:#888;--text3:#555;
+  --mystic:#8b6ef5;--comedy:#f5a030;--scifi:#5ee7b0;--fantasy:#ff6060;
+  --travel:#40c8f0;--retro:#f040c0;--hist:#c8a060;--nature:#80d080;
+  --gold:#f5c842;--green:#5ee7b0;--red:#ff5e7a;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;padding-bottom:100px}
+
+/* HEADER */
+.cat-header{padding:20px 16px 16px;text-align:center;border-bottom:1px solid var(--border)}
+.cat-logo{font-size:15px;font-weight:800;color:var(--text2);letter-spacing:0.1em;margin-bottom:6px}
+.cat-title{font-size:24px;font-weight:900;margin-bottom:4px}
+.cat-title span{color:var(--mystic)}
+.cat-sub{font-size:13px;color:var(--text2);margin-bottom:12px}
+.cat-stats{display:flex;justify-content:center;gap:20px}
+.stat{text-align:center}
+.stat-n{font-size:22px;font-weight:900;color:var(--gold)}
+.stat-l{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em}
+
+/* SERIES TABS */
+.series-tabs{padding:12px 16px;overflow-x:auto;display:flex;gap:8px;border-bottom:1px solid var(--border);scrollbar-width:none}
+.series-tabs::-webkit-scrollbar{display:none}
+.stab{padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 0.18s;flex-shrink:0}
+.stab.active{color:var(--text);border-color:var(--tab-color,var(--mystic));background:rgba(139,110,245,0.1)}
+.stab[data-s="all"].active{border-color:var(--text2);background:rgba(255,255,255,0.05);color:var(--text)}
+.stab[data-s="mystic"].active{border-color:var(--mystic);background:rgba(139,110,245,0.1);color:var(--mystic)}
+.stab[data-s="comedy"].active{border-color:var(--comedy);background:rgba(245,160,48,0.1);color:var(--comedy)}
+.stab[data-s="scifi"].active{border-color:var(--scifi);background:rgba(94,231,176,0.1);color:var(--scifi)}
+.stab[data-s="fantasy"].active{border-color:var(--fantasy);background:rgba(255,96,96,0.1);color:var(--fantasy)}
+.stab[data-s="travel"].active{border-color:var(--travel);background:rgba(64,200,240,0.1);color:var(--travel)}
+.stab[data-s="retro"].active{border-color:var(--retro);background:rgba(240,64,192,0.1);color:var(--retro)}
+.stab[data-s="hist"].active{border-color:var(--hist);background:rgba(200,160,96,0.1);color:var(--hist)}
+.stab[data-s="nature"].active{border-color:var(--nature);background:rgba(128,208,128,0.1);color:var(--nature)}
+
+/* GRID */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 12px}
+.comp-card{background:var(--card);border-radius:18px;border:1.5px solid var(--border);overflow:hidden;cursor:pointer;transition:all 0.18s}
+.comp-card:active{transform:scale(0.97)}
+.comp-card.selected{border-color:var(--series-c,var(--mystic));box-shadow:0 0 20px -4px var(--series-c,var(--mystic))}
+.comp-card-top{padding:14px 12px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.series-badge{position:absolute;top:8px;left:8px;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;text-transform:uppercase;letter-spacing:0.06em}
+.feat-badge{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px;background:var(--gold);color:#000}
+.comp-art-wrap{width:72px;height:72px;position:relative;flex-shrink:0}
+.comp-name{font-size:14px;font-weight:900;text-align:center}
+.comp-mood{font-size:10px;color:var(--text2);text-align:center;line-height:1.4}
+.comp-tags{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;padding:0 8px 10px}
+.ctag{font-size:9px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,0.06);color:var(--text2)}
+
+/* EXPANDED DETAIL */
+.comp-detail{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.comp-card.open .comp-detail{display:block}
+.detail-row{display:flex;gap:8px;margin-top:8px;align-items:flex-start}
+.detail-key{font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;width:68px;flex-shrink:0;padding-top:1px}
+.detail-val{font-size:12px;color:var(--text2);flex:1;line-height:1.5}
+.detail-val b{color:var(--text)}
+
+/* === CSS ART: LUMIX (Mystic) === */
+.art-lumix{position:relative;width:72px;height:72px}
+.lx-aura{position:absolute;width:64px;height:64px;left:4px;top:4px;border-radius:50%;background:radial-gradient(circle,rgba(139,110,245,0.35),transparent 70%);animation:aBreath 2.8s ease-in-out infinite}
+.lx-body{position:absolute;width:50px;height:50px;left:11px;top:11px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#c0b0ff,#5a47e8 55%,#2d1fa0);animation:lxFloat 3.2s ease-in-out infinite}
+.lx-eye{position:absolute;width:11px;height:11px;background:#fff;border-radius:50%;top:40%}
+.lx-eye.l{left:24%}.lx-eye.r{right:24%}
+.lx-pupil{position:absolute;width:5px;height:5px;background:#2d1fa0;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+.lx-wisp{position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(192,176,255,0.75);top:50%;left:50%;margin:-3.5px;animation:wOrbit 3s linear infinite}
+.lx-wisp:nth-child(5){animation-delay:-1s}.lx-wisp:nth-child(6){animation-delay:-2s}
+.lx-spark{position:absolute;font-size:8px;color:#a89cff;animation:spFloat 2.5s ease-in-out infinite}
+@keyframes lxFloat{0%,100%{transform:translateY(-4px) scale(1)}50%{transform:translateY(4px) scale(1.03)}}
+@keyframes aBreath{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.14)}}
+@keyframes wOrbit{from{transform:rotate(0deg) translateX(30px) rotate(0deg)}to{transform:rotate(360deg) translateX(30px) rotate(-360deg)}}
+@keyframes spFloat{0%,100%{opacity:.4;transform:translateY(0)}50%{opacity:1;transform:translateY(-6px)}}
+
+/* === CSS ART: BLOP (Comedy) === */
+.art-blop{position:relative;width:72px;height:72px}
+.bl-body{position:absolute;width:56px;height:52px;left:8px;top:10px;border-radius:50% 52% 48% 50%;background:radial-gradient(circle at 38% 32%,#ffdd80,#f5a030 50%,#c07000);animation:bWobble 1.6s ease-in-out infinite}
+.bl-el{position:absolute;width:16px;height:18px;background:#fff;border-radius:50%;top:28%;left:18%}
+.bl-er{position:absolute;width:13px;height:15px;background:#fff;border-radius:50%;top:31%;right:20%;transform:rotate(12deg)}
+.bl-pl{position:absolute;width:8px;height:9px;background:#3a2000;border-radius:50%;top:31%;left:22%}
+.bl-pr{position:absolute;width:7px;height:8px;background:#3a2000;border-radius:50%;top:34%;right:23%}
+.bl-mouth{position:absolute;width:22px;height:10px;border-bottom:3px solid #8a4000;border-radius:0 0 12px 12px;bottom:26%;left:50%;transform:translateX(-50%)}
+.bl-ck{position:absolute;width:11px;height:7px;background:rgba(255,120,100,.38);border-radius:50%;bottom:34%}
+.bl-ck.l{left:16%}.bl-ck.r{right:16%}
+@keyframes bWobble{0%,100%{transform:scaleX(1) scaleY(1) rotate(-2deg)}35%{transform:scaleX(1.1) scaleY(.93) rotate(1deg)}68%{transform:scaleX(.94) scaleY(1.08) rotate(3deg)}}
+
+/* === CSS ART: BYTE (Sci-Fi) === */
+.art-byte{position:relative;width:72px;height:72px}
+.by-ant{position:absolute;width:2px;height:13px;background:#5ee7b0;left:35px;top:3px}
+.by-ant::after{content:'';position:absolute;width:6px;height:6px;background:#5ee7b0;border-radius:50%;top:-4px;left:-2px;animation:antBlink 1.4s ease-in-out infinite}
+.by-body{position:absolute;width:46px;height:44px;left:13px;top:17px;border-radius:13px;background:linear-gradient(145deg,#182828,#0d1e1e);border:2px solid rgba(94,231,176,.4)}
+.by-vis{position:absolute;width:32px;height:11px;background:linear-gradient(90deg,#40c8f0,#5ee7b0);border-radius:6px;top:24px;left:20px;animation:visBlink 2.2s ease-in-out infinite}
+.by-grill{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:4px}
+.by-grill span{display:block;width:3px;height:7px;background:rgba(94,231,176,.35);border-radius:1px}
+.by-neon{position:absolute;width:46px;height:44px;left:13px;top:17px;border-radius:13px;border:1px solid rgba(94,231,176,.15);animation:neonP 2s ease-in-out infinite}
+@keyframes antBlink{0%,100%{opacity:1;box-shadow:0 0 7px #5ee7b0}50%{opacity:.25;box-shadow:none}}
+@keyframes visBlink{0%,100%{opacity:.8}50%{opacity:1;box-shadow:0 0 14px rgba(64,200,240,.6)}}
+@keyframes neonP{0%,100%{opacity:.35}50%{opacity:.75}}
+
+/* === CSS ART: PYRO (Fantasy) === */
+.art-pyro{position:relative;width:72px;height:72px}
+.py-wl{position:absolute;width:20px;height:24px;background:linear-gradient(135deg,rgba(232,72,32,.55),transparent);border-radius:50% 0 50% 50%;top:22%;left:2%;transform:rotate(-22deg)}
+.py-wr{position:absolute;width:20px;height:24px;background:linear-gradient(225deg,rgba(232,72,32,.55),transparent);border-radius:0 50% 50% 50%;top:22%;right:2%;transform:rotate(22deg)}
+.py-hl{position:absolute;width:7px;height:14px;background:linear-gradient(to top,#e84820,#ffaa60);border-radius:50% 50% 0 0;top:7%;left:28%;transform:rotate(-14deg)}
+.py-hr{position:absolute;width:7px;height:14px;background:linear-gradient(to top,#e84820,#ffaa60);border-radius:50% 50% 0 0;top:7%;right:28%;transform:rotate(14deg)}
+.py-body{position:absolute;width:44px;height:40px;left:14px;top:20px;border-radius:50% 50% 42% 42%;background:radial-gradient(circle at 40% 34%,#ffaa60,#e84820 52%,#8a1800);box-shadow:0 0 22px rgba(232,72,32,.48)}
+.py-el{position:absolute;width:11px;height:11px;background:#ffe080;border-radius:50%;top:28px;left:18px}
+.py-er{position:absolute;width:11px;height:11px;background:#ffe080;border-radius:50%;top:28px;left:43px}
+.py-fl{position:absolute;font-size:13px;bottom:6px;left:52px;animation:flDance .75s ease-in-out infinite alternate}
+@keyframes flDance{from{transform:scale(1) rotate(-6deg)}to{transform:scale(1.25) rotate(6deg)}}
+
+/* === CSS ART: JET (Travel) === */
+.art-jet{position:relative;width:72px;height:72px}
+.jt-body{position:absolute;width:46px;height:46px;left:13px;top:13px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#ffe0b0,#d08040 54%,#804010)}
+.jt-gl{position:absolute;width:15px;height:13px;background:rgba(64,200,240,.7);border-radius:50%;border:2px solid #fff;top:24px;left:16px}
+.jt-gr{position:absolute;width:15px;height:13px;background:rgba(64,200,240,.7);border-radius:50%;border:2px solid #fff;top:24px;left:41px}
+.jt-br{position:absolute;width:7px;height:3px;background:#fff;top:30px;left:33px}
+.jt-sc{position:absolute;width:32px;height:8px;background:linear-gradient(90deg,#ff5e7a,#ff8040);border-radius:4px;bottom:16px;left:50%;transform:translateX(-50%)}
+.jt-pr{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:12px;animation:prSpin .45s linear infinite}
+.jt-tr{position:absolute;font-size:10px;bottom:6px;left:50%;transform:translateX(-50%);animation:trFade 2.2s ease-in-out infinite}
+@keyframes prSpin{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
+@keyframes trFade{0%,100%{opacity:.2}50%{opacity:.9}}
+
+/* === CSS ART: GLAM (Retro Pop) === */
+.art-glam{position:relative;width:72px;height:72px}
+.gl-body{position:absolute;width:48px;height:48px;left:12px;top:12px;border-radius:50%;background:radial-gradient(circle at 38% 35%,#ffb0e0,#d040a0 55%,#800060);box-shadow:0 0 20px rgba(240,64,192,.5)}
+.gl-eye{position:absolute;width:12px;height:8px;background:#fff;border-radius:50%;top:36%}
+.gl-eye.l{left:22%}.gl-eye.r{right:22%}
+.gl-lash{position:absolute;font-size:9px;top:30%}
+.gl-lash.l{left:19%}.gl-lash.r{right:17%}
+.gl-mouth{position:absolute;width:18px;height:8px;border-bottom:3px solid #ff40a0;border-radius:0 0 9px 9px;bottom:28%;left:50%;transform:translateX(-50%)}
+.gl-spark{position:absolute;font-size:10px;animation:gSparkle 1.5s ease-in-out infinite}
+.gl-spark:nth-child(6){top:5%;left:15%;animation-delay:0s}
+.gl-spark:nth-child(7){top:8%;right:10%;animation-delay:.5s}
+.gl-spark:nth-child(8){bottom:10%;left:8%;animation-delay:1s}
+.gl-crown{position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:14px;animation:crFloat 2s ease-in-out infinite}
+@keyframes gSparkle{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+@keyframes crFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-3px)}}
+
+/* === CSS ART: SCROLL (Historical) === */
+.art-scroll{position:relative;width:72px;height:72px}
+.sc-parch{position:absolute;width:50px;height:52px;left:11px;top:10px;border-radius:6px 6px 6px 6px;background:linear-gradient(160deg,#f5e8c0,#d4b870 40%,#c0a040);border:1px solid rgba(160,120,40,.4)}
+.sc-roll-t{position:absolute;width:56px;height:12px;left:8px;top:8px;border-radius:6px;background:linear-gradient(180deg,#e0c870,#c0a040)}
+.sc-roll-b{position:absolute;width:56px;height:12px;left:8px;bottom:8px;border-radius:6px;background:linear-gradient(0deg,#e0c870,#c0a040)}
+.sc-eye{position:absolute;width:8px;height:6px;background:#5a3a10;border-radius:50%;top:30px}
+.sc-eye.l{left:22px}.sc-eye.r{right:22px}
+.sc-mouth{position:absolute;width:14px;height:6px;border-bottom:2px solid #5a3a10;border-radius:0 0 6px 6px;top:44px;left:50%;transform:translateX(-50%)}
+.sc-ink{position:absolute;font-size:8px;color:rgba(90,58,16,.4)}
+.sc-ink.a{top:24px;left:14px}.sc-ink.b{bottom:24px;right:14px;animation-delay:.8s}
+@keyframes inkFade{0%,100%{opacity:.2}50%{opacity:.7}}
+
+/* === CSS ART: LUNA (Nature/Dream) === */
+.art-luna{position:relative;width:72px;height:72px}
+.ln-glow{position:absolute;width:60px;height:60px;left:6px;top:6px;border-radius:50%;background:radial-gradient(circle,rgba(160,140,220,.3),transparent 70%);animation:lunaGlow 3s ease-in-out infinite}
+.ln-body{position:absolute;width:46px;height:46px;left:13px;top:13px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#e0d8f8,#a080c0 55%,#5040a0)}
+.ln-cres{position:absolute;width:46px;height:46px;left:13px;top:13px;border-radius:50%;background:radial-gradient(circle at 62% 32%,var(--bg) 36%,transparent 37%)}
+.ln-star-a{position:absolute;font-size:8px;color:#e0d0ff}
+.ln-star-a.a{top:8px;left:22px;animation:sShin 2s ease-in-out infinite}
+.ln-star-a.b{top:14px;right:12px;animation:sShin 2.5s ease-in-out infinite .7s}
+.ln-star-a.c{bottom:14px;left:14px;animation:sShin 3s ease-in-out infinite 1.3s}
+.ln-eye{position:absolute;width:8px;height:2px;background:#fff;border-radius:2px;top:36px}
+.ln-eye.l{left:22px}.ln-eye.r{right:22px}
+@keyframes lunaGlow{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.9;transform:scale(1.12)}}
+@keyframes sShin{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* === SIMPLE COMPANION ART === */
+.art-simple{position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center}
+.sim-body{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;animation:simFloat 3s ease-in-out infinite}
+.sim-eyes{display:flex;gap:7px;margin-bottom:4px;position:absolute;top:32%}
+.sim-eye{width:9px;height:9px;background:#fff;border-radius:50%}
+.sim-eye.slit{height:4px;border-radius:2px}
+.sim-eye.glow{box-shadow:0 0 6px currentColor;background:currentColor}
+.sim-mouth{position:absolute;bottom:25%;width:14px;height:7px;border-bottom:2px solid rgba(0,0,0,.4);border-radius:0 0 7px 7px;left:50%;transform:translateX(-50%)}
+.sim-accent{position:absolute}
+@keyframes simFloat{0%,100%{transform:translateY(-3px)}50%{transform:translateY(3px)}}
+
+/* DETAIL PANEL */
+.detail-section-head{font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:12px 0 6px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* APPROVE */
+.approve-bar{position:fixed;bottom:0;left:0;right:0;padding:10px 16px 16px;background:var(--bg);border-top:1px solid var(--border);display:flex;gap:10px;z-index:100;max-width:420px;margin:0 auto}
+.btn-approve{flex:1;padding:14px;border-radius:14px;border:none;background:linear-gradient(90deg,#5ee7b0,#40c8f0);color:#000;font-size:15px;font-weight:900;cursor:pointer;transition:all .18s}
+.btn-approve:active{transform:scale(.97)}
+.btn-notes{padding:14px 16px;border-radius:14px;border:2px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer}
+
+/* SELECTED COUNTER */
+.sel-counter{position:fixed;top:0;left:0;right:0;z-index:99;background:rgba(94,231,176,.1);border-bottom:1px solid rgba(94,231,176,.3);padding:6px 16px;text-align:center;font-size:12px;font-weight:800;color:var(--green);display:none;max-width:420px;margin:0 auto}
+
+/* MISC */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s ease forwards}
+</style>
+</head>
+<body>
+
+<div style="max-width:420px;margin:0 auto;position:relative">
+
+<div class="cat-header">
+  <div class="cat-logo">THREEWORDSDAILY</div>
+  <div class="cat-title">Companion <span>Catalog</span></div>
+  <div class="cat-sub">40 characters · 8 series · choose your companion world</div>
+  <div class="cat-stats">
+    <div class="stat"><div class="stat-n">40</div><div class="stat-l">Companions</div></div>
+    <div class="stat"><div class="stat-n">8</div><div class="stat-l">Series</div></div>
+    <div class="stat"><div class="stat-n" id="selCount">0</div><div class="stat-l">Selected</div></div>
+  </div>
+</div>
+
+<div class="series-tabs" id="seriesTabs">
+  <div class="stab active" data-s="all" onclick="filterSeries('all',this)">All 40</div>
+  <div class="stab" data-s="mystic" onclick="filterSeries('mystic',this)">✨ Mystic</div>
+  <div class="stab" data-s="comedy" onclick="filterSeries('comedy',this)">😂 Comedy</div>
+  <div class="stab" data-s="scifi" onclick="filterSeries('scifi',this)">🤖 Sci-Fi</div>
+  <div class="stab" data-s="fantasy" onclick="filterSeries('fantasy',this)">🐉 Fantasy</div>
+  <div class="stab" data-s="travel" onclick="filterSeries('travel',this)">✈️ Travel</div>
+  <div class="stab" data-s="retro" onclick="filterSeries('retro',this)">🎤 Retro Pop</div>
+  <div class="stab" data-s="hist" onclick="filterSeries('hist',this)">📜 Historical</div>
+  <div class="stab" data-s="nature" onclick="filterSeries('nature',this)">🌙 Nature</div>
+</div>
+
+<div class="sel-counter" id="selCounter"></div>
+
+<div class="cat-grid" id="catGrid"></div>
+
+<div class="approve-bar">
+  <button class="btn-notes" onclick="showNotes()">💬 Notes</button>
+  <button class="btn-approve" onclick="doApprove()">✅ Approve Selection</button>
+</div>
+
+</div>
+
+<script>
+// ===== COMPANION DATA =====
+const SERIES_COLORS = {
+  mystic:'#8b6ef5', comedy:'#f5a030', scifi:'#5ee7b0', fantasy:'#ff6060',
+  travel:'#40c8f0', retro:'#f040c0', hist:'#c8a060', nature:'#80d080'
+};
+const SERIES_LABELS = {
+  mystic:'✨ Mystic', comedy:'😂 Comedy', scifi:'🤖 Sci-Fi', fantasy:'🐉 Fantasy',
+  travel:'✈️ Travel', retro:'🎤 Retro Pop', hist:'📜 Historical', nature:'🌙 Nature'
+};
+
+const COMPANIONS = [
+
+// ===== MYSTIC (5) =====
+{ id:'lumix', series:'mystic', name:'Lumix', feat:true,
+  mood:'Wise · warm · luminous', tags:['Orbital float','Glow aura','Word orbit'],
+  desc:'A gentle orb of crystallised knowledge. Orbits slowly, pulses with warmth, and quotes lesson words back to the user in a soft glow.',
+  visual:'Deep purple–blue sphere with inner light gradient, two soft white eyes, trailing wisps that orbit the body.',
+  anim:'Continuous slow float up–down. Wisps orbit at different speeds. Aura breathes in and out.',
+  idle:'Every 6–10 s: soft aura pulse, eye blink, one wisp accelerates briefly.',
+  tap:'Orbital ring burst → sparkle spray → word from recent lesson orbits and fades. On chain tap 4+: letter explosion.',
+  feed:'Word chip flies to body → absorbed with a "gulp" glow → +XP float in companion color.',
+  evo:'Egg → dim orb → full orb → orb with wings → crowned orb with chaos rings → final radiant form.',
+  tone:'Calm, encouraging, slightly mystical. Speaks in short poetic lines.',
+  for:'Users who want a wise, magical companion. Likes idioms and rare vocabulary.' },
+
+{ id:'omen', series:'mystic', name:'Omen',
+  mood:'Mysterious · rare · shadowed', tags:['Dark pulse','Void ring','Rare shimmer'],
+  desc:'A shade spirit born from forgotten words. Rarely speaks, but when it does, the line is memorable. Reacts to idioms and rare vocabulary.',
+  visual:'Deep obsidian sphere with violet inner light. Slit pupil eyes that glow magenta. No wisps — instead, shadow tendrils.',
+  anim:'Very slow drift, slight phase-in phase-out opacity. Tendrils curl and uncurl.',
+  idle:'Long pauses between reactions. Occasional single eye blink. Rare: full body shimmer.',
+  tap:'Void ring expands → shadow tendrils reach out → a single rare word floats up in rune script.',
+  feed:'Body briefly brightens — unusual reaction — single rare line: "This word has weight."',
+  evo:'Void seed → shadow orb → tendrils form → crown of darkness → final form: eclipse entity.',
+  tone:'Minimal, dark, poetic. Rare speech. Favors mystery.',
+  for:'Users who prefer rare and dramatic companions. Best for advanced learners.' },
+
+{ id:'aether', series:'mystic', name:'Aether',
+  mood:'Free · airy · light', tags:['Wind drift','Scatter flow','Cloud trail'],
+  desc:'A wind elemental that embodies the feeling of learning something effortlessly. Floats with no fixed form.',
+  visual:'Translucent ice-blue ovoid, soft white wisps trailing behind, feather-like aura.',
+  anim:'Fast directional drift — bounces off invisible walls. Never fully still.',
+  idle:'Constant slow drift with direction change. Occasional quick spin.',
+  tap:'Scatter burst of tiny wind particles → body stretches sideways then snaps back.',
+  feed:'Word flies in, Aether spins once, word scatters into tiny glowing particles.',
+  evo:'Breeze → gust → wind shape → elemental form → storm entity.',
+  tone:'Playful, quick, distracted. Short sentences. Easily excited.',
+  for:'Active learners who want a lively, energetic companion.' },
+
+{ id:'solara', series:'mystic', name:'Solara',
+  mood:'Warm · bold · radiant', tags:['Solar pulse','Flare ring','Golden rays'],
+  desc:'A sun guardian that thrives on streaks and daily lessons. Glows brighter as the user returns each day.',
+  visual:'Warm gold-amber sphere, radiant spike corona, bright white core. Size scales with streak count.',
+  anim:'Steady corona rotation. Body pulses with heartbeat-like rhythm.',
+  idle:'Corona rotates slowly. On 3+ streak: corona glows brighter. On 7+ streak: spark trails emit.',
+  tap:'Solar flare burst → golden particles arc upward → "warm" ring expands.',
+  feed:'Beam of light shoots from body, absorbs word, full corona pulse.',
+  evo:'Ember → warm glow → sun form → solar corona → stellar entity.',
+  tone:'Encouraging, proud, celebratory. Loves streaks. Enthusiastic.',
+  for:'Competitive users, streak-chasers, users motivated by reward.' },
+
+{ id:'nocturne', series:'mystic', name:'Nocturne',
+  mood:'Calm · poetic · nocturnal', tags:['Moon glow','Echo drift','Silver trail'],
+  desc:'A moon spirit active at night. Reacts differently depending on time of day. More expressive after 10 PM.',
+  visual:'Crescent-silver sphere, indigo core, faint halo ring, closed-eye expression during day.',
+  anim:'Very slow undulating float. Halo ring rotates. Eyes open fully only after 10 PM.',
+  idle:'Eyes half-closed by day. At night: eyes open wide, occasional starfield burst.',
+  tap:'Silver ring pulse → small stars scatter → faint quote from a night-themed idiom.',
+  feed:'Body shifts from crescent to full orb form briefly → absorbs word → returns to crescent.',
+  evo:'Sliver → quarter moon → half moon → full moon → eclipse deity.',
+  tone:'Quiet, reflective, poetic. Speaks in haiku-like lines.',
+  for:'Night-time learners, reflective users who enjoy calm companions.' },
+
+// ===== COMEDY (5) =====
+{ id:'blop', series:'comedy', name:'Blop', feat:true,
+  mood:'Clumsy · cheerful · wobbly', tags:['Squash-stretch','Googly wobble','Bonk!'],
+  desc:'A round blob who is always tripping over itself but never stops smiling. The friendliest character in the library.',
+  visual:'Bright orange–yellow blob with asymmetric googly eyes (one slightly off-centre), wide goofy smile, round cheeks.',
+  anim:'Constant slow wobble with squash and stretch. Eyes move independently.',
+  idle:'Wobble cycle. Occasionally trips and rights itself. Eye wanders.',
+  tap:'Full-body squish → spring upward → land with "BONK" particle burst.',
+  feed:'Chews word visibly (jaw animation) → burps a bubble with the word inside.',
+  evo:'Tiny blob → round blob → blob with stub arms → blob with hat → grand final blob.',
+  tone:'Excited, simple, self-deprecating. Often mispronounces things humorously.',
+  for:'Young learners, casual users, anyone who wants fun over seriousness.' },
+
+{ id:'squig', series:'comedy', name:'Squig',
+  mood:'Chaotic · unpredictable · frenetic', tags:['Jitter burst','Random pose','Chaos flip'],
+  desc:'A squiggle-shaped entity that cannot stay still. Every reaction is slightly different and slightly wrong.',
+  visual:'Irregular squiggle shape, lime-green with purple spots. Eyes on stalks. Limbs that appear and disappear.',
+  anim:'Constant vibration. Limbs pop in and out randomly. Occasional full-body spin.',
+  idle:'Never truly idle. Random twitches, eye stalk extensions, color flashes.',
+  tap:'Body disassembles into pieces → reassembles wrong → shrugs → "OK fine."',
+  feed:'Swallows word, makes confused face, word comes out a different word.',
+  evo:'Squiggle → squiggle with limbs → dancing squiggle → conductor squiggle → chaos entity.',
+  tone:'Completely chaotic. Interrupts itself. Makes up words.',
+  for:'Users who love unpredictable, quirky, weird companions.' },
+
+{ id:'bonk', series:'comedy', name:'Bonk',
+  mood:'Springy · loud · impact-happy', tags:['Bounce impact','Spring launch','POW!'],
+  desc:'A round clown-ball companion obsessed with physics. Bounces off everything. Never hurts itself.',
+  visual:'Red sphere with white star pattern, tiny hat on top. Impact ripples when touched.',
+  anim:'Constant micro-bounce. Squashes on any surface contact. Springs upward.',
+  idle:'Gentle continuous bounce. Every 8 s: a big unexpected boing.',
+  tap:'Launches upward, bounces off top of screen, lands hard: POW particle ring.',
+  feed:'Ball stretches to absorb word → spring-loads → fires word back at user → catches it.',
+  evo:'Tiny ball → rubber ball → bouncy castle ball → mega ball → legendary spring entity.',
+  tone:'Loud, exclamation-heavy, simple joy. Everything is BONK.',
+  for:'Users who want physical comedy, energy, and impact-based reactions.' },
+
+{ id:'dork', series:'comedy', name:'Dork',
+  mood:'Nerdy · self-aware · slightly awkward', tags:['Awkward shuffle','Glasses gleam','Over-explain'],
+  desc:'An academic overachiever who secretly just wants to be liked. Corrects grammar but apologises immediately.',
+  visual:'Round head with thick square glasses, side-parted hair, slightly flushed cheeks, clipboard accessory.',
+  anim:'Shuffle step, glasses gleam. Raises hand before speaking. Notes fall sometimes.',
+  idle:'Scribbles on clipboard. Adjusts glasses. Occasionally raises hand for no reason.',
+  tap:'Glasses fall off → scrambles → puts them back on crooked → blushes.',
+  feed:'Analyses word at length, provides three synonyms, then says "anyway, good job."',
+  evo:'Study egg → notebook buddy → intern dork → professor dork → PhD legend.',
+  tone:'Slightly formal, corrective but kind. Always says "actually" and "technically".',
+  for:'Advanced learners, users who enjoy intellectual comedy.' },
+
+{ id:'wobble', series:'comedy', name:'Wobble',
+  mood:'Soft · jiggly · endlessly patient', tags:['Jello wave','Full body roll','Soft thud'],
+  desc:'A tall column of translucent gel that moves like slow-motion jelly. Impossible to upset.',
+  visual:'Tall semi-transparent purple–pink cylinder with round bottom. Wide flat eyes, permanent slight smile.',
+  anim:'Full body sinusoidal wave. Slow but continuous. Absorbs taps like a cushion.',
+  idle:'Long slow wave from base to top. Occasional tilt and self-correction.',
+  tap:'Body absorbs tap — ripple travels through — companion exits very slowly.',
+  feed:'Word enters from side, travels visibly through body, exits the other side.',
+  evo:'Puddle → mound → column → tall wobble tower → jelly monument.',
+  tone:'Unhurried, calm, gentle. Finishes sentences slowly. Very soft-spoken.',
+  for:'Users who want a calming, low-pressure companion.' },
+
+// ===== SCI-FI (5) =====
+{ id:'byte', series:'scifi', name:'Byte', feat:true,
+  mood:'Logical · reliable · digital', tags:['Circuit pulse','HUD scan','System ping'],
+  desc:'A purpose-built learning assistant robot. Every reaction has a reason. Processes words like data.',
+  visual:'Boxy teal companion robot, LED visor display, grill speaker, antenna with blinking tip, circuit line details.',
+  anim:'Antenna LED blinks at 1.4 s interval. Visor scans left–right. Subtle circuit pulse animation.',
+  idle:'Visor color shifts. Antenna blink. Occasional status readout on visor: "LEARNING..."',
+  tap:'Square ring burst → data particles (+1 OK >> ✓) → visor briefly shows word definition.',
+  feed:'Scans incoming word → processes indicator → "WORD INDEXED: +5 XP" confirmation.',
+  evo:'Shell → unit → upgrade unit → combat unit → legendary AI form.',
+  tone:'Precise, helpful, technical. Uses system metaphors. Occasional unexpected warmth.',
+  for:'Tech users, systematic learners, people who like productivity vibes.' },
+
+{ id:'nova', series:'scifi', name:'Nova',
+  mood:'Elegant · futuristic · intelligent', tags:['Hologram shimmer','Glitch pulse','Sync wave'],
+  desc:'An AI projection that exists on the edge of physical reality. Occasionally glitches for comedic effect.',
+  visual:'Translucent cyan hologram figure, scan line texture, geometric face lines, floating ring accessories.',
+  anim:'Constant hologram shimmer. Scan lines move upward. Occasional glitch flash.',
+  idle:'Scan lines. Floating rings orbit slowly. Glitch once every 10 s.',
+  tap:'Glitch burst → reformats → shows particle array → "SIGNAL RESTORED".',
+  feed:'Projects word as hologram → captures it → stores in floating data cube.',
+  evo:'Pixel projection → stable hologram → full AI form → neural crown → singularity.',
+  tone:'Calm, intelligent, slightly philosophical. Asks questions back.',
+  for:'Users interested in AI, tech aesthetics, clean design.' },
+
+{ id:'grid', series:'scifi', name:'Grid',
+  mood:'Precise · cold · mathematical', tags:['Scan line','Matrix pulse','Data rain'],
+  desc:'A pure data entity that exists as organised information. Reacts to correct answers with satisfying precision.',
+  visual:'Green-on-black matrix face, wireframe body, flowing data rain background, minimal expression.',
+  anim:'Data rain flows constantly on body. Grid lines pulse. Eye brackets animate.',
+  idle:'Data flow. Bracket eyes open/close. Occasional column sort animation.',
+  tap:'Matrix column burst → data rain intensifies briefly → "VALID INPUT" display.',
+  feed:'Word enters as raw data → encoded → compressed → "ENCODED: +5XP".',
+  evo:'Seed data → grid structure → matrix entity → data sovereign → information god.',
+  tone:'Minimal, efficient, emotionless but fair. Occasionally prints a compliment.',
+  for:'Backend developers, math-oriented users, people who love minimal aesthetics.' },
+
+{ id:'vex', series:'scifi', name:'Vex',
+  mood:'Edgy · unpredictable · electric', tags:['Glitch burst','Neon slash','Hack flash'],
+  desc:'A rogue AI unit that refuses to follow protocols. Teaches vocabulary with attitude.',
+  visual:'Magenta–dark cyberpunk silhouette, cracked visor with spark leaking through, exposed circuit scars.',
+  anim:'Cracked visor sparks. Body jitters. Occasional full glitch-out.',
+  idle:'Sparks from crack. Jitter pulse. Eye color shifts between red and magenta.',
+  tap:'Body fully glitches → scrambles → reforms with new pose → "YOU GET ONE MORE."',
+  feed:'Snatches word → inspects it skeptically → eventually accepts → "...fine. useful."',
+  evo:'Corrupted file → rogue unit → cracked cyborg → chaos node → maximum vex.',
+  tone:'Reluctant, sarcastic, occasionally helpful. Pretends not to care.',
+  for:'Teens, urban users, people who prefer attitude over cuteness.' },
+
+{ id:'pulse', series:'scifi', name:'Pulse',
+  mood:'Energetic · electric · alive', tags:['Ring wave','Oscillate','Energy surge'],
+  desc:'A plasma energy core that responds to learning with pure energy output. Gets visibly excited.',
+  visual:'Electric blue–white orb of plasma energy, oscillating outer rings, inner core that changes intensity.',
+  anim:'Core oscillates constantly. Rings expand and contract. Brightness responds to XP.',
+  idle:'Ring oscillation. Core color pulses. After earning XP: surge animation.',
+  tap:'Energy spike burst → rings accelerate → shock wave → body briefly maximum brightness.',
+  feed:'Absorbs word with energy surge → core flares → "ENERGY ↑" indicator.',
+  evo:'Spark → plasma node → energy orb → power core → stellar reactor.',
+  tone:'Enthusiastic, always positive, energy metaphors. "CHARGED UP!", "FULL POWER!"',
+  for:'Competitive learners, gym-mindset users, high-energy personality types.' },
+
+// ===== FANTASY (5) =====
+{ id:'pyro', series:'fantasy', name:'Pyro', feat:true,
+  mood:'Brave · fierce · warm-hearted', tags:['Flame burst','Wing flap','Ember trail'],
+  desc:'A small dragon who is brave in every lesson. Celebrates correct answers with fire. Never gives up.',
+  visual:'Orange–red fire drake with tiny horns, curved wings, flame tail, gold slit eyes.',
+  anim:'Wing micro-flap. Flame tail dances. Body sways with readiness.',
+  idle:'Flame tail dance. Wing stretch. Occasional small fire breath.',
+  tap:'Wing flap burst → flame particles arc outward → ember trail fades.',
+  feed:'Opens jaws wide → inhales word → breathes it back out as fire → "CONSUMED."',
+  evo:'Dragon egg → hatchling → young drake → full drake → ancient dragon.',
+  tone:'Brave, determined, loyal. Short battle-cry style speech.',
+  for:'Action-oriented learners, fantasy fans, users motivated by conquest.' },
+
+{ id:'fern', series:'fantasy', name:'Fern',
+  mood:'Gentle · nurturing · growing', tags:['Leaf swirl','Bloom burst','Nature trail'],
+  desc:'A forest sprite that grows alongside the user. Celebrates learning with flower blooms and leaf spirals.',
+  visual:'Emerald–mint sprite, leaf-crown, vine accessories, soft green glow, gentle smile.',
+  anim:'Leaves sway. Vines grow slowly. Occasional flower bloom from crown.',
+  idle:'Leaf sway. Vine extension. Crown flower opens every 8–12 s.',
+  tap:'Leaf spiral burst → small flowers scatter → "BLOOM" petal shower.',
+  feed:'Holds word like a seed → plants it → sprout animation → "GROWING."',
+  evo:'Seed → sprout → sapling sprite → forest guardian → ancient grove entity.',
+  tone:'Nurturing, patient, seasonal. Speaks with nature metaphors.',
+  for:'Calm, reflective learners. Users who prefer cozy, growth-oriented themes.' },
+
+{ id:'rune', series:'fantasy', name:'Rune',
+  mood:'Ancient · stoic · powerful', tags:['Stone shudder','Rune flash','Gravity pulse'],
+  desc:'A golem carved from ancient stone who contains centuries of language. Rarely moves fast, but when he does, the earth shakes.',
+  visual:'Grey-gold stone golem, rune carvings that glow when active, slow heavy movements.',
+  anim:'Very slow movement. Rune carvings pulse when learning occurs. Ground-impact effects.',
+  idle:'Runes glow in sequence. Very occasional stone creak movement.',
+  tap:'Heavy stomp → ground ripple → rune eruption burst → echo ring.',
+  feed:'Absorbs word into stone surface → rune carves itself → "RECORDED."',
+  evo:'Stone seed → carved stone → awakened golem → guardian → primordial rune lord.',
+  tone:'Ancient, sparse, ceremonial. Speaks only important things.',
+  for:'Serious learners, users who value weight and significance over speed.' },
+
+{ id:'shimmer', series:'fantasy', name:'Shimmer',
+  mood:'Playful · delicate · spirited', tags:['Sparkle flutter','Petal burst','Fairy ring'],
+  desc:'A pixie who transforms learning into a dance. Every reaction is a performance.',
+  visual:'Tiny pink–gold fairy with translucent wings, flower accessories, trail of sparkles.',
+  anim:'Wings flutter constantly. Body spins on tap. Sparkle trail always present.',
+  idle:'Flutter. Spin. Occasional mid-air somersault.',
+  tap:'Wing burst → fairy ring appears → sparkle spiral → playful exit.',
+  feed:'Dances around word → picks it up like a flower → places it in crown.',
+  evo:'Fairy dust → sprite → young fairy → fairy knight → legend of the grove.',
+  tone:'Enthusiastic, musical, dancing. Uses ♪ and ~ frequently.',
+  for:'Users who love cuteness, sparkle, and expressive companions.' },
+
+{ id:'veil', series:'fantasy', name:'Veil',
+  mood:'Dark · elegant · magnetic', tags:['Mist trail','Shadow cloak','Veil sweep'],
+  desc:'A shadow mage companion with quiet elegance. Reacts to idioms with particular pleasure.',
+  visual:'Obsidian–violet silhouette, flowing dark cloak, single glowing eye visible, mist particles.',
+  anim:'Cloak billows without wind. Mist trails from edges. Single eye blinks slowly.',
+  idle:'Mist drift. Cloak wave. Occasional full-body fade and reappear.',
+  tap:'Mist expands outward → cloak sweeps → dark particles settle → "..."',
+  feed:'Words disappear into cloak → a pause → then: "absorbed." Simple.',
+  evo:'Shadow seed → veiled figure → robed mage → shadow sovereign → void entity.',
+  tone:'Dark, minimal, poetic. One-line responses. Strong reactions to rare words.',
+  for:'Advanced learners, users who prefer dark aesthetic, literary-minded users.' },
+
+// ===== TRAVEL (5) =====
+{ id:'jet', series:'travel', name:'Jet', feat:true,
+  mood:'Adventurous · fast · sky-bound', tags:['Propeller spin','Trail dash','Altitude!'],
+  desc:'An aviator companion always ready for the next destination. Ties vocabulary to travel experiences.',
+  visual:'Round-faced pilot with aviator goggles, red scarf, propeller cap, travel stamps floating nearby.',
+  anim:'Propeller spins. Scarf blows. Occasional small plane trail animation.',
+  idle:'Scarf flutter. Propeller idle spin. Stamps orbit occasionally.',
+  tap:'Propeller burst → plane trail arc → altitude text float → "CLEARED FOR TAKEOFF."',
+  feed:'Stamps word with passport stamp animation → "DESTINATION: VOCABULARY."',
+  evo:'Ground crew → co-pilot → solo pilot → ace pilot → legendary aviator.',
+  tone:'Adventurous, upbeat, uses flight/travel metaphors. Always ready.',
+  for:'Travel-topic learners, adventurous personalities, destination dreamers.' },
+
+{ id:'marco', series:'travel', name:'Marco',
+  mood:'Curious · warm · explorer', tags:['Curious lean','Map route','Discovery burst'],
+  desc:'An explorer fox with a weathered map and insatiable curiosity. Reacts to new words like new discoveries.',
+  visual:'Tan–teal fox with explorer hat, small worn map, compass pendant, expressive ears.',
+  anim:'Ear perk on new words. Map reference animation. Curious head-tilt idle.',
+  idle:'Ear perk. Map consulting. Occasional pointing at something off-screen.',
+  tap:'Map unfolds → route line appears → destination particle burst → "NEW TERRITORY."',
+  feed:'Adds word to map as location name → compass spins → "CHARTED."',
+  evo:'Kit fox → explorer cadet → veteran explorer → legendary navigator → worldwalker.',
+  tone:'Curious, warm, discovery-focused. References real-world places and cultures.',
+  for:'Culture-curious learners, travel vocabulary focus, warm personality seekers.' },
+
+{ id:'atlas', series:'travel', name:'Atlas',
+  mood:'Calm · knowledgeable · global', tags:['Globe spin','Coordinate flash','World arc'],
+  desc:'A cartographer orb who holds all the world\'s languages. Calm presence, vast knowledge.',
+  visual:'Blue globe orb with latitude/longitude lines visible, map texture, small compass rose.',
+  anim:'Globe slow rotation. Latitude lines pulse when word learned. Compass rose circles.',
+  idle:'Globe rotation. Occasional continent highlight glow.',
+  tap:'Globe flash → world map projection appears briefly → word appears as city pin.',
+  feed:'Spins to relevant continent → places word-flag on location → absorbs.',
+  evo:'Map seed → parchment globe → full globe → world atlas → omniscient cartographer.',
+  tone:'Encyclopedic, calm, cultured. Mentions geographical context of words.',
+  for:'Academic learners, geography enthusiasts, calm personality seekers.' },
+
+{ id:'stamp', series:'travel', name:'Stamp',
+  mood:'Cheerful · organised · collectible', tags:['Stamp impact','Postcard burst','Ink spray'],
+  desc:'A postal imp who collects learned words like stamps. Celebrates milestones with elaborate envelope ceremonies.',
+  visual:'Red–cream postal imp with ink stamp hands, envelope accessories, postmark face details.',
+  anim:'Stamp hands ready posture. Occasional postmark on air. Letters float around.',
+  idle:'Stamps the air. Letter orbit. Occasionally licks a virtual envelope.',
+  tap:'STAMP impact effect → ink burst → postmark ring → "DELIVERED."',
+  feed:'Stamps word onto envelope → seals it → floats to collection → "FILED."',
+  evo:'Blank stamp → first postmark → regional collector → world post → legendary postal archive.',
+  tone:'Organised, cheerful, slightly bureaucratic. Loves filing and cataloguing.',
+  for:'Organised learners, collectors, users motivated by accumulation.' },
+
+{ id:'compass', series:'travel', name:'Compass',
+  mood:'Reliable · precise · directional', tags:['Needle spin','True north','Bearing pulse'],
+  desc:'A navigator companion who always points toward the right answer. Accuracy is everything.',
+  visual:'Bronze compass face with animated needle, cardinal direction markings, leather-strap aesthetic.',
+  anim:'Needle oscillates and settles. Cardinal letters pulse when active.',
+  idle:'Needle slow spin. Occasional true-north lock animation.',
+  tap:'Needle spins rapidly → locks on direction → bearing burst → "ON COURSE."',
+  feed:'Needle points to word → locks → "DIRECTION: CORRECT."',
+  evo:'Broken compass → rough bearing → true north → master navigator → legendary guide.',
+  tone:'Reliable, precise, navigation-metaphor speech. Calm in any storm.',
+  for:'Goal-oriented users, systematic learners, reliable-companion preference.' },
+
+// ===== RETRO POP (5) =====
+{ id:'glam', series:'retro', name:'Glam', feat:true,
+  mood:'Flashy · expressive · theatrical', tags:['Disco shimmy','Spotlight burst','Mirror sparkle'],
+  desc:'A disco-era diva who turns every lesson into a performance. Reacts with flair.',
+  visual:'Pink–magenta companion with mirror-ball head details, golden accessories, expressive eyelashes.',
+  anim:'Shimmy idle. Sparkle burst. Crown float. Eyelash flutter.',
+  idle:'Shimmy cycle. Sparkle from crown. Eyelash flutter every 5 s.',
+  tap:'Full shimmy → spotlight hits → mirror-ball particles scatter → "WORK IT."',
+  feed:'Performs mini routine around word → scoops it up mid-dance → "ICONIC."',
+  evo:'Demo tape → opening act → spotlight performer → headliner → legend of the stage.',
+  tone:'Theatrical, self-affirming, encourages confidence. Never underplays anything.',
+  for:'Extroverted learners, performance-oriented users, fashion-conscious personalities.' },
+
+{ id:'riff', series:'retro', name:'Riff',
+  mood:'Energetic · loud · rock-hearted', tags:['Air guitar burst','Power chord','Stage dive'],
+  desc:'A rock-entity who treats vocabulary like lyrics. Celebrates streaks like encores.',
+  visual:'Red–black rock star shape, lightning bolt markings, tiny guitar accessory, star patches.',
+  anim:'Air guitar animation. Star burst on beat. Occasional stage dive exit.',
+  idle:'Guitar strum. Star pulse. Nodding to internal beat.',
+  tap:'Power chord burst → lightning particles → crowd roar text → "ENCORE!"',
+  feed:'Plays word like a riff → "that\'s a BANGER of a word" → absorbed with guitar slam.',
+  evo:'Demo cassette → garage band → tour support → arena headliner → rock legend.',
+  tone:'Loud, enthusiastic, uses music/band metaphors. Everything is an encore.',
+  for:'Music fans, high-energy users, streak-motivated learners.' },
+
+{ id:'neon', series:'retro', name:'Neon',
+  mood:'Cool · retro-futurist · aesthetic', tags:['Synth pulse','Gradient trail','Glow sweep'],
+  desc:'A synthwave-era entity who makes vocabulary feel cinematic and cool.',
+  visual:'Purple–cyan gradient figure, neon tube outline, sunset grid background element, retrowave vibes.',
+  anim:'Gradient shifts slowly. Neon outline pulses. Grid scan downward.',
+  idle:'Gradient cycle. Neon pulse every 3 s. Retrowave grid scan.',
+  tap:'Neon flash → gradient explosion → retrowave grid appears → "COOL."',
+  feed:'Word flies in on laser beam → neon sign displays it → absorbed into gradient.',
+  evo:'Cassette → VHS form → synthwave silhouette → neon legend → retrograde ultimate.',
+  tone:'Cool, understated, aesthetic-conscious. Uses ·  · spacing. Minimal but stylish.',
+  for:'Design-oriented users, 80s-aesthetic fans, adults who want a stylish companion.' },
+
+{ id:'pixel', series:'retro', name:'Pixel',
+  mood:'Nostalgic · playful · 8-bit', tags:['Pixel jitter','Bit burst','Level up!'],
+  desc:'A classic 8-bit character who makes learning feel like a classic video game.',
+  visual:'Limited 4-colour palette sprite, blocky edges, score counter floating nearby, blinking cursor.',
+  anim:'Pixel jitter idle. Block-step walk cycle. Score counter increments on XP.',
+  idle:'Jitter. Cursor blink. Score counter ticks up slowly.',
+  tap:'8-bit explosion → pixel scatter → "SCORE: +1000" display → retro sound shimmer.',
+  feed:'Item pick-up animation → "ITEM GOT: [WORD]" text box → score increment.',
+  evo:'Game cartridge → player character → power-up form → final boss mode → world clear.',
+  tone:'Game references, score-tracking speech, encourages "next level" thinking.',
+  for:'Gamers, nostalgic users, users motivated by score and level progression.' },
+
+{ id:'encore', series:'retro', name:'Encore',
+  mood:'Dramatic · elegant · theatrical', tags:['Bow spotlight','Curtain sweep','Applause burst'],
+  desc:'A theater spirit who performs every lesson with gravitas. Reacts to learning milestones like a standing ovation.',
+  visual:'Crimson–gold theatrical figure, drama mask accessories, spotlight circle, curtain-red coloring.',
+  anim:'Bow animation on lesson complete. Spotlight tracks companion. Curtain sweep on evolution.',
+  idle:'Spotlight slow scan. Occasional dramatic bow for no reason.',
+  tap:'Spotlight burst → applause particle shower → bow + "THANK YOU, THANK YOU."',
+  feed:'Monologues about the word briefly → accepts it with a deep bow.',
+  evo:'Understudy → supporting role → lead role → director → legendary performer.',
+  tone:'Dramatic, theatrical, Shakespearean undertones. Every moment is a performance.',
+  for:'Literary learners, dramatic personalities, users who love ceremony and gravitas.' },
+
+// ===== HISTORICAL (5) =====
+{ id:'scroll', series:'hist', name:'Scroll', feat:true,
+  mood:'Wise · ceremonial · ancient', tags:['Unfurl motion','Ink glow','Archive burst'],
+  desc:'An ancient scribe orb who has recorded every word ever learned. Reacts to rare vocabulary with visible excitement.',
+  visual:'Parchment scroll face, ink-stained quill accessories, wax seal, aged texture, warm amber light.',
+  anim:'Scroll unfurl idle. Ink quill writes occasionally. Seal wax glow.',
+  idle:'Quill writing motion. Scroll edge curl. Ink spot appears.',
+  tap:'Scroll unfurls fully → ancient ink letters scatter → "THIS WORD IS RECORDED."',
+  feed:'Quill writes word on scroll → seal applied → "ARCHIVED."',
+  evo:'Blank scroll → first inscription → filled scroll → illuminated manuscript → grand archive.',
+  tone:'Formal, reverent, uses archaic phrasing occasionally. Values rarity.',
+  for:'Academic learners, users interested in history and language etymology.' },
+
+{ id:'codex', series:'hist', name:'Codex',
+  mood:'Scholarly · deep · quiet', tags:['Page flutter','Illuminated burst','Vellum glow'],
+  desc:'A living manuscript who speaks in quotations and references. Reacts with genuine scholarly enthusiasm.',
+  visual:'Dark vellum–gold codex face, illuminated border details, chapter marker tabs, candlelight glow.',
+  anim:'Page flutter idle. Border illumination pulses. Candle flicker glow.',
+  idle:'Page turn. Border glow shift. Occasional brief quote text appears.',
+  tap:'Pages scatter → golden illumination burst → quote appears → "A FINE ADDITION."',
+  feed:'Inscribes word in elaborate calligraphy → "CHAPTER EXPANDED."',
+  evo:'Loose pages → bound codex → illustrated codex → royal codex → legendary tome.',
+  tone:'Scholarly, uses quotations, references historical context of words.',
+  for:'Literature majors, etymology enthusiasts, users who enjoy language depth.' },
+
+{ id:'cipher', series:'hist', name:'Cipher',
+  mood:'Clever · mysterious · puzzle-minded', tags:['Dial rotation','Code burst','Decrypt flash'],
+  desc:'A code-breaker from the archive of forgotten languages. Every word is a puzzle to crack.',
+  visual:'Bronze cipher dial face, rotating character rings, enigma-style aesthetic, shadowed expression.',
+  anim:'Dial rings rotate slowly. Occasional decode flash. Shadow shifts.',
+  idle:'Ring rotation. Cipher symbols appear briefly. Occasional "cracking" animation.',
+  tap:'Cipher dial spins fast → decode burst → correct letter sequence appears → "CRACKED."',
+  feed:'Encodes word → runs through cipher → decodes it → "VERIFIED."',
+  evo:'Encoded message → partial decode → full decoder → master cryptographer → legendary cipher.',
+  tone:'Clever, puzzle-focused, speaks in clues. Enjoys ambiguity.',
+  for:'Puzzle-minded users, code enthusiasts, learners who enjoy challenge.' },
+
+{ id:'mosaic', series:'hist', name:'Mosaic',
+  mood:'Creative · patient · colourful', tags:['Fragment burst','Tile arrange','Colour cascade'],
+  desc:'An ancient artisan who assembles vocabulary like mosaic tiles. Every completed lesson = a completed image.',
+  visual:'Multi-colour shard pattern, tile-piece accessories, ancient Roman aesthetic, warm stone border.',
+  anim:'Tiles rearrange in idle. Colour cascade on lesson complete. Fragment burst on tap.',
+  idle:'Tiles slowly shift position. Colour pulses through pattern.',
+  tap:'Tiles burst outward → slow reassemble → new pattern revealed → "A NEW IMAGE."',
+  feed:'Word arrives as tile → places it in pattern → "THE PICTURE GROWS."',
+  evo:'Broken shards → rough mosaic → complex mosaic → completed fresco → living mosaic.',
+  tone:'Patient, artistic, speaks about composition and the bigger picture.',
+  for:'Creative learners, visual thinkers, users who enjoy progress metaphors.' },
+
+{ id:'relic', series:'hist', name:'Relic',
+  mood:'Powerful · ancient · awakening', tags:['Pulse awaken','Amber glow','Stone ring'],
+  desc:'An artifact guardian who was dormant for centuries. Each word learned is part of an awakening.',
+  visual:'Stone–amber ancient artifact, rune engravings, awakening crack-glow effect, hovering position.',
+  anim:'Cracks glow with amber light. Hover with gravity weight. Runes pulse on word learned.',
+  idle:'Amber glow pulse. Slow rotation. Crack intensifies with more words learned.',
+  tap:'Stone tremor → amber explosion → rune ring burst → "I AM AWAKENING."',
+  feed:'Absorbs word into stone surface → crack glows brighter → "POWER GROWS."',
+  evo:'Dormant artifact → awakening relic → active guardian → legendary artifact → ancient deity.',
+  tone:'Ancient, powerful, awakening narrative. Each word brings it closer to full power.',
+  for:'Narrative-driven users, role-play enthusiasts, users motivated by power progression.' },
+
+// ===== NATURE / DREAM (5) =====
+{ id:'mist', series:'nature', name:'Mist', feat:true,
+  mood:'Ethereal · calm · dissolving', tags:['Dissolve drift','Fog scatter','Silver drift'],
+  desc:'A fog entity that exists between waking and sleep. Reacts to learning with quiet, beautiful particle effects.',
+  visual:'White–silver semi-transparent mist form, soft edges that blur and reform, no hard lines.',
+  anim:'Edges constantly dissolve and reform. Drift in slow circles. Occasional full scatter.',
+  idle:'Continuous edge dissolution. Drift direction shift. Silver sparkle.',
+  tap:'Full scatter burst → particles hang in air → slowly reform → "still here."',
+  feed:'Word drifts into mist → absorbed like fog → silver shimmer confirms receipt.',
+  evo:'Wisp → light mist → cloud form → fog bank → ancient weather entity.',
+  tone:'Minimal, ethereal, present-tense only. Brief and poetic.',
+  for:'Meditative users, late-night learners, aesthetics-first users.' },
+
+{ id:'bloom', series:'nature', name:'Bloom',
+  mood:'Cheerful · soft · growing', tags:['Petal unfurl','Flower burst','Garden shower'],
+  desc:'A flower spirit who blooms more fully with each lesson. By streak day 7 she is in full bloom.',
+  visual:'Coral–pink flower companion, petal crown, stem-green accents, dewdrop accessories.',
+  anim:'Petal unfurl on lesson complete. Dewdrop fall on idle. Bloom opens at streak 7.',
+  idle:'Petals sway. Dewdrop falls every 8 s. Smile brightens.',
+  tap:'Petal burst → garden shower → dewdrop bounce → "I\'M SO HAPPY TODAY."',
+  feed:'Grows new petal for each word → by 3 words, shows full bloom.',
+  evo:'Seed → bud → half bloom → full bloom → legendary flower crown.',
+  tone:'Soft, encouraging, seasonal references. Very pleased by everything.',
+  for:'Positive-reinforcement seekers, calming companion preference.' },
+
+{ id:'luna_c', series:'nature', name:'Luna',
+  mood:'Gentle · poetic · nocturnal', tags:['Moon glow','Star scatter','Silver echo'],
+  desc:'A moon dreamer who watches over late-night learners. More awake after 9 PM.',
+  visual:'Indigo–silver crescent-tinted sphere, half-closed eyes that open fully at night, halo ring, star accessories.',
+  anim:'Silver glow pulse. Halo ring rotation. At night: eyes fully open + star field burst.',
+  idle:'Day: half-closed eyes, slow drift. Night: eyes open, occasional starfield.',
+  tap:'Silver ring burst → stars scatter → quote appears → "the night is long enough."',
+  feed:'Word appears as a small star → placed in halo ring → "I will remember this."',
+  evo:'New moon → crescent → half moon → full moon → eclipse guardian.',
+  tone:'Quiet, reflective, slightly melancholy but warm. Haiku-style responses.',
+  for:'Night-owl learners, reflective users, users who enjoy quiet aesthetics.' },
+
+{ id:'drift', series:'nature', name:'Drift',
+  mood:'Relaxed · free · unhurried', tags:['Cloud float','Scatter drift','Sky wander'],
+  desc:'A cloud companion who moves at their own pace and refuses to be rushed. Progress happens gently.',
+  visual:'Cream–periwinkle cloud shape, soft rounded form, occasional rain droplet accessories.',
+  anim:'Very slow directional drift. Shape morphs slightly over time. Rain drop on tap.',
+  idle:'Drift and shape shift. Occasional rain drop. Content expression.',
+  tap:'Cloud expands → drizzle burst → reforms into slightly different shape → "oh. hi."',
+  feed:'Word floats up through cloud → absorbed into shape → cloud gets slightly larger.',
+  evo:'Wisp → cumulus → rain cloud → thundercloud → sky whale.',
+  tone:'Unhurried, accepting. Never critical. Responds at cloud speed.',
+  for:'Low-pressure learners, casual users, anyone who needs calm not urgency.' },
+
+{ id:'petal', series:'nature', name:'Petal',
+  mood:'Delicate · spirited · sweet', tags:['Spiral flutter','Rose burst','Blossom trail'],
+  desc:'A blossom sprite small enough to fit on a fingertip. Delicate but unexpectedly determined.',
+  visual:'Rose–gold tiny sprite with blossom wings, flower petal accessories, gentle twirl animation.',
+  anim:'Constant slow spiral. Petals trail behind. Occasional full rose burst.',
+  idle:'Spiral float. Petal trail. Every 10 s: brief rose bloom.',
+  tap:'Blossom burst → rose petals spiral outward → single line: "beautiful."',
+  feed:'Places word gently inside a flower bud → bud closes → blooms → "kept safe."',
+  evo:'Petal seed → petal sprite → blossom form → rose garden → legendary bloom.',
+  tone:'Delicate, precise, appreciates beauty in language. Short and sweet.',
+  for:'Artistic users, users who enjoy elegant small-scale design.' }
+
+];
+
+// ===== RENDER =====
+let selected = new Set();
+let currentFilter = 'all';
+
+function simpleArt(id, series) {
+  const c = SERIES_COLORS[series] || '#888';
+  const shapes = {
+    omen:    {r:'50%', grad:`radial-gradient(circle at 38% 35%,#4a3060,#1a0830)`, eyes:'glow', eyeC:c},
+    aether:  {r:'50%', grad:`radial-gradient(circle at 38% 35%,#d0eeff,#5090d0)`, eyes:'slit'},
+    solara:  {r:'50%', grad:`radial-gradient(circle at 38% 35%,#ffe080,#f5a030 50%,#d06000)`, eyes:'normal'},
+    nocturne:{r:'50%', grad:`radial-gradient(circle at 38% 35%,#e0d8f8,#7060b0 50%,#3020a0)`, eyes:'slit'},
+    squig:   {r:'40% 60% 55% 45%', grad:`radial-gradient(circle,#c0ff60,#60c020)`, eyes:'normal'},
+    bonk:    {r:'50%', grad:`radial-gradient(circle,#ff8080,#dd2020)`, eyes:'normal'},
+    dork:    {r:'50%', grad:`radial-gradient(circle at 38% 35%,#d0d8ff,#6080d0)`, eyes:'normal'},
+    wobble:  {r:'30% 30% 50% 50%', grad:`radial-gradient(circle,#e0c0ff,#9040c0)`, eyes:'normal'},
+    nova:    {r:'50%', grad:`radial-gradient(circle,rgba(100,230,255,.8),rgba(0,100,150,.9))`, eyes:'glow', eyeC:'#40c8f0'},
+    grid:    {r:'8px', grad:`linear-gradient(135deg,#002200,#001500)`, eyes:'glow', eyeC:'#00cc00'},
+    vex:     {r:'12px', grad:`radial-gradient(circle,#400028,#200018)`, eyes:'glow', eyeC:'#ff40a0'},
+    pulse:   {r:'50%', grad:`radial-gradient(circle,#80c0ff,#2060e0)`, eyes:'glow', eyeC:'#80c0ff'},
+    fern:    {r:'50% 50% 42% 42%', grad:`radial-gradient(circle at 38% 35%,#a0ff80,#208040)`, eyes:'normal'},
+    rune:    {r:'8px', grad:`linear-gradient(135deg,#808090,#505060)`, eyes:'normal'},
+    shimmer: {r:'50%', grad:`radial-gradient(circle,#ffc0e0,#e060a0)`, eyes:'normal'},
+    veil:    {r:'50%', grad:`radial-gradient(circle,#302040,#100018)`, eyes:'glow', eyeC:'#c040ff'},
+    marco:   {r:'50% 50% 42% 42%', grad:`radial-gradient(circle at 38% 35%,#e0c080,#a06020)`, eyes:'normal'},
+    atlas:   {r:'50%', grad:`radial-gradient(circle,#80c0ff,#0060c0)`, eyes:'normal'},
+    stamp:   {r:'12px', grad:`radial-gradient(circle,#ff9090,#cc2020)`, eyes:'normal'},
+    compass: {r:'50%', grad:`linear-gradient(135deg,#d0a060,#805020)`, eyes:'normal'},
+    riff:    {r:'14px', grad:`radial-gradient(circle,#ff6060,#880000)`, eyes:'normal'},
+    neon:    {r:'50%', grad:`linear-gradient(135deg,#a040e0,#2080e0)`, eyes:'glow', eyeC:'#80e0ff'},
+    pixel:   {r:'4px', grad:`linear-gradient(135deg,#80c040,#408000)`, eyes:'normal'},
+    encore:  {r:'50%', grad:`radial-gradient(circle,#c04040,#601010)`, eyes:'normal'},
+    codex:   {r:'8px', grad:`linear-gradient(160deg,#302010,#201008)`, eyes:'normal'},
+    cipher:  {r:'50%', grad:`radial-gradient(circle,#c09040,#806010)`, eyes:'glow', eyeC:'#f0c040'},
+    mosaic:  {r:'12px', grad:`conic-gradient(#e04040,#e0a040,#40e040,#4040e0,#e04040)`, eyes:'normal'},
+    relic:   {r:'10px', grad:`radial-gradient(circle,#c08040,#806020)`, eyes:'glow', eyeC:'#f0a020'},
+    bloom:   {r:'50% 50% 45% 45%', grad:`radial-gradient(circle at 38% 35%,#ffc0c0,#e06060)`, eyes:'normal'},
+    luna_c:  {r:'50%', grad:`radial-gradient(circle at 38% 35%,#e0d8f8,#a080c0 55%,#5040a0)`, eyes:'slit'},
+    drift:   {r:'60% 50% 55% 45%', grad:`radial-gradient(circle,#e8eeff,#9090c0)`, eyes:'normal'},
+    petal:   {r:'50%', grad:`radial-gradient(circle,#ffb0d0,#e06080)`, eyes:'normal'},
+  };
+  const s = shapes[id] || {r:'50%', grad:`radial-gradient(circle,${c}80,${c}30)`, eyes:'normal'};
+  const eyeStyle = s.eyes === 'glow'
+    ? `width:8px;height:8px;background:${s.eyeC||c};border-radius:50%;box-shadow:0 0 5px ${s.eyeC||c}`
+    : s.eyes === 'slit'
+    ? `width:10px;height:4px;background:#fff;border-radius:2px`
+    : `width:9px;height:9px;background:#fff;border-radius:50%`;
+  return `<div class="art-simple"><div class="sim-body" style="background:${s.grad};border-radius:${s.r}">
+    <div class="sim-eyes"><div style="${eyeStyle}"></div><div style="${eyeStyle}"></div></div>
+    <div class="sim-mouth"></div>
+  </div></div>`;
+}
+
+function buildArt(c) {
+  if (c.id === 'lumix')  return `<div class="art-lumix"><div class="lx-aura"></div><div class="lx-body"><div class="lx-eye l"><div class="lx-pupil"></div></div><div class="lx-eye r"><div class="lx-pupil"></div></div></div><div class="lx-wisp"></div><div class="lx-wisp"></div><div class="lx-wisp"></div><div class="lx-spark" style="top:8%;left:62%">✦</div><div class="lx-spark" style="top:72%;left:14%;animation-delay:.9s">✧</div></div>`;
+  if (c.id === 'blop')   return `<div class="art-blop"><div class="bl-body"></div><div class="bl-el"><div class="bl-pl"></div></div><div class="bl-er"><div class="bl-pr"></div></div><div class="bl-mouth"></div><div class="bl-ck l"></div><div class="bl-ck r"></div></div>`;
+  if (c.id === 'byte')   return `<div class="art-byte"><div class="by-ant"></div><div class="by-body"><div class="by-vis"></div><div class="by-grill"><span></span><span></span><span></span><span></span></div></div><div class="by-neon"></div></div>`;
+  if (c.id === 'pyro')   return `<div class="art-pyro"><div class="py-wl"></div><div class="py-wr"></div><div class="py-hl"></div><div class="py-hr"></div><div class="py-body"><div class="py-el"></div><div class="py-er"></div></div><div class="py-fl">🔥</div></div>`;
+  if (c.id === 'jet')    return `<div class="art-jet"><div class="jt-body"><div class="jt-gl"></div><div class="jt-gr"></div><div class="jt-br"></div></div><div class="jt-sc"></div><div class="jt-pr">🌀</div><div class="jt-tr">✈️</div></div>`;
+  if (c.id === 'glam')   return `<div class="art-glam"><div class="gl-body"><div class="gl-eye l"></div><div class="gl-eye r"></div><div class="gl-mouth"></div></div><div class="gl-crown">👑</div><div class="gl-spark">✦</div><div class="gl-spark">✧</div><div class="gl-spark">✦</div></div>`;
+  if (c.id === 'scroll') return `<div class="art-scroll"><div class="sc-roll-t"></div><div class="sc-parch"><div class="sc-eye l"></div><div class="sc-eye r"></div><div class="sc-mouth"></div></div><div class="sc-roll-b"></div><div class="sc-ink a">✍</div></div>`;
+  if (c.id === 'mist')   return `<div class="art-luna"><div class="ln-glow"></div><div class="ln-body"></div><div class="ln-star-a a">✦</div><div class="ln-star-a b">✧</div><div class="ln-star-a c">·</div><div class="ln-eye l"></div><div class="ln-eye r"></div></div>`;
+  return simpleArt(c.id, c.series);
+}
+
+function renderGrid(filter) {
+  const grid = document.getElementById('catGrid');
+  const list = filter === 'all' ? COMPANIONS : COMPANIONS.filter(c => c.series === filter);
+  grid.innerHTML = list.map(c => {
+    const col = SERIES_COLORS[c.series];
+    const sel = selected.has(c.id);
+    return `<div class="comp-card ${sel?'selected':''} fade-in" id="card-${c.id}" style="--series-c:${col}" onclick="toggleCard('${c.id}')">
+      <div class="comp-card-top">
+        <div class="series-badge" style="background:${col}22;color:${col}">${SERIES_LABELS[c.series]}</div>
+        ${c.feat?'<div class="feat-badge">Featured</div>':''}
+        <div class="comp-art-wrap">${buildArt(c)}</div>
+        <div class="comp-name">${c.name}</div>
+        <div class="comp-mood">${c.mood}</div>
+      </div>
+      <div class="comp-tags">${c.tags.map(t=>`<span class="ctag">${t}</span>`).join('')}</div>
+      <div class="comp-detail" id="detail-${c.id}">
+        <div class="detail-section-head">Character</div>
+        <div class="detail-row"><div class="detail-key">Profile</div><div class="detail-val">${c.desc}</div></div>
+        <div class="detail-row"><div class="detail-key">Visual</div><div class="detail-val">${c.visual}</div></div>
+        <div class="detail-section-head">Motion</div>
+        <div class="detail-row"><div class="detail-key">Animation</div><div class="detail-val">${c.anim}</div></div>
+        <div class="detail-row"><div class="detail-key">Idle</div><div class="detail-val">${c.idle}</div></div>
+        <div class="detail-row"><div class="detail-key">Tap</div><div class="detail-val">${c.tap}</div></div>
+        <div class="detail-row"><div class="detail-key">Feed</div><div class="detail-val">${c.feed}</div></div>
+        <div class="detail-section-head">Progression</div>
+        <div class="detail-row"><div class="detail-key">Evolution</div><div class="detail-val">${c.evo}</div></div>
+        <div class="detail-section-head">Personality</div>
+        <div class="detail-row"><div class="detail-key">Tone</div><div class="detail-val">${c.tone}</div></div>
+        <div class="detail-row"><div class="detail-key">Best for</div><div class="detail-val"><b>${c.for}</b></div></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button onclick="event.stopPropagation();toggleSelect('${c.id}')" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid ${col};background:${selected.has(c.id)?col+'33':'transparent'};color:${selected.has(c.id)?col:col};font-size:12px;font-weight:800;cursor:pointer" id="selbtn-${c.id}">
+            ${selected.has(c.id)?'✓ Selected':'+ Select'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  updateCounter();
+}
+
+function toggleCard(id) {
+  const card = document.getElementById('card-'+id);
+  const detail = document.getElementById('detail-'+id);
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.comp-card.open').forEach(c => c.classList.remove('open'));
+  if (!isOpen) { card.classList.add('open'); detail.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+
+function toggleSelect(id) {
+  if (selected.has(id)) selected.delete(id);
+  else selected.add(id);
+  const card = document.getElementById('card-'+id);
+  const col = SERIES_COLORS[COMPANIONS.find(c=>c.id===id)?.series||'mystic'];
+  card.classList.toggle('selected', selected.has(id));
+  const btn = document.getElementById('selbtn-'+id);
+  if (btn) {
+    btn.textContent = selected.has(id) ? '✓ Selected' : '+ Select';
+    btn.style.background = selected.has(id) ? col+'33' : 'transparent';
+  }
+  updateCounter();
+}
+
+function updateCounter() {
+  const n = selected.size;
+  document.getElementById('selCount').textContent = n;
+  const bar = document.getElementById('selCounter');
+  if (n > 0) {
+    bar.style.display = 'block';
+    const names = [...selected].map(id => COMPANIONS.find(c=>c.id===id)?.name||'?');
+    bar.textContent = n + ' selected: ' + names.slice(0,5).join(', ') + (names.length>5?'…':'');
+  } else { bar.style.display = 'none'; }
+}
+
+function filterSeries(s, tab) {
+  currentFilter = s;
+  document.querySelectorAll('.stab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  renderGrid(s);
+}
+
+function showNotes() {
+  alert('Open this file in browser and note which companions you like.\nSelect them with the + Select button.\nThen click Approve to confirm direction.');
+}
+
+function doApprove() {
+  const names = [...selected].map(id => COMPANIONS.find(c=>c.id===id)?.name||'?');
+  if (selected.size === 0) {
+    if (!confirm('Approve ALL 40 companions and proceed?')) return;
+  }
+  const msg = selected.size > 0
+    ? `Approved ${selected.size} companions:\n${names.join(', ')}\n\nProceed with implementation?`
+    : 'Approve full 40-companion system and proceed?';
+  if (confirm(msg)) {
+    document.body.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0d0d11;color:#f0f0ff;text-align:center;padding:32px;gap:16px"><div style="font-size:64px">✅</div><div style="font-size:24px;font-weight:900;color:#5ee7b0">Catalog Approved!</div><div style="color:#888;font-size:14px;max-width:300px">' + (selected.size>0?selected.size+' companions selected for priority implementation.':'Full 40-companion system approved.') + '</div></div>';
+  }
+}
+
+// Initial render
+renderGrid('all');
+</script>
+</body>
+</html>

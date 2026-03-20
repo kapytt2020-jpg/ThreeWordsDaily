@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ThreeWordsDaily — v7 Legs + Crash Bandicoot</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #030310; color: #f0f0f8; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; min-height: 100vh; padding-bottom: 100px; overflow-x: hidden; }
+
+.bg-atmo { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.bokeh { position:absolute; border-radius:50%; filter:blur(60px); }
+.bk1 { width:200px;height:200px;background:rgba(120,60,220,0.18);top:-40px;left:-40px; }
+.bk2 { width:160px;height:160px;background:rgba(30,80,200,0.15);bottom:15%;right:-30px; }
+.bk3 { width:100px;height:100px;background:rgba(200,50,50,0.1);bottom:35%;left:5%; }
+.bk4 { width:80px;height:80px;background:rgba(40,160,140,0.12);top:40%;right:15%; }
+.wrap { position:relative; z-index:1; }
+
+.hero { text-align:center; padding:36px 20px 16px; }
+.hero-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#c4b5fd; background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.25); border-radius:20px; padding:4px 14px; margin-bottom:14px; }
+.hero h1 { font-size:23px; font-weight:800; letter-spacing:-0.02em; margin-bottom:8px; }
+.hero p { font-size:13px; color:rgba(240,240,248,0.42); }
+
+/* TIER LABELS */
+.tier-label { padding:18px 16px 10px; display:flex; align-items:center; gap:10px; }
+.tier-pill { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3px 10px; border-radius:10px; border:1px solid; }
+.pill-s { color:#c4b5fd; background:rgba(139,92,246,0.1); border-color:rgba(139,92,246,0.25); }
+.pill-h { color:#93c5fd; background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.25); }
+.pill-c { color:#fca5a5; background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); }
+.tier-label h2 { font-size:16px; font-weight:700; }
+.tier-label span { font-size:11px; color:rgba(240,240,248,0.38); margin-left:auto; }
+
+/* GRIDS */
+.char-grid  { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; padding:0 10px; }
+.char-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:0 10px; }
+.char-cell { display:flex; flex-direction:column; align-items:center; padding:14px 4px 10px; cursor:pointer; border-radius:20px; transition:background 0.2s; position:relative; }
+.char-cell:active { transform:scale(0.97); }
+.char-cell.selected { background:rgba(255,255,255,0.04); outline:1.5px solid rgba(139,92,246,0.5); }
+.char-stage { width:110px; height:134px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
+.char-label { font-size:13px; font-weight:700; margin-top:8px; }
+.char-fam   { font-size:10px; color:rgba(240,240,248,0.35); margin-top:2px; }
+.sel-ring { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent; transition:all 0.2s; }
+.char-cell.selected .sel-ring { background:#7c3aed; border-color:#7c3aed; color:white; }
+
+.divider { height:1px; background:rgba(255,255,255,0.07); margin:20px 16px; }
+
+/* ============================================================
+   IDLE BEHAVIOR ANIMATIONS
+   Applied to any .char-wrap element via JS class cycling
+============================================================ */
+/* Base float (each character has its own float animation, these override) */
+@keyframes idleLook {
+  0%   { transform:translateY(0) rotate(0deg); }
+  18%  { transform:translateY(-4px) rotate(-10deg); }
+  38%  { transform:translateY(-4px) rotate(10deg); }
+  55%  { transform:translateY(-4px) rotate(-5deg); }
+  72%  { transform:translateY(-3px) rotate(5deg); }
+  88%  { transform:translateY(-2px) rotate(-2deg); }
+  100% { transform:translateY(0) rotate(0deg); }
+}
+@keyframes idleStretch {
+  0%   { transform:translateY(0) scaleY(1) scaleX(1); }
+  25%  { transform:translateY(-10px) scaleY(1.18) scaleX(0.86); }
+  50%  { transform:translateY(-12px) scaleY(1.22) scaleX(0.84); }
+  70%  { transform:translateY(-8px) scaleY(1.1) scaleX(0.93); }
+  84%  { transform:translateY(-2px) scaleY(0.92) scaleX(1.08); }
+  94%  { transform:translateY(0) scaleY(1.03) scaleX(0.98); }
+  100% { transform:translateY(0) scaleY(1) scaleX(1); }
+}
+@keyframes idleBounce {
+  0%,100% { transform:translateY(0) scaleY(1) scaleX(1); }
+  12%  { transform:translateY(-12px) scaleY(1.1) scaleX(0.92); }
+  22%  { transform:translateY(0) scaleY(0.9) scaleX(1.1); }
+  34%  { transform:translateY(-9px) scaleY(1.08) scaleX(0.94); }
+  44%  { transform:translateY(0) scaleY(0.94) scaleX(1.06); }
+  56%  { transform:translateY(-6px) scaleY(1.05) scaleX(0.96); }
+  66%  { transform:translateY(0) scaleY(0.97) scaleX(1.03); }
+  80%  { transform:translateY(-3px) scaleY(1.02) scaleX(0.99); }
+}
+@keyframes idleProud {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  20%  { transform:translateY(-6px) rotate(-4deg) scaleX(1.05); }
+  40%  { transform:translateY(-10px) rotate(0) scaleX(1.08); }
+  60%  { transform:translateY(-8px) rotate(4deg) scaleX(1.05); }
+  78%  { transform:translateY(-4px) rotate(2deg) scaleX(1.02); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleWobble {
+  0%   { transform:rotate(0deg) translateY(0); }
+  10%  { transform:rotate(-18deg) translateY(-4px); }
+  22%  { transform:rotate(14deg) translateY(-2px); }
+  34%  { transform:rotate(-11deg) translateY(-1px); }
+  46%  { transform:rotate(9deg) translateY(0); }
+  58%  { transform:rotate(-6deg); }
+  70%  { transform:rotate(4deg); }
+  82%  { transform:rotate(-2deg); }
+  92%  { transform:rotate(1deg); }
+  100% { transform:rotate(0deg); }
+}
+@keyframes idleGlance {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  15%  { transform:translateY(-3px) rotate(6deg) scaleX(0.97); }
+  40%  { transform:translateY(-4px) rotate(6deg) scaleX(0.97); }
+  65%  { transform:translateY(-3px) rotate(3deg); }
+  82%  { transform:translateY(-1px) rotate(1deg); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleShake {
+  0%,100% { transform:translateX(0) translateY(-4px); }
+  15% { transform:translateX(-5px) translateY(-5px) rotate(-3deg); }
+  30% { transform:translateX(5px) translateY(-4px) rotate(3deg); }
+  45% { transform:translateX(-4px) translateY(-5px) rotate(-2deg); }
+  60% { transform:translateX(4px) translateY(-4px) rotate(2deg); }
+  75% { transform:translateX(-2px) translateY(-4px); }
+}
+@keyframes idleSurge {
+  0%   { transform:translateY(0) scale(1); filter:brightness(1); }
+  25%  { transform:translateY(-6px) scale(1.06); filter:brightness(1.3); }
+  50%  { transform:translateY(-8px) scale(1.1); filter:brightness(1.5); }
+  75%  { transform:translateY(-5px) scale(1.05); filter:brightness(1.2); }
+  100% { transform:translateY(0) scale(1); filter:brightness(1); }
+}
+@keyframes idleIntim {
+  0%   { transform:translateY(0) scale(1) rotate(0); }
+  30%  { transform:translateY(-3px) scale(1.04) rotate(-2deg); }
+  60%  { transform:translateY(-5px) scale(1.07) rotate(0); }
+  80%  { transform:translateY(-4px) scale(1.05) rotate(2deg); }
+  100% { transform:translateY(0) scale(1) rotate(0); }
+}
+/* Prop orbit */
+@keyframes propOrbit {
+  0%   { transform:translateX(-50%) rotate(0deg) translateX(32px) rotate(0deg); opacity:1; }
+  100% { transform:translateX(-50%) rotate(360deg) translateX(32px) rotate(-360deg); opacity:1; }
+}
+@keyframes propFloat {
+  0%,100% { transform:translateY(0) scale(1); }
+  50% { transform:translateY(-14px) scale(0.9); }
+}
+
+.idle-look     { animation:idleLook    2.2s ease-in-out 1 forwards !important; }
+.idle-stretch  { animation:idleStretch 2.0s ease-in-out 1 forwards !important; }
+.idle-bounce   { animation:idleBounce  2.0s ease-in-out 1 forwards !important; }
+.idle-proud    { animation:idleProud   2.2s ease-in-out 1 forwards !important; }
+.idle-wobble   { animation:idleWobble  1.8s ease-in-out 1 forwards !important; }
+.idle-glance   { animation:idleGlance  2.4s ease-in-out 1 forwards !important; }
+.idle-shake    { animation:idleShake   1.6s ease-in-out 1 forwards !important; }
+.idle-surge    { animation:idleSurge   2.0s ease-in-out 1 forwards !important; }
+.idle-intim    { animation:idleIntim   2.5s ease-in-out 1 forwards !important; }
+
+/* Prop element that appears during certain idles */
+.char-prop {
+  position:absolute; opacity:0; pointer-events:none; transition:opacity 0.3s;
+  bottom:80%; left:50%; transform:translateX(-50%);
+  font-size:16px; filter:drop-shadow(0 0 6px rgba(200,180,255,0.8));
+}
+.idle-bounce .char-prop,
+.idle-proud .char-prop { opacity:1; animation:propFloat 0.6s ease-in-out infinite; }
+
+/* Shared float animations */
+@keyframes f1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+@keyframes f2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes f3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes breathe { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.018) scaleY(0.99)} }
+@keyframes blinkEye { 0%,88%,100%{transform:scaleY(1)} 91%,96%{transform:scaleY(0.07)} }
+@keyframes glow { 0%,100%{opacity:0.65} 50%{opacity:1} }
+@keyframes antennaB { 0%,100%{transform:translateX(-50%) rotate(-4deg)} 50%{transform:translateX(-50%) rotate(4deg)} }
+@keyframes earTw { 0%,84%,100%{transform:rotate(0)} 87%,93%{transform:rotate(-10deg)} }
+@keyframes wingF { 0%,100%{transform:rotate(-6deg) scaleX(1)} 50%{transform:rotate(-20deg) scaleX(0.8)} }
+@keyframes combatPulse { 0%,100%{box-shadow:0 0 28px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7)} 50%{box-shadow:0 0 40px rgba(220,0,0,0.9),0 0 80px rgba(150,0,0,0.45),0 8px 24px rgba(0,0,0,0.7)} }
+@keyframes seraphGlow { 0%,100%{box-shadow:0 0 24px rgba(255,200,0,0.5),0 0 50px rgba(255,160,0,0.2),0 8px 22px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 40px rgba(255,220,0,0.9),0 0 80px rgba(255,180,0,0.45),0 8px 22px rgba(0,0,0,0.5)} }
+@keyframes hairDrift { 0%,100%{transform:rotate(0)} 50%{transform:rotate(1.5deg)} }
+@keyframes puff { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.02) scaleY(0.99)} }
+
+/* EYE SYSTEM */
+.eye { position:absolute; border-radius:50%; background:white; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 0 4px rgba(0,0,0,0.1); transform-origin:center; animation:blinkEye 5s ease-in-out infinite; }
+.iris  { position:absolute; border-radius:50%; top:50%; left:50%; transform:translate(-50%,-48%); }
+.pupil { position:absolute; border-radius:50%; background:radial-gradient(ellipse at 40% 30%,#0a0818,#000005); top:50%; left:50%; transform:translate(-50%,-50%); }
+.hl1   { position:absolute; border-radius:50%; background:rgba(255,255,255,0.96); top:14%; left:14%; }
+.hl2   { position:absolute; border-radius:50%; background:rgba(255,255,255,0.65); bottom:22%; right:18%; }
+
+/* =============================================
+   SOFT CHARACTERS (from preview5, condensed)
+============================================= */
+
+/* LUMIX */
+.lumix-wrap { position:relative;width:96px;height:108px;animation:f1 3.4s ease-in-out infinite; }
+.lumix-glow { position:absolute;inset:-22px;background:radial-gradient(ellipse,rgba(130,70,230,0.38) 0%,rgba(80,30,160,0.18) 45%,transparent 75%);border-radius:50%;animation:glow 3s ease-in-out infinite; }
+.lumix-ear-l,.lumix-ear-r { position:absolute;top:4px;width:24px;height:26px;background:radial-gradient(ellipse at 40% 30%,#d8b4fe,#7c3aed 60%,#4c1d95 100%);border-radius:50% 50% 40% 40%;box-shadow:0 0 12px rgba(147,51,234,0.6); }
+.lumix-ear-l { left:10px; } .lumix-ear-r { right:10px; }
+.lumix-body { position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:92px;height:96px;background:radial-gradient(ellipse at 32% 24%,rgba(255,255,255,0.45) 0%,transparent 28%),radial-gradient(ellipse at 36% 28%,#e8d8ff 0%,#c084fc 14%,#9333ea 40%,#6d28d9 64%,#3b0764 88%,#1e003a 100%);border-radius:50% 50% 48% 48%/52% 52% 48% 48%;box-shadow:0 0 28px rgba(147,51,234,0.85),0 0 60px rgba(109,40,217,0.45),0 10px 28px rgba(0,0,0,0.5),inset 0 -12px 28px rgba(30,0,60,0.6);animation:breathe 2.8s ease-in-out infinite; }
+.lumix-body::before { content:'';position:absolute;top:9%;left:15%;width:32%;height:24%;background:radial-gradient(ellipse,rgba(255,255,255,0.72) 0%,transparent 100%);border-radius:50%;transform:rotate(-18deg); }
+.lumix-eye-l { width:30px;height:32px;top:40%;left:11px;animation-delay:0.3s; }
+.lumix-eye-r { width:30px;height:32px;top:40%;right:11px;animation-delay:0.8s; }
+.lumix-iris  { width:24px;height:26px;background:radial-gradient(ellipse at 38% 30%,#818cf8,#312e81 55%,#1e1b4b 100%); }
+.lumix-pupil { width:14px;height:15px; } .lumix-hl1 { width:9px;height:9px; } .lumix-hl2 { width:4px;height:4px; }
+.lumix-smile { position:absolute;bottom:24%;left:50%;transform:translateX(-50%);width:26px;height:12px;border-bottom:3px solid rgba(80,20,120,0.55);border-radius:0 0 50% 50%; }
+
+/* KITSUNE — with legs + hands */
+.kitsune-wrap { position:relative;width:98px;height:148px;animation:f2 3.8s ease-in-out infinite;animation-delay:0.3s; }
+.kitsune-glow { position:absolute;inset:-18px;background:radial-gradient(ellipse,rgba(234,88,12,0.25) 0%,transparent 70%);border-radius:50%;animation:glow 3.5s ease-in-out infinite; }
+.kit-leg { position:absolute;bottom:4px;width:17px;height:24px;background:radial-gradient(ellipse at 40% 28%,#fed7aa,#fb923c 50%,#ea580c);border-radius:7px 7px 5px 5px;z-index:2; }
+.kit-leg.l { left:22px;transform:rotate(-5deg); } .kit-leg.r { right:22px;transform:rotate(5deg); }
+.kit-foot { position:absolute;bottom:0;width:23px;height:13px;background:radial-gradient(ellipse at 40% 30%,#fed7aa,#c2410c);border-radius:50%;z-index:3; }
+.kit-foot.l { left:15px; } .kit-foot.r { right:15px; }
+.kitsune-body { position:absolute;bottom:22px;left:50%;transform:translateX(-50%);width:70px;height:54px;background:radial-gradient(ellipse at 40% 32%,#fed7aa 0%,#fb923c 30%,#ea580c 65%,#9a3412 100%);border-radius:40% 40% 35% 35%/45% 45% 35% 35%;box-shadow:0 4px 16px rgba(0,0,0,0.45),inset 0 -6px 14px rgba(80,20,0,0.3);z-index:1; }
+.kitsune-chest { position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:32px;height:30px;background:radial-gradient(ellipse at 50% 40%,#fff7ed,#fde8c8 70%);border-radius:50% 50% 40% 40%;z-index:2; }
+.kitsune-paw { position:absolute;bottom:-4px;width:18px;height:12px;background:radial-gradient(ellipse at 40% 30%,#fed7aa,#ea580c);border-radius:50%;z-index:3; }
+.kitsune-paw.l { left:12px; } .kitsune-paw.r { right:12px; }
+.kitsune-head { position:absolute;bottom:66px;left:50%;transform:translateX(-50%);width:76px;height:78px;background:radial-gradient(ellipse at 32% 24%,rgba(255,255,255,0.4) 0%,transparent 26%),radial-gradient(ellipse at 36% 28%,#fff7ed 0%,#fed7aa 14%,#fb923c 42%,#c2410c 74%,#7c2d12 100%);border-radius:50%;box-shadow:0 0 18px rgba(234,88,12,0.4),0 6px 20px rgba(0,0,0,0.45),inset 0 -10px 22px rgba(80,20,0,0.4);z-index:3; }
+.kitsune-ear { position:absolute;top:-16px;width:24px;height:34px;background:linear-gradient(to top,#c2410c,#fb923c 60%,#fed7aa 100%);clip-path:polygon(50% 0%,0% 100%,100% 100%);z-index:4; }
+.kitsune-ear::before { content:'';position:absolute;top:35%;left:22%;width:56%;height:56%;background:rgba(255,220,200,0.55);clip-path:polygon(50% 0%,0% 100%,100% 100%); }
+.kitsune-ear.l { left:8px;transform:rotate(-8deg); } .kitsune-ear.r { right:8px;transform:rotate(8deg); }
+.kitsune-muzzle { position:absolute;bottom:24%;left:50%;transform:translateX(-50%);width:32px;height:20px;background:radial-gradient(ellipse at 50% 42%,#fed7aa,#fb923c 80%);border-radius:50%;z-index:5; }
+.kitsune-nose { position:absolute;bottom:38%;left:50%;transform:translateX(-50%);width:9px;height:6px;background:#1c0700;border-radius:50%;z-index:6; }
+.kit-eye-l { width:26px;height:28px;top:38%;left:8px;z-index:5;animation-delay:0.6s; }
+.kit-eye-r { width:26px;height:28px;top:38%;right:8px;z-index:5;animation-delay:1.1s; }
+.kit-iris  { width:20px;height:22px;background:radial-gradient(ellipse at 38% 30%,#86efac,#16a34a 45%,#14532d 100%); }
+.kit-pupil { width:11px;height:12px; } .kit-hl1 { width:8px;height:8px; } .kit-hl2 { width:4px;height:4px; }
+
+/* MOCHI — with legs + hands */
+.mochi-wrap { position:relative;width:96px;height:142px;animation:f3 3.6s ease-in-out infinite;animation-delay:0.6s; }
+.mochi-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(253,230,138,0.2) 0%,transparent 70%);border-radius:50%; }
+.moc-leg { position:absolute;bottom:4px;width:16px;height:22px;background:radial-gradient(ellipse at 40% 28%,#fef3d0,#fde8a8 50%,#f5c878);border-radius:7px 7px 5px 5px;z-index:2; }
+.moc-leg.l { left:22px;transform:rotate(-5deg); } .moc-leg.r { right:22px;transform:rotate(5deg); }
+.moc-foot { position:absolute;bottom:0;width:22px;height:12px;background:radial-gradient(ellipse at 40% 30%,#fef3d0,#e8a848);border-radius:50%;z-index:3; }
+.moc-foot.l { left:15px; } .moc-foot.r { right:15px; }
+.mochi-body { position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:66px;height:50px;background:radial-gradient(ellipse at 40% 32%,#fffbf0 0%,#fef3d0 22%,#fde8a8 55%,#f5c878 82%,#e8a848 100%);border-radius:40% 40% 35% 35%/45% 45% 38% 38%;box-shadow:0 4px 14px rgba(0,0,0,0.4),inset 0 -6px 14px rgba(120,70,0,0.2);z-index:1; }
+.mochi-paw { position:absolute;bottom:-3px;width:16px;height:11px;background:radial-gradient(ellipse at 40% 30%,#fef3d0,#f5c878);border-radius:50%;z-index:2; }
+.mochi-paw.l { left:10px; } .mochi-paw.r { right:10px; }
+.mochi-head { position:absolute;bottom:62px;left:50%;transform:translateX(-50%);width:84px;height:86px;background:radial-gradient(ellipse at 30% 24%,rgba(255,255,255,0.5) 0%,transparent 24%),radial-gradient(ellipse at 36% 28%,#fffbf0 0%,#fef3d0 18%,#fde8a8 50%,#f0c878 78%,#d8a850 100%);border-radius:50%;box-shadow:0 0 14px rgba(245,200,100,0.35),0 6px 20px rgba(0,0,0,0.4),inset 0 -10px 22px rgba(100,60,0,0.25);z-index:3; }
+.mochi-ear { position:absolute;top:-8px;width:28px;height:32px;background:radial-gradient(ellipse at 40% 30%,#fde8a8,#e8a848 70%);border-radius:50% 50% 25% 25%;z-index:4;animation:earTw 7s ease-in-out infinite;transform-origin:bottom center; }
+.mochi-ear::before { content:'';position:absolute;top:26%;left:24%;width:52%;height:52%;background:rgba(255,180,180,0.65);border-radius:50% 50% 30% 30%; }
+.mochi-ear.l { left:8px; } .mochi-ear.r { right:8px;animation-delay:0.4s; }
+.mochi-nose { position:absolute;bottom:34%;left:50%;transform:translateX(-50%);width:10px;height:7px;background:rgba(200,80,100,0.7);border-radius:50%;z-index:5; }
+.mochi-mouth { position:absolute;bottom:26%;left:50%;transform:translateX(-50%);width:18px;height:8px;border-bottom:2.5px solid rgba(120,60,0,0.4);border-radius:0 0 50% 50%;z-index:5; }
+.mochi-blush { position:absolute;top:56%;width:18px;height:9px;background:rgba(255,130,130,0.25);border-radius:50%;filter:blur(2.5px);z-index:5; }
+.mochi-blush.l { left:7px; } .mochi-blush.r { right:7px; }
+.moc-eye-l { width:28px;height:30px;top:38%;left:10px;z-index:5;animation-delay:0.2s; }
+.moc-eye-r { width:28px;height:30px;top:38%;right:10px;z-index:5;animation-delay:0.9s; }
+.moc-iris  { width:22px;height:24px;background:radial-gradient(ellipse at 38% 30%,#2d2040,#0f0820 60%,#040210 100%); }
+.moc-pupil { width:13px;height:14px; } .moc-hl1 { width:9px;height:9px; } .moc-hl2 { width:4px;height:4px; }
+
+/* BYTE */
+.byte-wrap { position:relative;width:90px;height:126px;animation:f1 3.2s ease-in-out infinite;animation-delay:0.9s; }
+.byte-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(20,184,166,0.32) 0%,transparent 70%);border-radius:50%;animation:glow 2.8s ease-in-out infinite; }
+.byte-foot { position:absolute;bottom:0;width:18px;height:12px;background:radial-gradient(ellipse at 40% 30%,#99f6e4,#0d9488);border-radius:4px;z-index:1; }
+.byte-foot.l { left:18px; } .byte-foot.r { right:18px; }
+.byte-arm { position:absolute;bottom:22px;width:14px;height:30px;background:radial-gradient(ellipse at 40% 28%,#99f6e4,#0d9488);border-radius:6px;z-index:1; }
+.byte-arm.l { left:4px;transform:rotate(8deg); } .byte-arm.r { right:4px;transform:rotate(-8deg); }
+.byte-torso { position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:58px;height:46px;background:radial-gradient(ellipse at 32% 24%,rgba(255,255,255,0.35) 0%,transparent 24%),radial-gradient(ellipse at 36% 28%,#ccfbf1 0%,#5eead4 22%,#14b8a6 52%,#0f766e 78%,#134e4a 100%);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.45),0 0 12px rgba(20,184,166,0.3),inset 0 -6px 14px rgba(0,50,40,0.4);z-index:2; }
+.byte-head { position:absolute;bottom:48px;left:50%;transform:translateX(-50%);width:68px;height:64px;background:radial-gradient(ellipse at 30% 22%,rgba(255,255,255,0.35) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#ccfbf1 0%,#5eead4 22%,#14b8a6 50%,#0f766e 78%,#134e4a 100%);border-radius:20px;box-shadow:0 0 20px rgba(20,184,166,0.5),0 6px 18px rgba(0,0,0,0.5),inset 0 -8px 18px rgba(0,50,40,0.45);z-index:3; }
+.byte-screen { position:absolute;top:18%;left:50%;transform:translateX(-50%);width:52px;height:38px;background:#010f0e;border-radius:10px;border:1.5px solid rgba(20,184,166,0.45);box-shadow:inset 0 0 12px rgba(20,184,166,0.25),0 0 10px rgba(20,184,166,0.35);z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px; }
+.byte-led-eyes { display:flex;gap:10px; }
+.byte-led { width:13px;height:10px;border-radius:3px;background:linear-gradient(135deg,#6ee7b7,#10b981);box-shadow:0 0 8px rgba(52,211,153,0.9);position:relative; }
+.byte-led::before { content:'';position:absolute;top:1px;left:1px;width:4px;height:3px;background:rgba(255,255,255,0.6);border-radius:1px; }
+.byte-led-smile { width:24px;height:6px;border-bottom:2.5px solid rgba(52,211,153,0.7);border-radius:0 0 50% 50%;box-shadow:0 2px 6px rgba(52,211,153,0.4); }
+.byte-antenna { position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:4px;height:18px;background:linear-gradient(to bottom,#99f6e4,#14b8a6);border-radius:2px;animation:antennaB 2.6s ease-in-out infinite;transform-origin:bottom center;z-index:5; }
+.byte-antenna::after { content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:radial-gradient(ellipse at 35% 30%,#e0fffe,#14b8a6);border-radius:50%;box-shadow:0 0 10px rgba(20,184,166,0.9); }
+
+/* EMBER — with legs + clawed feet */
+.ember-wrap { position:relative;width:102px;height:150px;animation:f2 4s ease-in-out infinite;animation-delay:0.4s; }
+.ember-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(220,38,38,0.3) 0%,transparent 70%);border-radius:50%;animation:glow 3s ease-in-out infinite; }
+.emb-leg { position:absolute;bottom:6px;width:18px;height:24px;background:radial-gradient(ellipse at 40% 28%,#fca5a5,#ef4444 50%,#b91c1c);border-radius:7px 7px 5px 5px;z-index:2; }
+.emb-leg.l { left:20px;transform:rotate(-5deg); } .emb-leg.r { right:20px;transform:rotate(5deg); }
+.emb-foot { position:absolute;bottom:0;width:26px;height:14px;background:radial-gradient(ellipse at 40% 30%,#fca5a5,#b91c1c);border-radius:50%;z-index:3; }
+.emb-foot.l { left:13px; } .emb-foot.r { right:13px; }
+.emb-claw { position:absolute;bottom:-5px;width:5px;height:7px;background:#7f1d1d;border-radius:0 0 3px 3px;z-index:4; }
+.emb-claw:nth-child(1) { left:2px; } .emb-claw:nth-child(2) { left:10px; } .emb-claw:nth-child(3) { right:2px; }
+.ember-tail { position:absolute;bottom:24px;left:20%;width:24px;height:40px;background:linear-gradient(to top,#7f1d1d,#b91c1c 60%,#ef4444 100%);border-radius:40% 60% 30% 70%;transform:rotate(-20deg);transform-origin:top right;z-index:0; }
+.ember-body { position:absolute;bottom:28px;left:50%;transform:translateX(-50%);width:78px;height:70px;background:radial-gradient(ellipse at 32% 24%,rgba(255,180,150,0.35) 0%,transparent 24%),radial-gradient(ellipse at 36% 28%,#fee2e2 0%,#fca5a5 12%,#ef4444 40%,#b91c1c 70%,#7f1d1d 100%);border-radius:45% 45% 40% 40%/50% 50% 42% 42%;box-shadow:0 0 22px rgba(220,38,38,0.6),0 6px 20px rgba(0,0,0,0.5),inset 0 -10px 22px rgba(80,0,0,0.5);z-index:1; }
+.ember-wing { position:absolute;top:14%;width:28px;height:50px;background:linear-gradient(to top,rgba(127,29,29,0.7),rgba(239,68,68,0.5));clip-path:polygon(0% 0%,100% 20%,85% 100%,0% 78%);z-index:0;animation:wingF 2.4s ease-in-out infinite; }
+.ember-wing.l { left:-4px;transform-origin:right center;transform:scaleX(-1); }
+.ember-wing.r { right:-4px;transform-origin:left center;animation-delay:0.2s; }
+.ember-head { position:absolute;bottom:84px;left:50%;transform:translateX(-50%);width:78px;height:80px;background:radial-gradient(ellipse at 32% 24%,rgba(255,200,180,0.35) 0%,transparent 24%),radial-gradient(ellipse at 36% 28%,#fee2e2 0%,#fca5a5 14%,#ef4444 44%,#b91c1c 72%,#7f1d1d 100%);border-radius:50%;box-shadow:0 0 18px rgba(220,38,38,0.45),0 6px 20px rgba(0,0,0,0.5),inset 0 -10px 22px rgba(80,0,0,0.45);z-index:2; }
+.ember-horn { position:absolute;top:-10px;width:12px;height:20px;background:linear-gradient(to top,#b91c1c,#fca5a5);clip-path:polygon(40% 0%,0% 100%,100% 100%);z-index:4; }
+.ember-horn.l { left:18px;transform:rotate(-6deg); } .ember-horn.r { right:18px;transform:rotate(6deg); }
+.emb-eye-l { width:28px;height:30px;top:37%;left:9px;z-index:4;animation-delay:0.7s; }
+.emb-eye-r { width:28px;height:30px;top:37%;right:9px;z-index:4;animation-delay:1.3s; }
+.emb-iris  { width:22px;height:24px;background:radial-gradient(ellipse at 38% 30%,#fef3c7,#d97706 40%,#92400e 80%,#3d1c00 100%); }
+.emb-pupil { width:12px;height:13px; } .emb-hl1 { width:8px;height:8px; } .emb-hl2 { width:4px;height:4px; }
+
+/* MIST */
+.mist-wrap { position:relative;width:100px;height:116px;animation:f3 4.2s ease-in-out infinite;animation-delay:0.2s; }
+.mist-glow { position:absolute;inset:-20px;background:radial-gradient(ellipse,rgba(186,230,253,0.38) 0%,rgba(125,211,252,0.15) 45%,transparent 72%);border-radius:50%;animation:glow 3.5s ease-in-out infinite; }
+.mist-puff { position:absolute;border-radius:50%;background:radial-gradient(ellipse at 40% 35%,rgba(255,255,255,0.9),rgba(186,230,253,0.7));box-shadow:0 0 10px rgba(186,230,253,0.5); }
+.mist-puff.p1 { width:30px;height:28px;top:-10px;left:12px; }
+.mist-puff.p2 { width:34px;height:30px;top:-12px;right:10px; }
+.mist-puff.p3 { width:22px;height:20px;top:4px;left:-4px; }
+.mist-puff.p4 { width:22px;height:20px;top:4px;right:-4px; }
+.mist-body { position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:90px;height:88px;background:radial-gradient(ellipse at 32% 24%,rgba(255,255,255,0.7) 0%,transparent 26%),radial-gradient(ellipse at 38% 30%,#f0f9ff 0%,#e0f2fe 18%,#bae6fd 40%,#7dd3fc 65%,#38bdf8 85%,#0284c7 100%);border-radius:50%;box-shadow:0 0 28px rgba(125,211,252,0.6),0 0 60px rgba(56,189,248,0.3),0 6px 20px rgba(0,0,0,0.4),inset 0 -10px 22px rgba(2,132,199,0.3);animation:puff 3s ease-in-out infinite; }
+.mist-moon { position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:24px;height:22px;z-index:5; }
+.mist-moon::before { content:'';position:absolute;inset:0;background:linear-gradient(135deg,#fef9c3,#fde68a 50%,#f59e0b 100%);border-radius:50%;box-shadow:0 0 10px rgba(253,230,138,0.8); }
+.mist-moon::after { content:'';position:absolute;top:2px;right:-2px;width:18px;height:18px;background:radial-gradient(ellipse,#030310,#050515);border-radius:50%; }
+.mis-eye-l { width:30px;height:32px;top:40%;left:12px;z-index:5;animation-delay:0.4s; }
+.mis-eye-r { width:30px;height:32px;top:40%;right:12px;z-index:5;animation-delay:1.0s; }
+.mis-iris  { width:24px;height:26px;background:radial-gradient(ellipse at 38% 30%,#bae6fd,#0284c7 45%,#075985 80%,#0c4a6e 100%); }
+.mis-pupil { width:13px;height:14px; } .mis-hl1 { width:9px;height:9px; } .mis-hl2 { width:4px;height:4px; }
+.mist-smile { position:absolute;bottom:28%;left:50%;transform:translateX(-50%);width:20px;height:9px;border-bottom:2.5px solid rgba(2,132,199,0.4);border-radius:0 0 50% 50%;z-index:6; }
+
+/* MARCO */
+.marco-wrap { position:relative;width:96px;height:120px;animation:f2 3.7s ease-in-out infinite;animation-delay:0.8s; }
+.marco-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(245,158,11,0.28) 0%,transparent 70%);border-radius:50%;animation:glow 3.2s ease-in-out infinite; }
+.marco-body { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:88px;height:90px;background:radial-gradient(ellipse at 32% 24%,rgba(255,255,255,0.42) 0%,transparent 24%),radial-gradient(ellipse at 36% 28%,#fffbeb 0%,#fde68a 16%,#f59e0b 44%,#b45309 72%,#78350f 100%);border-radius:50%;box-shadow:0 0 24px rgba(245,158,11,0.6),0 0 50px rgba(180,83,9,0.3),0 8px 22px rgba(0,0,0,0.5),inset 0 -12px 24px rgba(60,20,0,0.45);animation:breathe 3.2s ease-in-out infinite; }
+.marco-grid-h { position:absolute;height:1.5px;border-radius:1px;background:rgba(120,53,15,0.22);left:10%;right:10%; }
+.marco-grid-v { position:absolute;width:1.5px;border-radius:1px;background:rgba(120,53,15,0.22);top:10%;bottom:10%; }
+.marco-grid-h.h1 { top:35%; } .marco-grid-h.h2 { top:55%; }
+.marco-grid-v.v1 { left:38%; } .marco-grid-v.v2 { left:62%; }
+.marco-hat { position:absolute;top:-18px;left:50%;transform:translateX(-50%);width:60px;z-index:3; }
+.marco-hat-top { height:18px;background:linear-gradient(135deg,#92400e,#78350f 60%,#4d2a0f 100%);border-radius:6px 6px 2px 2px;box-shadow:0 0 6px rgba(0,0,0,0.4); }
+.marco-hat-brim { height:7px;background:linear-gradient(to bottom,#a16207,#78350f);border-radius:3px;margin-top:-1px; }
+.marco-hat-band { position:absolute;top:14px;left:0;right:0;height:4px;background:rgba(245,158,11,0.6);border-radius:1px; }
+.mar-eye-l { width:28px;height:30px;top:40%;left:11px;z-index:4;animation-delay:0.6s; }
+.mar-eye-r { width:28px;height:30px;top:40%;right:11px;z-index:4;animation-delay:1.2s; }
+.mar-iris  { width:22px;height:24px;background:radial-gradient(ellipse at 38% 30%,#fef3c7,#b45309 40%,#78350f 80%,#2c1200 100%); }
+.mar-pupil { width:12px;height:13px; } .mar-hl1 { width:8px;height:8px; } .mar-hl2 { width:4px;height:4px; }
+.marco-smile { position:absolute;bottom:28%;left:50%;transform:translateX(-50%);width:24px;height:11px;border-bottom:2.5px solid rgba(60,20,0,0.45);border-radius:0 0 50% 50%;z-index:5; }
+
+/* ASTRO */
+.astro-wrap { position:relative;width:96px;height:126px;animation:f3 3.3s ease-in-out infinite;animation-delay:0.5s; }
+.astro-glow { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(96,165,250,0.32) 0%,transparent 70%);border-radius:50%;animation:glow 2.8s ease-in-out infinite; }
+.astro-foot { position:absolute;bottom:0;width:20px;height:12px;background:radial-gradient(ellipse at 40% 30%,#f0f9ff,#bfdbfe);border-radius:4px;z-index:1; }
+.astro-foot.l { left:16px; } .astro-foot.r { right:16px; }
+.astro-arm { position:absolute;bottom:22px;width:14px;height:32px;background:radial-gradient(ellipse at 40% 28%,#dbeafe,#93c5fd);border-radius:6px;z-index:1; }
+.astro-arm.l { left:4px;transform:rotate(6deg); } .astro-arm.r { right:4px;transform:rotate(-6deg); }
+.astro-torso { position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:62px;height:48px;background:radial-gradient(ellipse at 30% 22%,rgba(255,255,255,0.5) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#f8faff 0%,#dbeafe 22%,#bfdbfe 50%,#93c5fd 74%,#60a5fa 100%);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4),0 0 12px rgba(96,165,250,0.3),inset 0 -6px 14px rgba(30,60,120,0.3);z-index:2; }
+.astro-head { position:absolute;bottom:50px;left:50%;transform:translateX(-50%);width:72px;height:66px;background:radial-gradient(ellipse at 28% 20%,rgba(255,255,255,0.6) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#f8faff 0%,#e0f2ff 20%,#c3dffe 48%,#93c5fd 72%,#60a5fa 100%);border-radius:20px;box-shadow:0 0 22px rgba(96,165,250,0.55),0 6px 18px rgba(0,0,0,0.5),inset 0 -8px 18px rgba(30,60,120,0.35);z-index:3; }
+.astro-phone { position:absolute;top:22%;width:16px;height:22px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);border-radius:6px;box-shadow:0 0 8px rgba(59,130,246,0.5);z-index:2; }
+.astro-phone.l { left:-6px; } .astro-phone.r { right:-6px; }
+.astro-phone-band { position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:80px;height:12px;border:3px solid rgba(59,130,246,0.5);border-bottom:none;border-radius:6px 6px 0 0;z-index:2; }
+.astro-visor { position:absolute;top:18%;left:50%;transform:translateX(-50%);width:54px;height:38px;background:#04101f;border-radius:14px;border:2px solid rgba(96,165,250,0.5);box-shadow:inset 0 0 14px rgba(96,165,250,0.35),0 0 12px rgba(96,165,250,0.45);z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px; }
+.astro-visor-eyes { display:flex;gap:12px; }
+.astro-visor-eye { width:14px;height:10px;border-radius:3px;background:linear-gradient(135deg,#93c5fd,#60a5fa);box-shadow:0 0 8px rgba(96,165,250,0.9);position:relative; }
+.astro-visor-eye::before { content:'';position:absolute;top:1px;left:1px;width:4px;height:3px;background:rgba(255,255,255,0.65);border-radius:1px; }
+.astro-visor-smile { width:22px;height:5px;border-bottom:2px solid rgba(147,197,253,0.8);border-radius:0 0 50% 50%; }
+
+/* =============================================
+   HUMAN FAMILY — Kaito + Yuki
+============================================= */
+.kaito-wrap { position:relative;width:92px;height:128px;animation:f2 4s ease-in-out infinite; }
+.kaito-jacket { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:80px;height:38px;background:linear-gradient(to bottom,#1e293b,#0f172a);border-radius:10px 10px 0 0;box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.kaito-jacket::before { content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);width:18px;height:14px;background:linear-gradient(to bottom,#334155,#1e293b);border-radius:0 0 4px 4px; }
+.kaito-neck { position:absolute;bottom:34px;left:50%;transform:translateX(-50%);width:20px;height:18px;background:radial-gradient(ellipse at 40% 30%,#f0c896,#c47840);border-radius:4px; }
+.kaito-head { position:absolute;bottom:44px;left:50%;transform:translateX(-50%);width:70px;height:76px;background:radial-gradient(ellipse at 40% 32%,#ffe8c8 0%,#f0c090 22%,#d4884a 62%,#a05e30 100%);border-radius:46% 46% 42% 42%/50% 50% 44% 44%;box-shadow:0 4px 18px rgba(0,0,0,0.4),inset 0 -6px 16px rgba(80,40,10,0.25); }
+.kaito-head::before { content:'';position:absolute;top:10%;left:16%;width:29%;height:21%;background:radial-gradient(ellipse,rgba(255,255,255,0.55) 0%,transparent 100%);border-radius:50%;transform:rotate(-14deg); }
+.kaito-hair { position:absolute;top:-5px;left:-2px;right:-2px;height:38px;background:linear-gradient(160deg,#0f0800 0%,#1a1000 50%,#100900 100%);border-radius:50% 50% 0 0;z-index:3; }
+.kaito-hair-side { position:absolute;top:8px;right:-6px;width:24px;height:28px;background:linear-gradient(135deg,#0f0800,#1a1000);border-radius:0 40% 60% 0;z-index:2;animation:hairDrift 4s ease-in-out infinite;transform-origin:top left; }
+.kaito-ear { position:absolute;top:46%;width:12px;height:16px;background:radial-gradient(ellipse at 40% 30%,#f0c896,#c47840);border-radius:50%; }
+.kaito-ear.l { left:-5px; } .kaito-ear.r { right:-5px; }
+.kaito-brow { position:absolute;top:32%;height:2.5px;background:#1a0a02;border-radius:1px; }
+.kaito-brow.l { left:12px;width:20px;transform:rotate(-5deg); }
+.kaito-brow.r { right:12px;width:20px;transform:rotate(5deg); }
+.kaito-eye { position:absolute;top:39%;width:22px;height:14px;background:radial-gradient(ellipse at 42% 35%,#3d2010,#0f0600 65%);border-radius:40% 40% 52% 52%;box-shadow:0 1px 4px rgba(0,0,0,0.5); }
+.kaito-eye.l { left:10px; } .kaito-eye.r { right:10px; }
+.kaito-eye::before { content:'';position:absolute;top:12%;left:58%;width:5px;height:5px;background:rgba(255,255,255,0.65);border-radius:50%; }
+.kaito-nose { position:absolute;bottom:38%;left:50%;transform:translateX(-50%);width:10px;height:5px;border-bottom:2px solid rgba(100,50,10,0.35);border-radius:0 0 50% 50%; }
+.kaito-mouth { position:absolute;bottom:26%;left:50%;transform:translateX(-50%) translateX(3px);width:20px;height:8px;border-bottom:2px solid rgba(100,50,10,0.5);border-radius:0 0 80% 30%; }
+
+.yuki-wrap { position:relative;width:92px;height:128px;animation:f1 3.8s ease-in-out infinite;animation-delay:0.5s; }
+.yuki-jacket { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:76px;height:36px;background:linear-gradient(to bottom,#4a1942,#2d0e28);border-radius:10px 10px 0 0;box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+.yuki-neck { position:absolute;bottom:32px;left:50%;transform:translateX(-50%);width:18px;height:16px;background:radial-gradient(ellipse at 40% 30%,#fce8d8,#e8b48a);border-radius:4px; }
+.yuki-head { position:absolute;bottom:40px;left:50%;transform:translateX(-50%);width:68px;height:78px;background:radial-gradient(ellipse at 38% 30%,#fff0e8 0%,#fcd8bc 22%,#e8a878 60%,#c07040 100%);border-radius:46% 46% 40% 40%/52% 52% 42% 42%;box-shadow:0 4px 18px rgba(0,0,0,0.35),inset 0 -6px 16px rgba(60,30,10,0.2); }
+.yuki-hair-back { position:absolute;top:-8px;left:-8px;right:-16px;bottom:-20px;background:linear-gradient(170deg,#1a0f05,#0d0800);border-radius:50% 50% 30% 30%;z-index:0; }
+.yuki-hair-top { position:absolute;top:-8px;left:-2px;right:-2px;height:36px;background:linear-gradient(160deg,#100a02,#1a1004);border-radius:50% 50% 0 0;z-index:3; }
+.yuki-hair-bang { position:absolute;top:14px;left:-4px;width:22px;height:24px;background:linear-gradient(130deg,#100a02,#1a1004);border-radius:0 30% 60% 0;z-index:4; }
+.yuki-ear { position:absolute;top:48%;width:11px;height:15px;background:radial-gradient(ellipse at 40% 30%,#fcd8bc,#c07040);border-radius:50%;z-index:2; }
+.yuki-ear.l { left:-4px;z-index:0; } .yuki-ear.r { right:-4px; }
+.yuki-brow { position:absolute;top:30%;height:2px;border-radius:1px;background:#1a0a02; }
+.yuki-brow.l { left:12px;width:20px;transform:rotate(-7deg); }
+.yuki-brow.r { right:12px;width:20px;transform:rotate(7deg); }
+.yuki-eye { position:absolute;top:38%;width:22px;height:15px;background:radial-gradient(ellipse at 40% 33%,#3a1a3a,#0a0208 70%);border-radius:38% 38% 54% 54%;box-shadow:0 1px 5px rgba(0,0,0,0.6); }
+.yuki-eye.l { left:10px; } .yuki-eye.r { right:10px; }
+.yuki-eye::before { content:'';position:absolute;top:12%;left:14%;width:6px;height:6px;background:rgba(255,255,255,0.7);border-radius:50%; }
+.yuki-eye::after { content:'';position:absolute;top:14%;right:16%;width:3px;height:3px;background:rgba(255,255,255,0.45);border-radius:50%; }
+.yuki-lash { position:absolute;top:36%;height:2px;border-radius:1px;background:rgba(10,2,8,0.8); }
+.yuki-lash.l { left:10px;width:22px;transform:rotate(-2deg); }
+.yuki-lash.r { right:10px;width:22px;transform:rotate(2deg); }
+.yuki-nose { position:absolute;bottom:36%;left:50%;transform:translateX(-50%);width:9px;height:4px;border-bottom:1.5px solid rgba(80,40,10,0.3);border-radius:0 0 50% 50%; }
+.yuki-lips { position:absolute;bottom:24%;left:50%;transform:translateX(-50%);width:18px;height:7px;background:rgba(180,60,80,0.4);border-radius:50% 50% 60% 60%; }
+.yuki-blush { position:absolute;top:56%;width:14px;height:7px;background:rgba(255,130,130,0.18);border-radius:50%;filter:blur(2px); }
+.yuki-blush.l { left:6px; } .yuki-blush.r { right:6px; }
+
+/* =============================================
+   COMBAT FAMILY — Vex + Seraph
+============================================= */
+.vex-wrap { position:relative;width:92px;height:116px;animation:f2 4.5s ease-in-out infinite; }
+.vex-aura { position:absolute;inset:-16px;background:radial-gradient(ellipse,rgba(160,0,0,0.2) 0%,transparent 70%);border-radius:50%;animation:glow 2.5s ease-in-out infinite; }
+.vex-horn { position:absolute;top:-22px;width:13px;height:34px;background:linear-gradient(to top,#3d0000,#750000 60%,#a00000 100%);clip-path:polygon(28% 0%,0% 100%,100% 100%);filter:drop-shadow(0 0 6px rgba(180,0,0,0.5)); }
+.vex-horn.l { left:15px;transform:rotate(-6deg); } .vex-horn.r { right:15px;transform:rotate(6deg); }
+.vex-body { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:82px;height:96px;background:radial-gradient(ellipse at 34% 24%,#400008 0%,#1a0004 30%,#0d0002 65%,#050001 100%);border-radius:36% 36% 44% 44%/32% 32% 48% 48%;box-shadow:0 0 30px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7),inset 0 -12px 26px rgba(0,0,0,0.65);animation:combatPulse 3s ease-in-out infinite; }
+.vex-body::before { content:'';position:absolute;inset:0;border-radius:inherit;border:1.5px solid transparent;border-right-color:rgba(255,40,0,0.3);border-bottom-color:rgba(255,20,0,0.15); }
+.vex-body::after { content:'';position:absolute;top:7%;left:13%;width:25%;height:17%;background:radial-gradient(ellipse,rgba(255,80,40,0.22) 0%,transparent 100%);border-radius:50%;transform:rotate(-14deg); }
+.vex-brow { position:absolute;top:31%;height:3.5px;background:rgba(0,0,0,0.8);border-radius:1px; }
+.vex-brow.l { left:10px;width:26px;transform:rotate(-14deg);transform-origin:right center; }
+.vex-brow.r { right:10px;width:26px;transform:rotate(14deg);transform-origin:left center; }
+.vex-eye { position:absolute;top:41%;width:26px;height:7px;background:linear-gradient(to right,#cc0000,#ff5500,#cc0000);border-radius:50%;box-shadow:0 0 14px rgba(255,50,0,0.95),0 0 28px rgba(200,0,0,0.5);display:flex;align-items:center;justify-content:center; }
+.vex-eye.l { left:10px; } .vex-eye.r { right:10px; }
+.vex-slit { width:3px;height:200%;background:rgba(0,0,0,0.65);border-radius:1px; }
+.vex-scar { position:absolute;top:36%;left:53%;width:2px;height:22px;background:linear-gradient(to bottom,rgba(255,60,0,0.55),rgba(200,0,0,0.15));border-radius:1px;transform:rotate(4deg); }
+.vex-collar { position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:50px;height:16px;background:linear-gradient(to bottom,#1a0004,#0d0002);border-radius:4px 4px 0 0;border-top:2px solid rgba(180,0,0,0.35); }
+
+.seraph-wrap { position:relative;width:96px;height:116px;animation:f1 4s ease-in-out infinite;animation-delay:0.4s; }
+.seraph-halo { position:absolute;top:-12px;left:50%;transform:translateX(-50%);width:54px;height:12px;border:2.5px solid rgba(255,215,0,0.7);border-radius:50%;box-shadow:0 0 10px rgba(255,200,0,0.6),0 0 20px rgba(255,160,0,0.3);animation:glow 2s ease-in-out infinite; }
+.seraph-wing { position:absolute;top:16%;width:22px;height:52px;background:linear-gradient(to top,rgba(253,230,138,0.15),rgba(255,255,255,0.55));clip-path:polygon(15% 0%,100% 15%,90% 100%,0% 75%);filter:drop-shadow(0 0 6px rgba(255,200,0,0.4)); }
+.seraph-wing.l { left:-4px;transform:scaleX(-1); } .seraph-wing.r { right:-4px; }
+.seraph-body { position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:78px;height:92px;background:radial-gradient(ellipse at 36% 26%,#fffef5 0%,#fef9e0 14%,#fde68a 36%,#d97706 68%,#92400e 100%);border-radius:42% 42% 46% 46%/44% 44% 48% 48%;animation:seraphGlow 3s ease-in-out infinite; }
+.seraph-body::before { content:'';position:absolute;top:8%;left:14%;width:28%;height:20%;background:radial-gradient(ellipse,rgba(255,255,255,0.75) 0%,transparent 100%);border-radius:50%;transform:rotate(-16deg); }
+.seraph-mark { position:absolute;top:14%;left:50%;transform:translateX(-50%);width:10px;height:10px;background:radial-gradient(ellipse at 40% 35%,#fff176,#f59e0b);clip-path:polygon(50% 0%,0% 100%,100% 100%);filter:drop-shadow(0 0 4px rgba(255,200,0,0.7)); }
+.seraph-brow { position:absolute;top:33%;height:3px;border-radius:1px;background:rgba(80,40,0,0.65); }
+.seraph-brow.l { left:11px;width:22px;transform:rotate(-10deg);transform-origin:right center; }
+.seraph-brow.r { right:11px;width:22px;transform:rotate(10deg);transform-origin:left center; }
+.seraph-eye { position:absolute;top:41%;width:24px;height:9px;background:radial-gradient(ellipse at 42% 32%,#fffde7,#fbbf24 40%,#d97706 80%);border-radius:50%;box-shadow:0 0 12px rgba(255,200,0,0.9),0 0 24px rgba(255,160,0,0.45); }
+.seraph-eye.l { left:11px; } .seraph-eye.r { right:11px; }
+.seraph-eye::before { content:'';position:absolute;top:5%;left:30%;width:40%;height:90%;background:rgba(80,40,0,0.35);border-radius:50%; }
+.seraph-collar { position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:46px;height:14px;background:linear-gradient(to bottom,#d97706,#92400e);border-radius:4px 4px 0 0;border-top:2px solid rgba(255,215,0,0.5);box-shadow:0 0 8px rgba(255,200,0,0.3); }
+
+/* =============================================
+   IDLE BEHAVIOR PANEL
+============================================= */
+.idle-panel { background:rgba(255,255,255,0.03); border:1.5px solid rgba(255,255,255,0.07); border-radius:24px; margin:8px 16px 24px; padding:20px 16px; }
+.idle-panel h3 { font-size:16px; font-weight:700; margin-bottom:4px; }
+.idle-panel p  { font-size:12px; color:rgba(240,240,248,0.38); margin-bottom:16px; line-height:1.5; }
+.idle-demo-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.idle-demo-row:last-child { border-bottom:none; }
+.idle-demo-char { width:80px; height:90px; display:flex; align-items:flex-end; justify-content:center; flex-shrink:0; position:relative; }
+.idle-info { flex:1; }
+.idle-name { font-size:13px; font-weight:700; margin-bottom:3px; }
+.idle-desc { font-size:11px; color:rgba(240,240,248,0.4); line-height:1.5; }
+.idle-tag  { display:inline-block; font-size:10px; font-weight:600; letter-spacing:0.05em; text-transform:uppercase; padding:2px 8px; border-radius:8px; background:rgba(139,92,246,0.12); color:#c4b5fd; border:1px solid rgba(139,92,246,0.22); margin-top:5px; }
+.idle-tag.active { background:rgba(139,92,246,0.22); }
+
+/* APPROVE */
+.approve-section { padding:0 16px 30px; }
+.approve-card { background:rgba(255,255,255,0.03); border:1.5px solid rgba(255,255,255,0.07); border-radius:24px; padding:24px 20px; text-align:center; }
+.approve-card h2 { font-size:18px; font-weight:700; margin-bottom:8px; }
+.approve-card p  { font-size:13px; color:rgba(240,240,248,0.42); margin-bottom:20px; line-height:1.6; }
+.approve-btn { width:100%; padding:16px; background:linear-gradient(135deg,#7c3aed,#6d28d9); border:none; border-radius:16px; color:white; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 20px rgba(139,92,246,0.5); transition:all 0.15s; }
+.approve-btn:active { transform:scale(0.98); }
+.sel-info { font-size:13px; color:rgba(196,181,253,0.8); margin-bottom:16px; }
+
+.sticky { position:fixed; bottom:0; left:0; right:0; background:rgba(3,3,16,0.95); backdrop-filter:blur(16px); border-top:1px solid rgba(255,255,255,0.07); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; z-index:100; }
+.sticky span { font-size:13px; color:rgba(240,240,248,0.45); }
+.sticky strong { color:#c4b5fd; }
+.sticky button { padding:10px 24px; background:linear-gradient(135deg,#7c3aed,#6d28d9); border:none; border-radius:12px; color:white; font-size:14px; font-weight:600; cursor:pointer; }
+
+/* =============================================
+   CRASH BANDICOOT — full CSS character
+============================================= */
+.crash-wrap { position:relative;width:106px;height:148px;animation:f1 3.0s ease-in-out infinite;animation-delay:0.15s; }
+.crash-glow { position:absolute;inset:-14px;background:radial-gradient(ellipse,rgba(234,88,12,0.4) 0%,transparent 70%);border-radius:50%;animation:glow 2.6s ease-in-out infinite; }
+/* shoes */
+.crash-shoe { position:absolute;bottom:0;width:32px;height:16px;background:radial-gradient(ellipse at 38% 38%,#a83200,#6b1a00);border-radius:50% 50% 42% 42%/55% 55% 40% 40%;z-index:1; }
+.crash-shoe::before { content:'';position:absolute;top:3px;left:4px;right:4px;height:5px;background:rgba(255,255,255,0.14);border-radius:50%; }
+.crash-shoe::after { content:'';position:absolute;bottom:0;left:2px;right:2px;height:5px;background:rgba(255,255,255,0.12);border-radius:0 0 50% 50%; }
+.crash-shoe.l { left:10px; } .crash-shoe.r { right:10px; }
+/* jeans legs */
+.crash-jeans { position:absolute;bottom:12px;width:22px;height:30px;background:linear-gradient(to bottom,#1e5bbf,#1546a0 60%,#0f3380);border-radius:6px 6px 3px 3px;z-index:2; }
+.crash-jeans.l { left:14px;transform:rotate(-4deg); } .crash-jeans.r { right:14px;transform:rotate(4deg); }
+/* belt + shorts base */
+.crash-shorts { position:absolute;bottom:38px;left:50%;transform:translateX(-50%);width:82px;height:24px;background:linear-gradient(to bottom,#1e5bbf,#163d99);border-radius:12px 12px 6px 6px;z-index:3; }
+.crash-belt { position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:78px;height:9px;background:#5a2d00;border-radius:4px;z-index:4; }
+.crash-belt::before { content:'';position:absolute;left:50%;transform:translateX(-50%);top:-4px;width:14px;height:16px;background:radial-gradient(ellipse at 40% 35%,#c87020,#8b4500);border-radius:4px;box-shadow:0 0 5px rgba(200,120,0,0.5); }
+/* torso */
+.crash-torso { position:absolute;bottom:60px;left:50%;transform:translateX(-50%);width:86px;height:52px;background:radial-gradient(ellipse at 34% 26%,#ffe0b0 0%,#f87c20 22%,#d95000 54%,#a03010 80%,#6a1800 100%);border-radius:46% 46% 38% 38%/50% 50% 40% 40%;box-shadow:0 0 16px rgba(234,88,12,0.4),0 4px 14px rgba(0,0,0,0.5),inset 0 -10px 20px rgba(60,10,0,0.4);z-index:3; }
+/* cream belly */
+.crash-belly { position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:50px;height:32px;background:radial-gradient(ellipse at 50% 40%,#fff4e6,#ffddb0 65%);border-radius:50%;z-index:4; }
+/* arms */
+.crash-arm { position:absolute;bottom:68px;width:18px;height:44px;background:radial-gradient(ellipse at 40% 28%,#ffe0b0,#f87c20 50%,#d95000);border-radius:9px;z-index:2; }
+.crash-arm.l { left:0;transform:rotate(20deg);transform-origin:top center; }
+.crash-arm.r { right:0;transform:rotate(-20deg);transform-origin:top center; }
+/* white gloves */
+.crash-glove { position:absolute;width:28px;height:24px;background:radial-gradient(ellipse at 38% 32%,#ffffff,#e8e8e8 70%);border-radius:50%;box-shadow:0 3px 8px rgba(0,0,0,0.35),inset 0 -4px 8px rgba(0,0,0,0.1);z-index:3; }
+.crash-glove::before { content:'';position:absolute;top:3px;left:4px;width:8px;height:6px;background:rgba(255,255,255,0.7);border-radius:50%; }
+.crash-glove.l { left:-10px;bottom:62px; } .crash-glove.r { right:-10px;bottom:62px; }
+/* head */
+.crash-head { position:absolute;bottom:104px;left:50%;transform:translateX(-50%);width:94px;height:78px;background:radial-gradient(ellipse at 30% 22%,rgba(255,220,170,0.5) 0%,transparent 22%),radial-gradient(ellipse at 36% 28%,#ffe0b0 0%,#f87c20 22%,#d95000 52%,#a03010 78%,#6a1800 100%);border-radius:50% 50% 48% 48%/52% 52% 48% 48%;box-shadow:0 0 20px rgba(234,88,12,0.5),0 6px 20px rgba(0,0,0,0.55),inset 0 -12px 26px rgba(60,10,0,0.45);z-index:5; }
+.crash-head::before { content:'';position:absolute;top:7%;left:11%;width:24%;height:17%;background:radial-gradient(ellipse,rgba(255,255,255,0.6) 0%,transparent 100%);border-radius:50%;transform:rotate(-14deg); }
+/* spiky hair */
+.crash-hair { position:absolute;top:-22px;left:50%;transform:translateX(-50%);display:flex;justify-content:center;align-items:flex-end;gap:3px;z-index:7; }
+.crash-spike { background:linear-gradient(to top,#b84000,#e86000 50%,#f8a060 100%);clip-path:polygon(50% 0%,0% 100%,100% 100%); }
+.crash-spike:nth-child(1) { width:13px;height:18px;transform:rotate(-22deg); }
+.crash-spike:nth-child(2) { width:14px;height:24px;transform:rotate(-10deg); }
+.crash-spike:nth-child(3) { width:15px;height:28px; }
+.crash-spike:nth-child(4) { width:14px;height:24px;transform:rotate(10deg); }
+.crash-spike:nth-child(5) { width:13px;height:18px;transform:rotate(22deg); }
+/* wide snout */
+.crash-snout { position:absolute;bottom:18%;left:50%;transform:translateX(-50%);width:58px;height:38px;background:radial-gradient(ellipse at 50% 42%,#fff4e6,#ffddb0 50%,#e8b880 80%);border-radius:50% 50% 55% 55%/46% 46% 54% 54%;z-index:6; }
+/* big grin */
+.crash-mouth { position:absolute;bottom:18%;left:50%;transform:translateX(-50%);width:42px;height:16px;border-bottom:3px solid rgba(60,10,0,0.55);border-radius:0 0 50% 50%;z-index:7; }
+.crash-tooth { position:absolute;bottom:20%;width:8px;height:10px;background:#fff;border-radius:2px 2px 3px 3px;z-index:8; }
+.crash-tooth.l { left:50%;transform:translateX(-14px); } .crash-tooth.r { left:50%;transform:translateX(6px); }
+/* nose */
+.crash-nose { position:absolute;bottom:40%;left:50%;transform:translateX(-50%);width:16px;height:10px;background:#1a0800;border-radius:50%;z-index:7; }
+.crash-nose::before { content:'';position:absolute;top:2px;left:3px;width:5px;height:5px;background:rgba(255,255,255,0.35);border-radius:50%; }
+/* eyes */
+.crs-eye-l { width:30px;height:32px;top:28%;left:9px;z-index:6;animation-delay:0.3s; }
+.crs-eye-r { width:30px;height:32px;top:28%;right:9px;z-index:6;animation-delay:0.8s; }
+.crs-iris { width:24px;height:26px;background:radial-gradient(ellipse at 38% 30%,#7c4010,#2a0e00 55%,#080200 100%); }
+.crs-pupil { width:13px;height:14px; } .crs-hl1 { width:9px;height:9px; } .crs-hl2 { width:4px;height:4px; }
+/* expressive brows */
+.crash-brow { position:absolute;height:5px;background:#1a0800;border-radius:3px;z-index:7; }
+.crash-brow.l { top:21%;left:10px;width:26px;transform:rotate(-14deg);transform-origin:right; }
+.crash-brow.r { top:21%;right:10px;width:26px;transform:rotate(14deg);transform-origin:left; }
+</style>
+</head>
+<body>
+<div class="bg-atmo">
+  <div class="bokeh bk1"></div><div class="bokeh bk2"></div>
+  <div class="bokeh bk3"></div><div class="bokeh bk4"></div>
+</div>
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-tag">Legs + Crash Bandicoot — v7</div>
+    <h1>14 Characters. 3 Tiers.</h1>
+    <p>Soft · Stylish · Combat — legs, hands, Crash Bandicoot added</p>
+  </div>
+
+  <!-- SOFT TIER -->
+  <div class="tier-label">
+    <div class="tier-pill pill-s">Soft</div>
+    <h2>Soft Companions</h2>
+    <span>9 + Crash</span>
+  </div>
+  <div class="char-grid">
+    <div class="char-cell selected" onclick="toggleSel(this)" id="c-lumix">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="lumix-wrap" id="lumix-idle">
+          <div class="char-prop">✦</div>
+          <div class="lumix-glow"></div>
+          <div class="lumix-ear-l"></div><div class="lumix-ear-r"></div>
+          <div class="lumix-body">
+            <div class="eye lumix-eye-l"><div class="iris lumix-iris"></div><div class="pupil lumix-pupil"></div><div class="hl1 lumix-hl1"></div><div class="hl2 lumix-hl2"></div></div>
+            <div class="eye lumix-eye-r"><div class="iris lumix-iris"></div><div class="pupil lumix-pupil"></div><div class="hl1 lumix-hl1"></div><div class="hl2 lumix-hl2"></div></div>
+            <div class="lumix-smile"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Lumix</div><div class="char-fam">Spirit</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="kitsune-wrap" id="kit-idle">
+          <div class="char-prop">🌟</div>
+          <div class="kitsune-glow"></div>
+          <div class="kit-foot l"></div><div class="kit-foot r"></div>
+          <div class="kit-leg l"></div><div class="kit-leg r"></div>
+          <div class="kitsune-body"><div class="kitsune-chest"></div><div class="kitsune-paw l"></div><div class="kitsune-paw r"></div></div>
+          <div class="kitsune-head">
+            <div class="kitsune-ear l"></div><div class="kitsune-ear r"></div>
+            <div class="eye kit-eye-l"><div class="iris kit-iris"></div><div class="pupil kit-pupil"></div><div class="hl1 kit-hl1"></div><div class="hl2 kit-hl2"></div></div>
+            <div class="eye kit-eye-r"><div class="iris kit-iris"></div><div class="pupil kit-pupil"></div><div class="hl1 kit-hl1"></div><div class="hl2 kit-hl2"></div></div>
+            <div class="kitsune-muzzle"></div><div class="kitsune-nose"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Kitsune</div><div class="char-fam">Animal</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="mochi-wrap" id="mochi-idle">
+          <div class="char-prop">💕</div>
+          <div class="mochi-glow"></div>
+          <div class="moc-foot l"></div><div class="moc-foot r"></div>
+          <div class="moc-leg l"></div><div class="moc-leg r"></div>
+          <div class="mochi-body"><div class="mochi-paw l"></div><div class="mochi-paw r"></div></div>
+          <div class="mochi-head">
+            <div class="mochi-ear l"></div><div class="mochi-ear r"></div>
+            <div class="eye moc-eye-l"><div class="iris moc-iris"></div><div class="pupil moc-pupil"></div><div class="hl1 moc-hl1"></div><div class="hl2 moc-hl2"></div></div>
+            <div class="eye moc-eye-r"><div class="iris moc-iris"></div><div class="pupil moc-pupil"></div><div class="hl1 moc-hl1"></div><div class="hl2 moc-hl2"></div></div>
+            <div class="mochi-blush l"></div><div class="mochi-blush r"></div>
+            <div class="mochi-nose"></div><div class="mochi-mouth"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Mochi</div><div class="char-fam">Animal</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="byte-wrap" id="byte-idle">
+          <div class="char-prop">⚙️</div>
+          <div class="byte-glow"></div>
+          <div class="byte-foot l"></div><div class="byte-foot r"></div>
+          <div class="byte-arm l"></div><div class="byte-arm r"></div>
+          <div class="byte-torso"></div>
+          <div class="byte-head"><div class="byte-antenna"></div><div class="byte-screen"><div class="byte-led-eyes"><div class="byte-led"></div><div class="byte-led"></div></div><div class="byte-led-smile"></div></div></div>
+        </div>
+      </div>
+      <div class="char-label">Byte</div><div class="char-fam">Robot</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="ember-wrap" id="ember-idle">
+          <div class="char-prop">🔥</div>
+          <div class="ember-glow"></div>
+          <div class="emb-foot l"><div class="emb-claw"></div><div class="emb-claw"></div><div class="emb-claw"></div></div>
+          <div class="emb-foot r"><div class="emb-claw"></div><div class="emb-claw"></div><div class="emb-claw"></div></div>
+          <div class="emb-leg l"></div><div class="emb-leg r"></div>
+          <div class="ember-wing l"></div><div class="ember-wing r"></div>
+          <div class="ember-tail"></div>
+          <div class="ember-body"></div>
+          <div class="ember-head">
+            <div class="ember-horn l"></div><div class="ember-horn r"></div>
+            <div class="eye emb-eye-l"><div class="iris emb-iris"></div><div class="pupil emb-pupil"></div><div class="hl1 emb-hl1"></div><div class="hl2 emb-hl2"></div></div>
+            <div class="eye emb-eye-r"><div class="iris emb-iris"></div><div class="pupil emb-pupil"></div><div class="hl1 emb-hl1"></div><div class="hl2 emb-hl2"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Ember</div><div class="char-fam">Fantasy</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="mist-wrap" id="mist-idle">
+          <div class="char-prop">🌙</div>
+          <div class="mist-glow"></div>
+          <div class="mist-puff p1"></div><div class="mist-puff p2"></div><div class="mist-puff p3"></div><div class="mist-puff p4"></div>
+          <div class="mist-body">
+            <div class="mist-moon"></div>
+            <div class="eye mis-eye-l"><div class="iris mis-iris"></div><div class="pupil mis-pupil"></div><div class="hl1 mis-hl1"></div><div class="hl2 mis-hl2"></div></div>
+            <div class="eye mis-eye-r"><div class="iris mis-iris"></div><div class="pupil mis-pupil"></div><div class="hl1 mis-hl1"></div><div class="hl2 mis-hl2"></div></div>
+            <div class="mist-smile"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Mist</div><div class="char-fam">Fantasy</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="marco-wrap" id="marco-idle">
+          <div class="char-prop">🧭</div>
+          <div class="marco-glow"></div>
+          <div class="marco-body">
+            <div class="marco-grid-h h1"></div><div class="marco-grid-h h2"></div>
+            <div class="marco-grid-v v1"></div><div class="marco-grid-v v2"></div>
+            <div class="marco-hat"><div class="marco-hat-top"><div class="marco-hat-band"></div></div><div class="marco-hat-brim"></div></div>
+            <div class="eye mar-eye-l"><div class="iris mar-iris"></div><div class="pupil mar-pupil"></div><div class="hl1 mar-hl1"></div><div class="hl2 mar-hl2"></div></div>
+            <div class="eye mar-eye-r"><div class="iris mar-iris"></div><div class="pupil mar-pupil"></div><div class="hl1 mar-hl1"></div><div class="hl2 mar-hl2"></div></div>
+            <div class="marco-smile"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Marco</div><div class="char-fam">Travel</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="astro-wrap" id="astro-idle">
+          <div class="char-prop">📡</div>
+          <div class="astro-glow"></div>
+          <div class="astro-foot l"></div><div class="astro-foot r"></div>
+          <div class="astro-arm l"></div><div class="astro-arm r"></div>
+          <div class="astro-torso"></div>
+          <div class="astro-head"><div class="astro-phone-band"></div><div class="astro-phone l"></div><div class="astro-phone r"></div><div class="astro-visor"><div class="astro-visor-eyes"><div class="astro-visor-eye"></div><div class="astro-visor-eye"></div></div><div class="astro-visor-smile"></div></div></div>
+        </div>
+      </div>
+      <div class="char-label">Astro</div><div class="char-fam">Robot</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)" id="c-crash">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="crash-wrap" id="crash-idle">
+          <div class="char-prop">🌀</div>
+          <div class="crash-glow"></div>
+          <div class="crash-shoe l"></div><div class="crash-shoe r"></div>
+          <div class="crash-jeans l"></div><div class="crash-jeans r"></div>
+          <div class="crash-shorts"></div>
+          <div class="crash-belt"></div>
+          <div class="crash-torso"><div class="crash-belly"></div></div>
+          <div class="crash-arm l"></div><div class="crash-arm r"></div>
+          <div class="crash-glove l"></div><div class="crash-glove r"></div>
+          <div class="crash-head">
+            <div class="crash-hair">
+              <div class="crash-spike"></div><div class="crash-spike"></div>
+              <div class="crash-spike"></div><div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+            </div>
+            <div class="crash-brow l"></div><div class="crash-brow r"></div>
+            <div class="eye crs-eye-l"><div class="iris crs-iris"></div><div class="pupil crs-pupil"></div><div class="hl1 crs-hl1"></div><div class="hl2 crs-hl2"></div></div>
+            <div class="eye crs-eye-r"><div class="iris crs-iris"></div><div class="pupil crs-pupil"></div><div class="hl1 crs-hl1"></div><div class="hl2 crs-hl2"></div></div>
+            <div class="crash-snout"></div>
+            <div class="crash-nose"></div>
+            <div class="crash-mouth"></div>
+            <div class="crash-tooth l"></div><div class="crash-tooth r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Crash</div><div class="char-fam">Bandicoot</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- HUMAN TIER -->
+  <div class="tier-label">
+    <div class="tier-pill pill-h">Stylish</div>
+    <h2>Human Family</h2>
+    <span>New</span>
+  </div>
+  <div class="char-grid2">
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="kaito-wrap" id="kaito-idle">
+          <div class="char-prop" style="font-size:14px">🎧</div>
+          <div class="kaito-jacket"></div><div class="kaito-neck"></div>
+          <div class="kaito-head">
+            <div class="kaito-hair"></div><div class="kaito-hair-side"></div>
+            <div class="kaito-ear l"></div><div class="kaito-ear r"></div>
+            <div class="kaito-brow l"></div><div class="kaito-brow r"></div>
+            <div class="kaito-eye l"></div><div class="kaito-eye r"></div>
+            <div class="kaito-nose"></div><div class="kaito-mouth"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Kaito</div><div class="char-fam">Human — Cool</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="yuki-wrap" id="yuki-idle">
+          <div class="char-prop" style="font-size:14px">🌸</div>
+          <div class="yuki-jacket"></div><div class="yuki-neck"></div>
+          <div class="yuki-head">
+            <div class="yuki-hair-back"></div><div class="yuki-hair-top"></div><div class="yuki-hair-bang"></div>
+            <div class="yuki-ear l"></div><div class="yuki-ear r"></div>
+            <div class="yuki-lash l"></div><div class="yuki-lash r"></div>
+            <div class="yuki-brow l"></div><div class="yuki-brow r"></div>
+            <div class="yuki-eye l"></div><div class="yuki-eye r"></div>
+            <div class="yuki-nose"></div><div class="yuki-lips"></div>
+            <div class="yuki-blush l"></div><div class="yuki-blush r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Yuki</div><div class="char-fam">Human — Fashion</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- COMBAT TIER -->
+  <div class="tier-label">
+    <div class="tier-pill pill-c">Combat</div>
+    <h2>Warrior Family</h2>
+    <span>New — sharp eyes, power energy</span>
+  </div>
+  <div class="char-grid2">
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="vex-wrap" id="vex-idle">
+          <div class="vex-aura"></div>
+          <div class="vex-horn l"></div><div class="vex-horn r"></div>
+          <div class="vex-body">
+            <div class="vex-brow l"></div><div class="vex-brow r"></div>
+            <div class="vex-eye l"><div class="vex-slit"></div></div>
+            <div class="vex-eye r"><div class="vex-slit"></div></div>
+            <div class="vex-scar"></div><div class="vex-collar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Vex</div><div class="char-fam">Warrior — Dark</div>
+    </div>
+    <div class="char-cell selected" onclick="toggleSel(this)">
+      <div class="sel-ring">✓</div>
+      <div class="char-stage">
+        <div class="seraph-wrap" id="seraph-idle">
+          <div class="seraph-halo"></div>
+          <div class="seraph-wing l"></div><div class="seraph-wing r"></div>
+          <div class="seraph-body">
+            <div class="seraph-mark"></div>
+            <div class="seraph-brow l"></div><div class="seraph-brow r"></div>
+            <div class="seraph-eye l"></div><div class="seraph-eye r"></div>
+            <div class="seraph-collar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-label">Seraph</div><div class="char-fam">Warrior — Light</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- IDLE SYSTEM PANEL -->
+  <div class="tier-label" style="padding-bottom:0">
+    <h2>Idle Personality System</h2>
+  </div>
+  <div class="idle-panel">
+    <h3>Crash-style idle behaviors</h3>
+    <p>Each companion cycles through a unique repertoire. Characters are never static — they entertain themselves, react to nothing, and show personality even when untouched.</p>
+    <div class="idle-demo-row">
+      <div class="idle-demo-char">
+        <div class="lumix-wrap" id="demo-idle" style="transform:scale(0.72);transform-origin:bottom center;">
+          <div class="lumix-glow"></div>
+          <div class="lumix-ear-l"></div><div class="lumix-ear-r"></div>
+          <div class="lumix-body">
+            <div class="eye lumix-eye-l"><div class="iris lumix-iris"></div><div class="pupil lumix-pupil"></div><div class="hl1 lumix-hl1"></div><div class="hl2 lumix-hl2"></div></div>
+            <div class="eye lumix-eye-r"><div class="iris lumix-iris"></div><div class="pupil lumix-pupil"></div><div class="hl1 lumix-hl1"></div><div class="hl2 lumix-hl2"></div></div>
+            <div class="lumix-smile"></div>
+          </div>
+        </div>
+      </div>
+      <div class="idle-info">
+        <div class="idle-name" id="idleName">Look Around</div>
+        <div class="idle-desc" id="idleDesc">Glances left, then right — impatient, curious, alive even when nothing is happening.</div>
+        <div class="idle-tag active" id="idleTag">ACTIVE</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;" id="behaviorPills"></div>
+  </div>
+
+  <!-- APPROVE -->
+  <div class="approve-section">
+    <div class="approve-card">
+      <h2>Ready to Build?</h2>
+      <p>14 characters across 3 tiers — legs, hands, and Crash Bandicoot added. Tap to select, then approve.</p>
+      <div class="sel-info"><strong id="selCnt">14</strong> of 14 selected</div>
+      <button class="approve-btn" onclick="doApprove()">Approve & Implement →</button>
+    </div>
+  </div>
+</div>
+
+<div class="sticky">
+  <span><strong id="cnt2">14</strong> selected</span>
+  <button onclick="doApprove()">Approve →</button>
+</div>
+
+<script>
+// ============================================================
+// IDLE BEHAVIOR SYSTEM
+// ============================================================
+const BEHAVIORS = [
+  { cls:'idle-look',    name:'Look Around',     desc:'Glances left, then right — impatient, curious, alive.',                dur:2200 },
+  { cls:'idle-stretch', name:'Stretch Up',       desc:'Full-body stretch upward, squash on landing — classic platformer energy.', dur:2000 },
+  { cls:'idle-bounce',  name:'Impatient Bounce', desc:'Three quick bounces — "come ON, do something with me!"',               dur:2000 },
+  { cls:'idle-proud',   name:'Proud Pose',       desc:'Puffs up, leans back slightly, holds a proud moment.',                 dur:2200 },
+  { cls:'idle-wobble',  name:'Lose Balance',     desc:'Tips too far, catches itself — charming comedic recovery.',            dur:1800 },
+  { cls:'idle-glance',  name:'Glance at You',    desc:'Tilts toward the user — "hey, you still there?"',                    dur:2400 },
+  { cls:'idle-shake',   name:'Quick Shimmy',     desc:'Full-body wiggle of excitement with no particular reason.',            dur:1600 },
+];
+
+const COMBAT_BEHAVIORS = [
+  { cls:'idle-surge',  name:'Power Surge',   desc:'Intensifies — aura flares, posture stiffens, then settles.',   dur:2000 },
+  { cls:'idle-intim',  name:'Intimidation',  desc:'Slow powerful lean forward — daring the world.',               dur:2500 },
+  { cls:'idle-look',   name:'Scan',          desc:'Controlled scan left-right — alert, tactical, composed.',       dur:2200 },
+  { cls:'idle-wobble', name:'Weight Shift',  desc:'Side-to-side weight shift — warrior at rest, not off-guard.',  dur:1800 },
+];
+
+function runCycle(el, seq, offset) {
+  let i = (offset || 0) % seq.length;
+  let current = '';
+  function tick() {
+    if (current) el.classList.remove(current);
+    const s = seq[i];
+    current = s.cls;
+    el.classList.add(s.cls);
+    i = (i + 1) % seq.length;
+    setTimeout(tick, s.dur + 400);
+  }
+  setTimeout(tick, (offset || 0) * 700);
+}
+
+// Soft characters — full behavior repertoire
+const softIds = ['lumix-idle','kit-idle','mochi-idle','byte-idle','ember-idle','mist-idle','marco-idle','astro-idle','crash-idle'];
+softIds.forEach((id, i) => {
+  const el = document.getElementById(id);
+  if (el) runCycle(el, BEHAVIORS, i);
+});
+
+// Human — mostly look/proud/glance (cool/fashionable energy)
+const humanSeq = [BEHAVIORS[0], BEHAVIORS[3], BEHAVIORS[5], BEHAVIORS[6], BEHAVIORS[1]];
+['kaito-idle','yuki-idle'].forEach((id, i) => {
+  const el = document.getElementById(id);
+  if (el) runCycle(el, humanSeq, i * 2);
+});
+
+// Combat — power-focused sequence
+const combatIds = ['vex-idle','seraph-idle'];
+combatIds.forEach((id, i) => {
+  const el = document.getElementById(id);
+  if (el) runCycle(el, COMBAT_BEHAVIORS, i * 3);
+});
+
+// Demo panel — Lumix cycles with label updates
+const demoEl = document.getElementById('demo-idle');
+const nameEl = document.getElementById('idleName');
+const descEl = document.getElementById('idleDesc');
+const tagEl  = document.getElementById('idleTag');
+let demoI = 0, demoCurrent = '';
+function demoTick() {
+  if (demoCurrent) demoEl.classList.remove(demoCurrent);
+  const s = BEHAVIORS[demoI];
+  demoCurrent = s.cls;
+  demoEl.classList.add(s.cls);
+  nameEl.textContent = s.name;
+  descEl.textContent = s.desc;
+  tagEl.textContent  = s.name.toUpperCase();
+  // Update pills
+  document.querySelectorAll('#behaviorPills .pill').forEach((p, pi) => {
+    p.style.background = pi === demoI ? 'rgba(139,92,246,0.25)' : 'rgba(255,255,255,0.05)';
+    p.style.color = pi === demoI ? '#c4b5fd' : 'rgba(240,240,248,0.4)';
+    p.style.borderColor = pi === demoI ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.08)';
+  });
+  demoI = (demoI + 1) % BEHAVIORS.length;
+  setTimeout(demoTick, s.dur + 600);
+}
+
+// Build pills
+const pillsEl = document.getElementById('behaviorPills');
+BEHAVIORS.forEach(b => {
+  const p = document.createElement('div');
+  p.className = 'pill';
+  p.textContent = b.name;
+  p.style.cssText = 'font-size:10px;font-weight:600;padding:4px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);color:rgba(240,240,248,0.4);transition:all 0.3s;';
+  pillsEl.appendChild(p);
+});
+setTimeout(demoTick, 800);
+
+// ============================================================
+// SELECTION
+// ============================================================
+let count = document.querySelectorAll('.char-cell.selected').length;
+function updateCount() {
+  count = document.querySelectorAll('.char-cell.selected').length;
+  document.getElementById('selCnt').textContent = count;
+  document.getElementById('cnt2').textContent = count;
+}
+function toggleSel(el) {
+  el.classList.toggle('selected');
+  updateCount();
+}
+updateCount();
+
+function doApprove() {
+  const names = [...document.querySelectorAll('.char-cell.selected .char-label')].map(e => e.textContent);
+  if (!names.length) { alert('Select at least one character.'); return; }
+  alert('✅ Approved!\n\nImplementing:\n' + names.map(n=>'• '+n).join('\n') + '\n\nIncludes:\n• Full CSS art for all characters\n• Crash-style idle behavior system\n• 3-tier eye language (soft / stylish / combat)\n• Per-character prop animations\n\nSend this back to start implementation!');
+}
+</script>
+</body>
+</html>

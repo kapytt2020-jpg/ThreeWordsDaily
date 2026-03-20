@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThreeWordsDaily — Companion World Preview v2</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0d0d11; --card:#1a1a24; --card2:#22223a;
+  --text:#f0f0ff; --text2:#888; --accent:#7c6ef5;
+  --gold:#f5c842; --green:#5ee7b0; --red:#ff5e7a;
+  --mystic:#7c6ef5; --comedy:#f5a030; --scifi:#5ee7b0; --fantasy:#ff5e7a; --travel:#40c8f0;
+}
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; min-height:100vh; }
+
+/* ===== LAYOUT ===== */
+.preview-wrap { max-width:420px; margin:0 auto; padding:20px 16px 80px; }
+.preview-title { text-align:center; font-size:22px; font-weight:900; margin-bottom:4px; }
+.preview-title b { color:var(--accent); }
+.preview-sub { text-align:center; color:var(--text2); font-size:13px; margin-bottom:24px; }
+.section { margin-bottom:32px; }
+.section-head { font-size:11px; font-weight:800; letter-spacing:0.12em; color:var(--text2); text-transform:uppercase; margin-bottom:12px; }
+.divider { height:1px; background:rgba(255,255,255,0.06); margin:24px 0; }
+
+/* ===== SERIES CARDS ===== */
+.series-grid { display:flex; flex-direction:column; gap:10px; }
+.series-card {
+  background:var(--card); border-radius:18px; border:2px solid transparent;
+  padding:14px 16px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:14px;
+}
+.series-card.active { border-color:var(--card-color,var(--accent)); background:var(--card2); }
+.series-card:active { transform:scale(0.98); }
+.series-card .s-icon { width:52px; height:52px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:26px; }
+.series-card .s-info { flex:1; }
+.series-card .s-name { font-size:16px; font-weight:800; }
+.series-card .s-desc { font-size:12px; color:var(--text2); margin-top:2px; }
+.series-card .s-companions { font-size:10px; color:var(--text2); margin-top:4px; }
+.series-card .s-arrow { font-size:18px; color:var(--text2); }
+
+/* ===== COMPANION PICKER ===== */
+.comp-picker { display:none; margin-top:16px; background:var(--card2); border-radius:18px; padding:16px; }
+.comp-picker.show { display:block; }
+.comp-picker-title { font-size:13px; font-weight:800; color:var(--text2); margin-bottom:12px; }
+.comp-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.comp-card {
+  background:var(--card); border-radius:16px; border:2px solid rgba(255,255,255,0.06);
+  padding:16px 10px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;
+}
+.comp-card.selected { border-color:var(--series-color,var(--accent)); }
+.comp-card:active { transform:scale(0.96); }
+.comp-art { width:72px; height:72px; margin:0 auto 8px; position:relative; }
+.comp-name { font-size:13px; font-weight:800; }
+.comp-trait { font-size:10px; color:var(--text2); margin-top:3px; }
+.comp-badge { position:absolute; top:8px; right:8px; background:var(--gold); color:#000; font-size:9px; font-weight:900; padding:2px 5px; border-radius:5px; }
+
+/* ===== CSS ART: MYSTIC LUMIX ===== */
+.art-lumix { position:relative; width:72px; height:72px; }
+.lumix-aura { position:absolute; width:60px; height:60px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle,rgba(124,110,245,0.3),transparent 70%); animation:auraBreath 2s ease-in-out infinite; }
+.lumix-body { position:absolute; width:48px; height:48px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 35%,#c0b0ff,#5a47e8 55%,#2d1fa0); animation:lumixFloat 3s ease-in-out infinite; }
+.lumix-eye { position:absolute; width:10px; height:10px; background:#fff; border-radius:50%; top:38%; }
+.lumix-eye.l { left:26%; } .lumix-eye.r { right:26%; }
+.lumix-wisp { position:absolute; width:8px; height:8px; border-radius:50%; background:rgba(180,160,255,0.7); animation:wispOrbit 3s linear infinite; }
+.lumix-wisp:nth-child(4) { animation-delay:-1s; }
+.lumix-wisp:nth-child(5) { animation-delay:-2s; }
+@keyframes lumixFloat { 0%,100%{transform:translate(-50%,-56%) scale(1)} 50%{transform:translate(-50%,-44%) scale(1.04)} }
+@keyframes auraBreath { 0%,100%{opacity:0.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)} }
+@keyframes wispOrbit { from{transform:rotate(0deg) translateX(28px) rotate(0deg)} to{transform:rotate(360deg) translateX(28px) rotate(-360deg)} }
+
+/* ===== CSS ART: MYSTIC OMEN ===== */
+.art-omen { position:relative; width:72px; height:72px; }
+.omen-body { position:absolute; width:44px; height:44px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 35% 35%,#4a3060,#1a0830 55%,#0a0015); box-shadow:0 0 20px rgba(120,40,200,0.5); animation:omenPulse 2.5s ease-in-out infinite; }
+.omen-eye { position:absolute; width:8px; height:12px; background:rgba(180,80,255,0.9); border-radius:50%; top:36%; }
+.omen-eye.l { left:28%; } .omen-eye.r { right:28%; }
+.omen-spark { position:absolute; font-size:8px; color:#b050ff; animation:sparkFloat 2s ease-in-out infinite; }
+@keyframes omenPulse { 0%,100%{box-shadow:0 0 20px rgba(120,40,200,0.5)} 50%{box-shadow:0 0 35px rgba(180,80,255,0.8)} }
+@keyframes sparkFloat { 0%,100%{opacity:0.5;transform:translateY(0)} 50%{opacity:1;transform:translateY(-5px)} }
+
+/* ===== CSS ART: COMEDY BLOP ===== */
+.art-blop { position:relative; width:72px; height:72px; }
+.blop-body { position:absolute; width:52px; height:50px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50% 50% 45% 45%; background:radial-gradient(circle at 38% 32%,#ffdd80,#f5a030 50%,#d07000); animation:blopWobble 1.8s ease-in-out infinite; }
+.blop-eye-l { position:absolute; width:14px; height:16px; background:#fff; border-radius:50%; top:30%; left:22%; }
+.blop-eye-r { position:absolute; width:12px; height:14px; background:#fff; border-radius:50%; top:33%; right:23%; transform:rotate(10deg); }
+.blop-pupil { position:absolute; width:7px; height:8px; background:#333; border-radius:50%; top:30%; left:26%; }
+.blop-pupil-r { position:absolute; width:6px; height:7px; background:#333; border-radius:50%; top:37%; right:27%; }
+.blop-mouth { position:absolute; width:20px; height:10px; border-bottom:3px solid #8a4000; border-radius:0 0 10px 10px; bottom:28%; left:50%; transform:translateX(-50%); }
+.blop-cheek { position:absolute; width:10px; height:6px; background:rgba(255,100,100,0.4); border-radius:50%; bottom:36%; }
+.blop-cheek.l { left:20%; } .blop-cheek.r { right:20%; }
+@keyframes blopWobble { 0%,100%{transform:translate(-50%,-50%) scaleX(1) scaleY(1) rotate(-2deg)} 33%{transform:translate(-50%,-52%) scaleX(1.08) scaleY(0.95)} 66%{transform:translate(-50%,-48%) scaleX(0.95) scaleY(1.06) rotate(2deg)} }
+
+/* ===== CSS ART: SCI-FI BYTE ===== */
+.art-byte { position:relative; width:72px; height:72px; }
+.byte-antenna { position:absolute; width:2px; height:12px; background:#5ee7b0; left:50%; top:4px; transform:translateX(-50%); }
+.byte-antenna::after { content:''; position:absolute; width:6px; height:6px; background:#5ee7b0; border-radius:50%; top:-4px; left:-2px; animation:antennaBlink 1.5s ease-in-out infinite; }
+.byte-body { position:absolute; width:44px; height:44px; left:50%; top:50%; transform:translate(-50%,-48%); border-radius:12px; background:linear-gradient(135deg,#1a2a2a,#0d1f1f); border:2px solid rgba(94,231,176,0.4); }
+.byte-visor { position:absolute; width:30px; height:10px; background:linear-gradient(90deg,#40c8f0,#5ee7b0); border-radius:5px; top:30%; left:50%; transform:translateX(-50%); animation:visorScan 2s ease-in-out infinite; }
+.byte-grill { position:absolute; bottom:18%; left:50%; transform:translateX(-50%); display:flex; gap:3px; }
+.byte-grill span { display:block; width:3px; height:6px; background:rgba(94,231,176,0.4); border-radius:1px; }
+.byte-neon { position:absolute; inset:0; border-radius:12px; border:1px solid rgba(94,231,176,0.15); animation:neonPulse2 2s ease-in-out infinite; }
+@keyframes antennaBlink { 0%,100%{opacity:1;box-shadow:0 0 6px #5ee7b0} 50%{opacity:0.3;box-shadow:none} }
+@keyframes visorScan { 0%,100%{opacity:0.8} 50%{opacity:1;box-shadow:0 0 12px rgba(64,200,240,0.6)} }
+@keyframes neonPulse2 { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+
+/* ===== CSS ART: FANTASY PYRO ===== */
+.art-pyro { position:relative; width:72px; height:72px; }
+.pyro-body { position:absolute; width:42px; height:38px; left:50%; top:50%; transform:translate(-50%,-46%); border-radius:50% 50% 40% 40%; background:radial-gradient(circle at 40% 35%,#ffaa60,#e84820 55%,#8a1800); box-shadow:0 0 20px rgba(232,72,32,0.5); }
+.pyro-eye-l { position:absolute; width:10px; height:10px; background:#ffe080; border-radius:50%; top:32%; left:22%; }
+.pyro-eye-r { position:absolute; width:10px; height:10px; background:#ffe080; border-radius:50%; top:32%; right:22%; }
+.pyro-wing-l { position:absolute; width:18px; height:22px; background:linear-gradient(135deg,rgba(232,72,32,0.6),transparent); border-radius:50% 0 50% 50%; top:28%; left:4%; transform:rotate(-20deg); }
+.pyro-wing-r { position:absolute; width:18px; height:22px; background:linear-gradient(225deg,rgba(232,72,32,0.6),transparent); border-radius:0 50% 50% 50%; top:28%; right:4%; transform:rotate(20deg); }
+.pyro-flame { position:absolute; font-size:14px; bottom:8%; left:60%; animation:flameDance 0.8s ease-in-out infinite alternate; }
+.pyro-horn-l { position:absolute; width:6px; height:12px; background:linear-gradient(to top,#e84820,#ffaa60); border-radius:50% 50% 0 0; top:8%; left:30%; transform:rotate(-15deg); }
+.pyro-horn-r { position:absolute; width:6px; height:12px; background:linear-gradient(to top,#e84820,#ffaa60); border-radius:50% 50% 0 0; top:8%; right:30%; transform:rotate(15deg); }
+@keyframes flameDance { from{transform:scale(1) rotate(-5deg)} to{transform:scale(1.2) rotate(5deg)} }
+
+/* ===== CSS ART: TRAVEL JET ===== */
+.art-jet { position:relative; width:72px; height:72px; }
+.jet-body { position:absolute; width:44px; height:44px; left:50%; top:50%; transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 38% 35%,#ffe0b0,#d08040 55%,#804010); }
+.jet-goggle-l { position:absolute; width:14px; height:12px; background:rgba(64,200,240,0.7); border-radius:50%; border:2px solid #fff; top:30%; left:18%; }
+.jet-goggle-r { position:absolute; width:14px; height:12px; background:rgba(64,200,240,0.7); border-radius:50%; border:2px solid #fff; top:30%; right:18%; }
+.jet-bridge { position:absolute; width:6px; height:3px; background:#fff; top:35%; left:50%; transform:translateX(-50%); }
+.jet-scarf { position:absolute; width:30px; height:8px; background:linear-gradient(90deg,#ff5e7a,#ff8040); border-radius:4px; bottom:20%; left:50%; transform:translateX(-50%); }
+.jet-prop { position:absolute; top:2px; left:50%; transform:translateX(-50%); font-size:12px; animation:propSpin 0.5s linear infinite; }
+.jet-trail { position:absolute; font-size:10px; bottom:10%; left:50%; transform:translateX(-50%); animation:trailFade 2s ease-in-out infinite; }
+@keyframes propSpin { from{transform:translateX(-50%) rotate(0)} to{transform:translateX(-50%) rotate(360deg)} }
+@keyframes trailFade { 0%,100%{opacity:0;transform:translateX(-50%) translateX(-20px)} 50%{opacity:1;transform:translateX(-50%) translateX(0)} }
+
+/* ===== REACTIONS DEMO ===== */
+.reactions-row { display:flex; flex-wrap:wrap; gap:8px; }
+.reaction-pill {
+  background:rgba(124,110,245,0.12); border:1.5px solid rgba(124,110,245,0.25);
+  border-radius:20px; padding:7px 14px; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.reaction-pill:active { transform:scale(0.95); background:rgba(124,110,245,0.25); }
+.reaction-pill.mystic { border-color:rgba(124,110,245,0.4); background:rgba(124,110,245,0.1); }
+.reaction-pill.comedy  { border-color:rgba(245,160,48,0.4); background:rgba(245,160,48,0.1); color:#f5a030; }
+.reaction-pill.scifi   { border-color:rgba(94,231,176,0.4); background:rgba(94,231,176,0.1); color:#5ee7b0; }
+.reaction-pill.fantasy { border-color:rgba(255,94,122,0.4); background:rgba(255,94,122,0.1); color:#ff5e7a; }
+.reaction-pill.travel  { border-color:rgba(64,200,240,0.4); background:rgba(64,200,240,0.1); color:#40c8f0; }
+.reaction-pill.rare    { border-color:rgba(245,200,66,0.5); background:rgba(245,200,66,0.08); color:var(--gold); }
+
+/* ===== NAMING FLOW ===== */
+.naming-flow { background:var(--card); border-radius:18px; padding:16px; }
+.name-flow-step { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+.name-flow-step:last-child { border-bottom:none; }
+.name-step-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; background:rgba(124,110,245,0.12); }
+.name-step-info { flex:1; }
+.name-step-label { font-size:13px; font-weight:700; }
+.name-step-sub { font-size:11px; color:var(--text2); margin-top:2px; }
+.name-step-tag { font-size:10px; font-weight:700; padding:3px 8px; border-radius:6px; background:rgba(94,231,176,0.15); color:#5ee7b0; }
+
+/* ===== GAMES GRID ===== */
+.games-concept { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.game-concept-card {
+  background:var(--card); border-radius:16px; border:1px solid rgba(255,255,255,0.06);
+  padding:14px; position:relative; overflow:hidden;
+}
+.game-concept-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; border-radius:2px 2px 0 0; }
+.gc-blue::before { background:linear-gradient(90deg,#5e7bf5,#7c6ef5); }
+.gc-green::before { background:linear-gradient(90deg,#5ee7b0,#40c8f0); }
+.gc-gold::before  { background:linear-gradient(90deg,#f5c842,#f5a030); }
+.gc-red::before   { background:linear-gradient(90deg,#ff5e7a,#ff8040); }
+.gc-icon { font-size:24px; margin-bottom:6px; }
+.gc-name { font-size:12px; font-weight:800; margin-bottom:3px; }
+.gc-mech { font-size:10px; color:var(--text2); }
+.gc-diff { position:absolute; top:8px; right:8px; font-size:9px; font-weight:800; padding:2px 5px; border-radius:4px; }
+.diff-fast { background:rgba(255,94,122,0.2); color:#ff5e7a; }
+.diff-mem  { background:rgba(94,231,176,0.2); color:#5ee7b0; }
+.diff-drag { background:rgba(124,110,245,0.2); color:var(--accent); }
+.diff-pvp  { background:rgba(245,200,66,0.2); color:var(--gold); }
+
+/* ===== EASTER EGG ===== */
+.egg-discovery {
+  background:linear-gradient(135deg,rgba(245,200,66,0.06),rgba(30,30,40,1));
+  border:1px solid rgba(245,200,66,0.2); border-radius:18px; padding:20px;
+  text-align:center;
+}
+.egg-mystery { font-size:48px; animation:eggPulse 2s ease-in-out infinite; margin-bottom:12px; }
+.egg-title { font-size:16px; font-weight:800; color:var(--gold); margin-bottom:8px; }
+.egg-text { font-size:13px; color:var(--text2); line-height:1.6; }
+.egg-hint { margin-top:14px; background:rgba(245,200,66,0.08); border-radius:10px; padding:10px 14px; font-size:12px; color:var(--gold); }
+@keyframes eggPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08) rotate(5deg)} }
+
+/* ===== FX PARTICLES ===== */
+.fx-demo { position:relative; height:180px; background:var(--card); border-radius:18px; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.fx-demo-label { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:11px; color:var(--text2); }
+.fx-dot { position:absolute; border-radius:50%; pointer-events:none; transition:all 0.7s cubic-bezier(0.2,0,0.4,1); opacity:0; }
+.fx-ring-demo { position:absolute; border-radius:50%; pointer-events:none; border:2px solid rgba(124,110,245,0.6); transition:all 0.5s ease; opacity:0; }
+
+/* ===== APPROVAL SECTION ===== */
+.approve-section { position:fixed; bottom:0; left:0; right:0; padding:12px 16px; background:var(--bg); border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:10px; z-index:100; }
+.btn-approve { flex:1; padding:14px; border-radius:14px; border:none; background:linear-gradient(90deg,#5ee7b0,#40c8f0); color:#000; font-size:16px; font-weight:900; cursor:pointer; }
+.btn-feedback { flex:0 0 auto; padding:14px 16px; border-radius:14px; border:2px solid rgba(255,255,255,0.12); background:transparent; color:var(--text2); font-size:14px; cursor:pointer; }
+
+/* ===== MISC ===== */
+.badge-new { background:var(--red); color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:5px; vertical-align:middle; margin-left:6px; }
+.flow-arrow { text-align:center; color:var(--text2); font-size:20px; margin:4px 0; }
+.info-block { background:rgba(124,110,245,0.06); border:1px solid rgba(124,110,245,0.15); border-radius:12px; padding:12px 14px; font-size:12px; color:var(--text2); line-height:1.6; }
+.info-block strong { color:var(--text); }
+.tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.tag { padding:4px 10px; border-radius:8px; font-size:11px; font-weight:700; background:rgba(255,255,255,0.06); }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.fade-in { animation:fadeIn 0.3s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="preview-wrap">
+
+  <div style="text-align:center;margin-bottom:20px">
+    <div style="font-size:28px;font-weight:900;margin-bottom:6px">ThreeWords<b style="color:var(--accent)">Daily</b></div>
+    <div style="font-size:18px;font-weight:800;margin-bottom:4px">Companion World — Preview v2</div>
+    <div style="font-size:12px;color:var(--text2)">Переглянь кожну секцію → натисни Approve</div>
+  </div>
+
+  <!-- SECTION 1: COMPANION SERIES -->
+  <div class="section">
+    <div class="section-head">1. Companion Series — 5 світів × 4 персонажі = 20 компаньонів</div>
+    <div class="info-block" style="margin-bottom:12px">
+      <strong>Новий вибір:</strong> спочатку обираєш жанр/серію, потім — конкретного персонажа з 4 варіантів. Кожна серія має власну мову руху, тему та Easter Eggs.
+    </div>
+    <div class="series-grid">
+
+      <!-- MYSTIC -->
+      <div class="series-card" onclick="toggleSeries('mystic')" id="series-mystic" style="--card-color:var(--mystic)">
+        <div class="s-icon" style="background:radial-gradient(circle,rgba(124,110,245,0.3),rgba(45,31,160,0.6))">✨</div>
+        <div class="s-info">
+          <div class="s-name" style="color:var(--mystic)">Mystic</div>
+          <div class="s-desc">Магія слів · орбіти · аури · містичні реакції</div>
+          <div class="s-companions">Lumix · Omen · Aether · Solara</div>
+        </div>
+        <div class="s-arrow" id="arr-mystic">›</div>
+      </div>
+      <div class="comp-picker" id="picker-mystic">
+        <div class="comp-picker-title" style="color:var(--mystic)">✨ Mystic Series — обери компаньона</div>
+        <div class="comp-grid">
+          <div class="comp-card" onclick="selectComp(this,'mystic')" style="--series-color:var(--mystic)">
+            <div class="comp-badge">⭐ Popular</div>
+            <div class="comp-art">
+              <div class="art-lumix">
+                <div class="lumix-aura"></div>
+                <div class="lumix-body">
+                  <div class="lumix-eye l"></div><div class="lumix-eye r"></div>
+                </div>
+                <div class="lumix-wisp" style="top:50%;left:50%;margin:-4px"></div>
+                <div class="lumix-wisp" style="top:50%;left:50%;margin:-4px;animation-delay:-1s"></div>
+              </div>
+            </div>
+            <div class="comp-name">Lumix</div>
+            <div class="comp-trait">Добрий · мудрий · світлий</div>
+          </div>
+          <div class="comp-card" onclick="selectComp(this,'mystic')" style="--series-color:var(--mystic)">
+            <div class="comp-art">
+              <div class="art-omen">
+                <div class="omen-body">
+                  <div class="omen-eye l"></div><div class="omen-eye r"></div>
+                </div>
+                <div class="omen-spark" style="top:10%;left:20%">✦</div>
+                <div class="omen-spark" style="bottom:10%;right:20%;animation-delay:-1s">✧</div>
+              </div>
+            </div>
+            <div class="comp-name">Omen</div>
+            <div class="comp-trait">Таємничий · темний · рідкісний</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--mystic);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#a0f0ff,#40b0e0);display:flex;align-items:center;justify-content:center;font-size:24px;animation:auraBreath 2.5s ease-in-out infinite">💨</div>
+            </div>
+            <div class="comp-name">Aether</div>
+            <div class="comp-trait">Вітер · легкий · вільний</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--mystic);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#ffe080,#f5a030 50%,#d06000);display:flex;align-items:center;justify-content:center;font-size:24px;animation:auraBreath 3s ease-in-out infinite">☀️</div>
+            </div>
+            <div class="comp-name">Solara</div>
+            <div class="comp-trait">Сонце · тепло · сила</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMEDY -->
+      <div class="series-card" onclick="toggleSeries('comedy')" id="series-comedy" style="--card-color:var(--comedy)">
+        <div class="s-icon" style="background:radial-gradient(circle,rgba(245,160,48,0.3),rgba(160,80,0,0.6))">😂</div>
+        <div class="s-info">
+          <div class="s-name" style="color:var(--comedy)">Comedy</div>
+          <div class="s-desc">Гумор · wobbly рухи · silly реакції · сміх</div>
+          <div class="s-companions">Blop · Squig · Bonk · Dork</div>
+        </div>
+        <div class="s-arrow" id="arr-comedy">›</div>
+      </div>
+      <div class="comp-picker" id="picker-comedy">
+        <div class="comp-picker-title" style="color:var(--comedy)">😂 Comedy Series — обери компаньона</div>
+        <div class="comp-grid">
+          <div class="comp-card" onclick="selectComp(this,'comedy')" style="--series-color:var(--comedy)">
+            <div class="comp-badge" style="background:var(--comedy)">😂 Funny</div>
+            <div class="comp-art">
+              <div class="art-blop">
+                <div class="blop-body"></div>
+                <div class="blop-eye-l"><div class="blop-pupil"></div></div>
+                <div class="blop-eye-r"><div class="blop-pupil-r"></div></div>
+                <div class="blop-mouth"></div>
+                <div class="blop-cheek l"></div><div class="blop-cheek r"></div>
+              </div>
+            </div>
+            <div class="comp-name">Blop</div>
+            <div class="comp-trait">Гумор · веселий · wobbly</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--comedy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:40% 60% 55% 45%;background:linear-gradient(135deg,#ffcc80,#ff9040);display:flex;align-items:center;justify-content:center;font-size:20px;animation:blopWobble 2s ease-in-out infinite">🥴</div>
+            </div>
+            <div class="comp-name">Squig</div>
+            <div class="comp-trait">Дивний · хаотичний · сміхотун</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--comedy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#ffd080,#f08000);display:flex;align-items:center;justify-content:center;font-size:20px">💥</div>
+            </div>
+            <div class="comp-name">Bonk</div>
+            <div class="comp-trait">Клоун · пружний · bonk!</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--comedy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#c0e0ff,#6080c0);display:flex;align-items:center;justify-content:center;font-size:20px">🤓</div>
+            </div>
+            <div class="comp-name">Dork</div>
+            <div class="comp-trait">Ботан · розумний · ніяковий</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCI-FI -->
+      <div class="series-card" onclick="toggleSeries('scifi')" id="series-scifi" style="--card-color:var(--scifi)">
+        <div class="s-icon" style="background:radial-gradient(circle,rgba(94,231,176,0.2),rgba(13,40,40,0.8))">🤖</div>
+        <div class="s-info">
+          <div class="s-name" style="color:var(--scifi)">Sci-Fi</div>
+          <div class="s-desc">Neon · HUD · circuit effects · tech reactions</div>
+          <div class="s-companions">Byte · Nova · Grid · Vex</div>
+        </div>
+        <div class="s-arrow" id="arr-scifi">›</div>
+      </div>
+      <div class="comp-picker" id="picker-scifi">
+        <div class="comp-picker-title" style="color:var(--scifi)">🤖 Sci-Fi Series — обери компаньона</div>
+        <div class="comp-grid">
+          <div class="comp-card" onclick="selectComp(this,'scifi')" style="--series-color:var(--scifi)">
+            <div class="comp-art">
+              <div class="art-byte">
+                <div class="byte-antenna"></div>
+                <div class="byte-body">
+                  <div class="byte-visor"></div>
+                  <div class="byte-grill"><span></span><span></span><span></span><span></span></div>
+                  <div class="byte-neon"></div>
+                </div>
+              </div>
+            </div>
+            <div class="comp-name">Byte</div>
+            <div class="comp-trait">Технологічний · чіткий · логічний</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--scifi);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,rgba(64,200,240,0.8),rgba(0,80,120,0.9));display:flex;align-items:center;justify-content:center;font-size:22px;animation:visorScan 2s ease-in-out infinite">🌀</div>
+            </div>
+            <div class="comp-name">Nova</div>
+            <div class="comp-trait">AI · голограма · інтелект</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--scifi);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#1a2a1a,#0a1a0a);border:2px solid rgba(94,231,176,0.5);display:flex;align-items:center;justify-content:center;font-size:22px">⚡</div>
+            </div>
+            <div class="comp-name">Grid</div>
+            <div class="comp-trait">Circuit · матриця · структура</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--scifi);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:8px;background:radial-gradient(circle,#ff40a0,#600040);display:flex;align-items:center;justify-content:center;font-size:22px">💀</div>
+            </div>
+            <div class="comp-name">Vex</div>
+            <div class="comp-trait">Cyberpunk · темний · небезпечний</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FANTASY -->
+      <div class="series-card" onclick="toggleSeries('fantasy')" id="series-fantasy" style="--card-color:var(--fantasy)">
+        <div class="s-icon" style="background:radial-gradient(circle,rgba(255,94,122,0.3),rgba(100,0,30,0.6))">🐉</div>
+        <div class="s-info">
+          <div class="s-name" style="color:var(--fantasy)">Fantasy</div>
+          <div class="s-desc">Магія · дракони · зілля · лісові духи</div>
+          <div class="s-companions">Pyro · Fern · Rune · Shimmer</div>
+        </div>
+        <div class="s-arrow" id="arr-fantasy">›</div>
+      </div>
+      <div class="comp-picker" id="picker-fantasy">
+        <div class="comp-picker-title" style="color:var(--fantasy)">🐉 Fantasy Series — обери компаньона</div>
+        <div class="comp-grid">
+          <div class="comp-card" onclick="selectComp(this,'fantasy')" style="--series-color:var(--fantasy)">
+            <div class="comp-art">
+              <div class="art-pyro">
+                <div class="pyro-wing-l"></div><div class="pyro-wing-r"></div>
+                <div class="pyro-horn-l"></div><div class="pyro-horn-r"></div>
+                <div class="pyro-body">
+                  <div class="pyro-eye-l"></div><div class="pyro-eye-r"></div>
+                </div>
+                <div class="pyro-flame">🔥</div>
+              </div>
+            </div>
+            <div class="comp-name">Pyro</div>
+            <div class="comp-trait">Вогонь · сміливий · потужний</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--fantasy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50% 50% 40% 40%;background:radial-gradient(circle,#a0ff80,#208040);display:flex;align-items:center;justify-content:center;font-size:22px;animation:auraBreath 2.5s ease-in-out infinite">🌿</div>
+            </div>
+            <div class="comp-name">Fern</div>
+            <div class="comp-trait">Ліс · природа · зелений</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--fantasy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:8px;background:linear-gradient(135deg,#8080c0,#404080);display:flex;align-items:center;justify-content:center;font-size:22px">🗿</div>
+            </div>
+            <div class="comp-name">Rune</div>
+            <div class="comp-trait">Давній · стародавній · рунічний</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--fantasy);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#ffe0ff,#e080e0);display:flex;align-items:center;justify-content:center;font-size:22px;animation:auraBreath 2s ease-in-out infinite">🧚</div>
+            </div>
+            <div class="comp-name">Shimmer</div>
+            <div class="comp-trait">Фея · блиск · легкий</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRAVEL -->
+      <div class="series-card" onclick="toggleSeries('travel')" id="series-travel" style="--card-color:var(--travel)">
+        <div class="s-icon" style="background:radial-gradient(circle,rgba(64,200,240,0.3),rgba(0,60,100,0.6))">✈️</div>
+        <div class="s-info">
+          <div class="s-name" style="color:var(--travel)">Travel</div>
+          <div class="s-desc">Подорожі · карти · штампи · авіація</div>
+          <div class="s-companions">Jet · Marco · Atlas · Stamp</div>
+        </div>
+        <div class="s-arrow" id="arr-travel">›</div>
+      </div>
+      <div class="comp-picker" id="picker-travel">
+        <div class="comp-picker-title" style="color:var(--travel)">✈️ Travel Series — обери компаньона</div>
+        <div class="comp-grid">
+          <div class="comp-card" onclick="selectComp(this,'travel')" style="--series-color:var(--travel)">
+            <div class="comp-art">
+              <div class="art-jet">
+                <div class="jet-body">
+                  <div class="jet-goggle-l"></div><div class="jet-goggle-r"></div>
+                  <div class="jet-bridge"></div>
+                </div>
+                <div class="jet-scarf"></div>
+                <div class="jet-prop">🌀</div>
+                <div class="jet-trail">✈️</div>
+              </div>
+            </div>
+            <div class="comp-name">Jet</div>
+            <div class="comp-trait">Авіатор · пригоди · небо</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--travel);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#e0c080,#a06020);display:flex;align-items:center;justify-content:center;font-size:22px;animation:blopWobble 3s ease-in-out infinite">🦊</div>
+            </div>
+            <div class="comp-name">Marco</div>
+            <div class="comp-trait">Мандрівник · лис · Explorer</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--travel);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:50%;background:radial-gradient(circle,#60c0ff,#0060c0);display:flex;align-items:center;justify-content:center;font-size:22px;animation:auraBreath 3s ease-in-out infinite">🌍</div>
+            </div>
+            <div class="comp-name">Atlas</div>
+            <div class="comp-trait">Глобус · знання · карти</div>
+          </div>
+          <div class="comp-card" style="--series-color:var(--travel);opacity:0.7">
+            <div class="comp-art" style="display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#ff8080,#c04040);display:flex;align-items:center;justify-content:center;font-size:22px">📮</div>
+            </div>
+            <div class="comp-name">Stamp</div>
+            <div class="comp-trait">Паспорт · листи · штампи</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /series-grid -->
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 2: MOTION LANGUAGE -->
+  <div class="section">
+    <div class="section-head">2. Reaction system — 20+ реакцій на тап, кожна серія унікальна</div>
+    <div class="info-block" style="margin-bottom:12px">
+      Натисни будь-яку реакцію щоб побачити preview. Кожна серія має власну "мову руху".
+    </div>
+
+    <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--mystic)">✨ Mystic — орбітальні · магічні · слова</div>
+    <div class="reactions-row" style="margin-bottom:16px">
+      <div class="reaction-pill mystic" onclick="demoReaction(this,'mystic')">✦ Word orbit</div>
+      <div class="reaction-pill mystic" onclick="demoReaction(this,'mystic')">💜 Aura pulse</div>
+      <div class="reaction-pill mystic" onclick="demoReaction(this,'mystic')">🌀 Mini spin</div>
+      <div class="reaction-pill mystic" onclick="demoReaction(this,'mystic')">✧ Spark burst</div>
+      <div class="reaction-pill mystic" onclick="demoReaction(this,'mystic')">📖 Letter explode</div>
+      <div class="reaction-pill rare" onclick="demoReaction(this,'mystic')">⚡ LEGENDARY halo</div>
+    </div>
+
+    <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--comedy)">😂 Comedy — wobble · bounce · goofy</div>
+    <div class="reactions-row" style="margin-bottom:16px">
+      <div class="reaction-pill comedy" onclick="demoReaction(this,'comedy')">💥 Bonk!</div>
+      <div class="reaction-pill comedy" onclick="demoReaction(this,'comedy')">🌀 Goofy spin</div>
+      <div class="reaction-pill comedy" onclick="demoReaction(this,'comedy')">😜 Silly bounce</div>
+      <div class="reaction-pill comedy" onclick="demoReaction(this,'comedy')">👀 Googly eyes</div>
+      <div class="reaction-pill comedy" onclick="demoReaction(this,'comedy')">💨 Wobbly escape</div>
+      <div class="reaction-pill rare" onclick="demoReaction(this,'comedy')">🎭 RARE: Spotlight!</div>
+    </div>
+
+    <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--scifi)">🤖 Sci-Fi — HUD · circuit · neon pulse</div>
+    <div class="reactions-row" style="margin-bottom:16px">
+      <div class="reaction-pill scifi" onclick="demoReaction(this,'scifi')">📡 System scan</div>
+      <div class="reaction-pill scifi" onclick="demoReaction(this,'scifi')">⚡ Neon flash</div>
+      <div class="reaction-pill scifi" onclick="demoReaction(this,'scifi')">🖥 HUD display</div>
+      <div class="reaction-pill scifi" onclick="demoReaction(this,'scifi')">🔄 Reboot spin</div>
+      <div class="reaction-pill scifi" onclick="demoReaction(this,'scifi')">💾 Data burst</div>
+      <div class="reaction-pill rare" onclick="demoReaction(this,'scifi')">⚡ OVERCLOCK!</div>
+    </div>
+
+    <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--fantasy)">🐉 Fantasy — enchanted · fire · magic trail</div>
+    <div class="reactions-row" style="margin-bottom:16px">
+      <div class="reaction-pill fantasy" onclick="demoReaction(this,'fantasy')">🔥 Fire burst</div>
+      <div class="reaction-pill fantasy" onclick="demoReaction(this,'fantasy')">✨ Magic trail</div>
+      <div class="reaction-pill fantasy" onclick="demoReaction(this,'fantasy')">💎 Crystal pulse</div>
+      <div class="reaction-pill fantasy" onclick="demoReaction(this,'fantasy')">🌿 Nature bloom</div>
+      <div class="reaction-pill fantasy" onclick="demoReaction(this,'fantasy')">⚔️ Power strike</div>
+      <div class="reaction-pill rare" onclick="demoReaction(this,'fantasy')">🐉 DRAGON ROAR!</div>
+    </div>
+
+    <div style="margin-bottom:10px;font-size:12px;font-weight:700;color:var(--travel)">✈️ Travel — plane trails · stamps · maps</div>
+    <div class="reactions-row" style="margin-bottom:16px">
+      <div class="reaction-pill travel" onclick="demoReaction(this,'travel')">✈️ Plane trail</div>
+      <div class="reaction-pill travel" onclick="demoReaction(this,'travel')">📮 Stamp burst</div>
+      <div class="reaction-pill travel" onclick="demoReaction(this,'travel')">🗺 Map route</div>
+      <div class="reaction-pill travel" onclick="demoReaction(this,'travel')">🌍 Globe spin</div>
+      <div class="reaction-pill travel" onclick="demoReaction(this,'travel')">🎫 Ticket shower</div>
+      <div class="reaction-pill rare" onclick="demoReaction(this,'travel')">🏆 World tour!</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 3: NAMING FLOW -->
+  <div class="section">
+    <div class="section-head">3. Naming system — companion name is fully yours</div>
+    <div class="naming-flow">
+      <div class="name-flow-step">
+        <div class="name-step-icon">👤</div>
+        <div class="name-step-info">
+          <div class="name-step-label">Telegram First Name</div>
+          <div class="name-step-sub">Автоматично підтягується з Telegram профілю</div>
+        </div>
+        <div class="name-step-tag">Quick</div>
+      </div>
+      <div class="name-flow-step">
+        <div class="name-step-icon">@</div>
+        <div class="name-step-info">
+          <div class="name-step-label">Telegram Username</div>
+          <div class="name-step-sub">Використати @handle як ім'я компаньона</div>
+        </div>
+        <div class="name-step-tag">Quick</div>
+      </div>
+      <div class="name-flow-step">
+        <div class="name-step-icon">✨</div>
+        <div class="name-step-info">
+          <div class="name-step-label">Suggested Name</div>
+          <div class="name-step-sub">Люмікс / Рикс / Байт / Pyro / Jet — залежно від серії</div>
+        </div>
+        <div class="name-step-tag">Branded</div>
+      </div>
+      <div class="name-flow-step">
+        <div class="name-step-icon">✏️</div>
+        <div class="name-step-info">
+          <div class="name-step-label">Custom Name</div>
+          <div class="name-step-sub">Власне ім'я — до 16 символів</div>
+        </div>
+        <div class="name-step-tag" style="background:rgba(124,110,245,0.15);color:var(--accent)">Free</div>
+      </div>
+    </div>
+    <div class="info-block" style="margin-top:12px">
+      <strong>Rename anytime:</strong> кнопка в Header → тап на ім'я + кнопка в Profile. Ім'я з'являється скрізь: Home, Evolution, Rewards, Easter Egg messages.
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 4: GAMES CONCEPT -->
+  <div class="section">
+    <div class="section-head">4. Games — кожна гра має унікальну механіку</div>
+    <div class="games-concept">
+      <div class="game-concept-card gc-blue">
+        <div class="gc-diff diff-fast">SPEED</div>
+        <div class="gc-icon">⚡</div>
+        <div class="gc-name">Fast Tap Quiz</div>
+        <div class="gc-mech">5 слів · таймер · рефлекси</div>
+      </div>
+      <div class="game-concept-card gc-green">
+        <div class="gc-diff diff-mem">MEMORY</div>
+        <div class="gc-icon">🃏</div>
+        <div class="gc-name">Match Pairs</div>
+        <div class="gc-mech">Flip-card · знайди пару</div>
+      </div>
+      <div class="game-concept-card gc-gold">
+        <div class="gc-diff diff-mem">RECALL</div>
+        <div class="gc-icon">🧠</div>
+        <div class="gc-name">Memory Cards</div>
+        <div class="gc-mech">Запам'ятай 3s → відтвори</div>
+      </div>
+      <div class="game-concept-card gc-blue">
+        <div class="gc-diff diff-drag">CLUES</div>
+        <div class="gc-icon">🎯</div>
+        <div class="gc-name">Guess the Word</div>
+        <div class="gc-mech">3 підказки → 4 варіанти</div>
+      </div>
+      <div class="game-concept-card gc-green">
+        <div class="gc-diff diff-drag">DRAG</div>
+        <div class="gc-icon">🖐</div>
+        <div class="gc-name">Drag to Meaning</div>
+        <div class="gc-mech">Тягни слово до визначення</div>
+      </div>
+      <div class="game-concept-card gc-red">
+        <div class="gc-diff diff-drag">ORDER</div>
+        <div class="gc-icon">🔤</div>
+        <div class="gc-name">Build Sentence</div>
+        <div class="gc-mech">Збери речення по словах</div>
+      </div>
+      <div class="game-concept-card gc-red">
+        <div class="gc-diff diff-fast">THINK</div>
+        <div class="gc-icon">🔀</div>
+        <div class="gc-name">Synonym Hunt</div>
+        <div class="gc-mech">Знайди синонім з 4 варіантів</div>
+      </div>
+      <div class="game-concept-card gc-gold">
+        <div class="gc-diff diff-pvp">PvP</div>
+        <div class="gc-icon">⚔️</div>
+        <div class="gc-name">Word Battle</div>
+        <div class="gc-mech">Реальний час · vs інших</div>
+      </div>
+      <div class="game-concept-card gc-green" style="grid-column:span 2">
+        <div class="gc-diff diff-drag">TAMA</div>
+        <div class="gc-icon">🥚</div>
+        <div class="gc-name">Tamagotchi Feed Mode</div>
+        <div class="gc-mech">Тягни їжу/слова до компаньона · настрій · XP · еволюція</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 5: EASTER EGGS -->
+  <div class="section">
+    <div class="section-head">5. Easter Egg system — прихована система</div>
+    <div class="egg-discovery">
+      <div class="egg-mystery">🥚</div>
+      <div class="egg-title">Ти знайшов перший секрет!</div>
+      <div class="egg-text">
+        У застосунку є приховані моменти.<br>
+        Деякі реакції з'являються лише в особливих умовах.<br>
+        <br>
+        <em>"Це лише перший. Решту знайди сам."</em>
+      </div>
+      <div class="egg-hint">
+        💡 Підказка: деякі компаньони реагують інакше на рідкісні слова, особливі дні або довгі Streak-серії.
+      </div>
+    </div>
+    <div class="info-block" style="margin-top:12px">
+      <strong>Типи Easter Eggs:</strong>
+      <div class="tag-row">
+        <div class="tag">🏛 Historical scroll</div>
+        <div class="tag">🎭 Spotlight burst</div>
+        <div class="tag">🗺 Lost library</div>
+        <div class="tag">🎤 Encore applause</div>
+        <div class="tag">💫 Streak legend</div>
+        <div class="tag">📜 Ancient runes</div>
+        <div class="tag">🌙 Midnight mood</div>
+        <div class="tag">🎂 Birthday secret</div>
+        <div class="tag">🔐 Combo unlock</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SECTION 6: ONBOARDING FLOW -->
+  <div class="section">
+    <div class="section-head">6. Onboarding flow — 4 кроки</div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div style="background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">1</div>
+        <div><div style="font-size:13px;font-weight:700">Обрати серію</div><div style="font-size:11px;color:var(--text2)">Mystic · Comedy · Sci-Fi · Fantasy · Travel</div></div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div style="background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--comedy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">2</div>
+        <div><div style="font-size:13px;font-weight:700">Обрати компаньона</div><div style="font-size:11px;color:var(--text2)">4 персонажі на вибір всередині серії</div></div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div style="background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--scifi);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">3</div>
+        <div><div style="font-size:13px;font-weight:700">Дати ім'я</div><div style="font-size:11px;color:var(--text2)">Telegram / username / запропоноване / custom</div></div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div style="background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--fantasy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0">4</div>
+        <div><div style="font-size:13px;font-weight:700">Обрати ціль навчання</div><div style="font-size:11px;color:var(--text2)">Робота · Подорожі · Спілкування · Технології</div></div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div style="background:var(--card);border-radius:12px;padding:12px 14px;border:1.5px solid rgba(94,231,176,0.3);display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;color:#000">✓</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--green)">Компаньон живий на Home!</div><div style="font-size:11px;color:var(--text2)">Idle анімації · тап реакції · idle loop · урок</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+</div>
+
+<!-- APPROVE -->
+<div class="approve-section">
+  <button class="btn-feedback" onclick="alert('Напиши що змінити!')">💬 Feedback</button>
+  <button class="btn-approve" onclick="approved()">✅ Approve — реалізувати!</button>
+</div>
+
+<script>
+var activeSeries = null;
+
+function toggleSeries(id) {
+  var picker = document.getElementById('picker-' + id);
+  var arr = document.getElementById('arr-' + id);
+  var card = document.getElementById('series-' + id);
+  if (activeSeries && activeSeries !== id) {
+    document.getElementById('picker-' + activeSeries).classList.remove('show');
+    document.getElementById('arr-' + activeSeries).textContent = '›';
+    document.getElementById('series-' + activeSeries).classList.remove('active');
+  }
+  var isOpen = picker.classList.contains('show');
+  picker.classList.toggle('show');
+  arr.textContent = isOpen ? '›' : '˅';
+  card.classList.toggle('active', !isOpen);
+  activeSeries = isOpen ? null : id;
+  if (!isOpen) { setTimeout(function() { picker.scrollIntoView({behavior:'smooth',block:'nearest'}); },100); }
+}
+
+function selectComp(el, series) {
+  el.closest('.comp-grid').querySelectorAll('.comp-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  var name = el.querySelector('.comp-name').textContent;
+  showToast('✓ ' + name + ' обрано!');
+}
+
+function demoReaction(el, series) {
+  el.style.transform = 'scale(0.92)';
+  setTimeout(function() { el.style.transform = ''; },150);
+  var colors = { mystic:'#7c6ef5', comedy:'#f5a030', scifi:'#5ee7b0', fantasy:'#ff5e7a', travel:'#40c8f0' };
+  var color = colors[series] || '#7c6ef5';
+  var rect = el.getBoundingClientRect();
+  var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+  // Rings
+  for (var i=0; i<3; i++) {
+    (function(i) {
+      var ring = document.createElement('div');
+      ring.style.cssText = 'position:fixed;width:'+(50+i*30)+'px;height:'+(50+i*30)+'px;border:2px solid '+color+';border-radius:50%;left:'+cx+'px;top:'+cy+'px;transform:translate(-50%,-50%) scale(0.2);opacity:0.9;pointer-events:none;z-index:9999;transition:all '+(0.4+i*0.08)+'s ease;';
+      document.body.appendChild(ring);
+      setTimeout(function() { ring.style.transform='translate(-50%,-50%) scale(2.5)'; ring.style.opacity='0'; },20+i*60);
+      setTimeout(function() { ring.remove(); },700);
+    })(i);
+  }
+  // Particles
+  for (var j=0; j<8; j++) {
+    (function(j) {
+      var p = document.createElement('div');
+      var ang = (j/8)*360*Math.PI/180;
+      var dist = 30+Math.random()*25;
+      p.style.cssText = 'position:fixed;width:'+(4+Math.random()*5)+'px;height:'+(4+Math.random()*5)+'px;background:'+color+';border-radius:50%;left:'+cx+'px;top:'+cy+'px;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;transition:all 0.6s ease;opacity:1;';
+      document.body.appendChild(p);
+      setTimeout(function() { p.style.transform='translate(calc(-50% + '+(Math.cos(ang)*dist)+'px),calc(-50% + '+(Math.sin(ang)*dist)+'px))'; p.style.opacity='0'; },20);
+      setTimeout(function() { p.remove(); },700);
+    })(j);
+  }
+}
+
+var toastTimer = null;
+function showToast(msg) {
+  var existing = document.getElementById('preview-toast');
+  if (existing) existing.remove();
+  var t = document.createElement('div');
+  t.id = 'preview-toast';
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(94,231,176,0.9);color:#000;font-size:13px;font-weight:800;padding:10px 20px;border-radius:12px;z-index:99999;white-space:nowrap;animation:fadeIn 0.2s ease';
+  document.body.appendChild(t);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { t.remove(); },2000);
+}
+
+function approved() {
+  var t = document.createElement('div');
+  t.style.cssText='position:fixed;inset:0;background:rgba(0,200,120,0.12);z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px';
+  t.innerHTML='<div style="font-size:64px">✅</div><div style="font-size:22px;font-weight:900;color:#5ee7b0">Approved!</div><div style="color:#888;font-size:14px;text-align:center;max-width:280px">Реалізація почнеться після підтвердження всіх секцій.</div>';
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},2500);
+}
+</script>
+</body>
+</html>

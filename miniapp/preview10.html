@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThreeWordsDaily — Вибір компаньона</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:#030310;color:#e2e8f0;overflow-x:hidden}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Stars background ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 20%,rgba(124,58,237,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(59,130,246,0.06) 0%,transparent 50%),
+    radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 25% 45%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 40% 10%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 55% 70%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 30%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 55%,rgba(255,255,255,0.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 93% 20%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 5% 80%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 50% 90%,rgba(255,255,255,0.35) 0%,transparent 100%),
+    #030310;
+}
+
+/* ── Header ── */
+.header{
+  position:relative;z-index:10;
+  padding:20px 16px 12px;
+  text-align:center;
+}
+.header h1{
+  font-size:1.25rem;font-weight:700;
+  background:linear-gradient(135deg,#a78bfa,#60a5fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;
+}
+.header p{font-size:0.78rem;color:#94a3b8;}
+
+/* ── Grid ── */
+.grid{
+  position:relative;z-index:10;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  padding:8px 12px 100px;
+  flex:1;
+}
+
+/* ── Card ── */
+.card{
+  background:rgba(255,255,255,0.04);
+  border:1.5px solid rgba(255,255,255,0.07);
+  border-radius:18px;
+  padding:12px 8px 10px;
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;
+  transition:border-color 0.25s,box-shadow 0.25s,transform 0.15s;
+  position:relative;overflow:hidden;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:18px;
+  background:radial-gradient(circle at 50% 0%,rgba(124,58,237,0.06),transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.card.selected{
+  border-color:#7c3aed;
+  box-shadow:0 0 0 2px rgba(124,58,237,0.4),0 0 20px rgba(124,58,237,0.25);
+}
+.card.selected::before{opacity:1;}
+.card:active{transform:scale(0.96);}
+
+.check-ring{
+  position:absolute;top:8px;right:8px;
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  transition:background 0.2s,border-color 0.2s;
+  font-size:11px;color:transparent;
+}
+.card.selected .check-ring{
+  background:#7c3aed;border-color:#7c3aed;color:#fff;
+}
+
+.char-stage{
+  width:110px;height:140px;
+  position:relative;
+  display:flex;align-items:flex-end;justify-content:center;
+  overflow:visible;
+}
+
+.char-wrap{
+  position:relative;
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:floatY 3.6s ease-in-out infinite;
+}
+
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes floatY2{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes floatY3{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+/* idle behaviours */
+@keyframes idleLook{0%,100%{transform:rotate(0deg)}30%{transform:rotate(-4deg)}70%{transform:rotate(4deg)}}
+@keyframes idleBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes idleWobble{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@keyframes idleNod{0%,100%{transform:rotate(0)}40%{transform:rotate(5deg)}60%{transform:rotate(5deg)}}
+@keyframes idleShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+.idle-look{animation:idleLook 1.4s ease-in-out 1!important;}
+.idle-bounce{animation:idleBounce 0.7s ease-in-out 2!important;}
+.idle-wobble{animation:idleWobble 1s ease-in-out 1!important;}
+.idle-nod{animation:idleNod 0.8s ease-in-out 2!important;}
+.idle-shake{animation:idleShake 0.6s ease-in-out 2!important;}
+
+/* ── Eye blink ── */
+@keyframes blinkEye{0%,88%,100%{transform:scaleY(1)}91%,96%{transform:scaleY(0.07)}}
+
+/* ── Card labels ── */
+.char-name{
+  font-size:0.8rem;font-weight:700;color:#e2e8f0;
+  margin-top:6px;text-align:center;
+}
+.char-fam{
+  font-size:0.65rem;color:#7c3aed;
+  background:rgba(124,58,237,0.12);
+  border-radius:8px;padding:1px 6px;margin-top:2px;
+}
+
+/* ── Bottom bar ── */
+.bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(3,3,16,0.95);
+  border-top:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(12px);
+  padding:10px 16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.sel-count{font-size:0.85rem;color:#94a3b8;white-space:nowrap;}
+.sel-count span{color:#a78bfa;font-weight:700;}
+.btn-confirm{
+  flex:1;max-width:200px;
+  padding:12px 20px;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;border-radius:14px;
+  color:#fff;font-size:0.9rem;font-weight:700;
+  cursor:pointer;
+  transition:opacity 0.2s,transform 0.15s;
+  box-shadow:0 4px 16px rgba(124,58,237,0.4);
+}
+.btn-confirm:hover{opacity:0.88;}
+.btn-confirm:active{transform:scale(0.97);}
+
+/* ══════════════════════════════════════════
+   CHARACTER CSS ART
+══════════════════════════════════════════ */
+
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(0.5)}50%{opacity:1;transform:scale(1)}}
+@keyframes lumixGlow{0%,100%{opacity:0.6;transform:translate(-50%,-55%) scale(1)}50%{opacity:1;transform:translate(-50%,-55%) scale(1.12)}}
+@keyframes mistGlow{0%,100%{opacity:0.5;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+@keyframes ledBlink{0%,80%,100%{opacity:1}85%,92%{opacity:0.1}}
+@keyframes novaEyePulse{0%,100%{box-shadow:0 0 8px rgba(0,229,255,0.8),0 0 16px rgba(0,229,255,0.4);}50%{box-shadow:0 0 14px rgba(0,229,255,1),0 0 28px rgba(0,229,255,0.7),0 0 40px rgba(0,229,255,0.3);}}
+@keyframes sunnyGlow{0%,100%{box-shadow:0 0 18px 6px rgba(251,191,36,0.6),0 0 36px 10px rgba(245,158,11,0.25)}50%{box-shadow:0 0 28px 10px rgba(251,191,36,0.9),0 0 56px 16px rgba(245,158,11,0.45)}}
+@keyframes apexVisor{0%,100%{opacity:1;filter:brightness(1)}50%{opacity:0.75;filter:brightness(1.35)}}
+@keyframes apexAccent{0%,100%{opacity:0.6}50%{opacity:1}}
+
+/* ── 1. LUMIX ── */
+.lumix-wrap{width:80px;height:100px;position:relative;}
+.lumix-glow{position:absolute;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,0.35) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-55%);animation:lumixGlow 2.5s ease-in-out infinite;}
+.lumix-orb{position:absolute;width:68px;height:68px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#c4b5fd,#7c3aed 60%,#4c1d95);box-shadow:0 0 18px 6px rgba(167,139,250,0.7),0 0 40px 10px rgba(124,58,237,0.4);bottom:14px;left:50%;transform:translateX(-50%);}
+.lumix-ear-l,.lumix-ear-r{position:absolute;width:12px;height:30px;border-radius:6px 6px 4px 4px;background:linear-gradient(to bottom,#c4b5fd,#7c3aed);bottom:72px;}
+.lumix-ear-l{left:18px;transform:rotate(-8deg);}
+.lumix-ear-r{right:18px;transform:rotate(8deg);}
+.lumix-ear-inner-l,.lumix-ear-inner-r{position:absolute;width:5px;height:18px;border-radius:3px 3px 2px 2px;background:#e9d5ff;top:5px;left:50%;transform:translateX(-50%);}
+.lumix-eyes{position:absolute;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:10px;width:40px;justify-content:space-between;}
+.lumix-eye{width:13px;height:13px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:blinkEye 4s ease-in-out infinite;}
+.lumix-pupil{width:8px;height:8px;border-radius:50%;background:#2d1b69;position:relative;}
+.lumix-pupil::after{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.lumix-sparkle{position:absolute;font-size:10px;color:#e9d5ff;animation:sparkle 1.8s ease-in-out infinite;}
+.lumix-sparkle:nth-child(1){top:0;left:5px;animation-delay:0s;}
+.lumix-sparkle:nth-child(2){top:10px;right:2px;animation-delay:0.6s;}
+.lumix-sparkle:nth-child(3){bottom:18px;right:4px;animation-delay:1.2s;}
+
+/* ── 2. KITSUNE ── */
+.kitsune-wrap{width:72px;height:108px;position:relative;}
+.kit-tail{position:absolute;width:28px;height:50px;background:linear-gradient(to top,#ea580c,#fb923c);border-radius:14px 14px 8px 20px;bottom:14px;right:-8px;transform:rotate(-15deg);}
+.kit-tail::after{content:'';position:absolute;width:12px;height:16px;background:#fff;border-radius:6px 6px 4px 4px;bottom:2px;left:50%;transform:translateX(-50%);}
+.kit-body{position:absolute;width:40px;height:44px;background:linear-gradient(to bottom,#f97316,#ea580c);border-radius:20px 20px 15px 15px;bottom:16px;left:50%;transform:translateX(-50%);}
+.kit-belly{position:absolute;width:22px;height:26px;background:#fff5f0;border-radius:11px 11px 10px 10px;bottom:3px;left:50%;transform:translateX(-50%);}
+.kit-head{position:absolute;width:46px;height:42px;background:linear-gradient(to bottom,#fb923c,#f97316);border-radius:50% 50% 40% 40%;bottom:54px;left:50%;transform:translateX(-50%);}
+.kit-ear-l,.kit-ear-r{position:absolute;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:22px solid #ea580c;top:-14px;}
+.kit-ear-l{left:3px;transform:rotate(-8deg);}
+.kit-ear-r{right:3px;transform:rotate(8deg);}
+.kit-ear-inner-l,.kit-ear-inner-r{position:absolute;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:13px solid #fecaca;top:-10px;}
+.kit-ear-inner-l{left:50%;transform:translateX(-50%);}
+.kit-ear-inner-r{left:50%;transform:translateX(-50%);}
+.kit-muzzle{position:absolute;width:20px;height:12px;background:#fff5f0;border-radius:50%;bottom:8px;left:50%;transform:translateX(-50%);}
+.kit-nose{position:absolute;width:6px;height:4px;background:#1a1a1a;border-radius:50%;top:2px;left:50%;transform:translateX(-50%);}
+.kit-eye-l,.kit-eye-r{position:absolute;width:11px;height:12px;background:#fff;border-radius:50%;top:12px;overflow:hidden;animation:blinkEye 5s ease-in-out infinite;}
+.kit-eye-l{left:6px;}
+.kit-eye-r{right:6px;}
+.kit-iris{width:7px;height:8px;border-radius:50%;background:#15803d;position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);}
+.kit-iris::after{content:'';position:absolute;width:4px;height:5px;border-radius:50%;background:#000;top:50%;left:50%;transform:translate(-50%,-50%);}
+.kit-iris-hl{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.kit-paw-l,.kit-paw-r{position:absolute;width:13px;height:10px;background:#ea580c;border-radius:6px 6px 5px 5px;bottom:12px;}
+.kit-paw-l{left:2px;}
+.kit-paw-r{right:2px;}
+.kit-leg-l,.kit-leg-r{position:absolute;width:12px;height:16px;background:#ea580c;border-radius:4px 4px 6px 6px;bottom:0px;}
+.kit-leg-l{left:8px;}
+.kit-leg-r{right:8px;}
+.kit-foot-l,.kit-foot-r{position:absolute;width:15px;height:8px;background:#c2410c;border-radius:0 0 6px 6px;bottom:-4px;}
+.kit-foot-l{left:50%;transform:translateX(-60%);}
+.kit-foot-r{left:50%;transform:translateX(-40%);}
+
+/* ── 3. MOCHI ── (redesigned to match screenshot: big round golden face, chunky ears, pixel-art eyes) */
+.mochi-wrap{width:80px;height:102px;position:relative;}
+/* Legs */
+.mochi-leg-l,.mochi-leg-r{position:absolute;width:16px;height:13px;background:#fde68a;border-radius:8px;bottom:0;}
+.mochi-leg-l{left:10px;}
+.mochi-leg-r{right:10px;}
+/* Body — small, just below head */
+.mochi-body{position:absolute;width:46px;height:28px;background:radial-gradient(ellipse at 40%30%,#fef3c7,#fde68a 60%,#fbbf24);border-radius:23px 23px 16px 16px;bottom:11px;left:50%;transform:translateX(-50%);}
+/* Head — large golden circle, matches screenshot */
+.mochi-head{position:absolute;width:78px;height:76px;background:radial-gradient(circle at 38%30%,#fef9c3 0%,#fde68a 22%,#fbbf24 48%,#f59e0b 74%,#d97706 92%);border-radius:50%;bottom:26px;left:50%;transform:translateX(-50%);box-shadow:0 0 18px 6px rgba(251,191,36,0.45),0 0 36px 10px rgba(217,119,6,0.2);}
+/* Ears — chunky rounded-rectangle, orange inner (matches screenshot exactly) */
+.mochi-ear-l,.mochi-ear-r{position:absolute;width:22px;height:27px;background:radial-gradient(ellipse at 44%58%,#fde68a,#fbbf24 45%,#f59e0b 78%,#d97706);border-radius:11px 11px 8px 8px;top:-14px;}
+.mochi-ear-l{left:8px;}
+.mochi-ear-r{right:8px;}
+.mochi-ear-inner-l,.mochi-ear-inner-r{position:absolute;width:11px;height:14px;background:radial-gradient(ellipse at 50%50%,#fb923c,#ea580c 65%,#c2410c);border-radius:6px 6px 5px 5px;top:6px;left:50%;transform:translateX(-50%);}
+/* Eyes — large dark, pixel-art style double white highlight */
+.mochi-eye-l,.mochi-eye-r{position:absolute;width:19px;height:20px;border-radius:50%;background:radial-gradient(ellipse at 40%30%,#3b1a00,#1a0900 55%,#0d0400);top:18px;animation:blinkEye 4.5s ease-in-out infinite;}
+.mochi-eye-l{left:10px;}
+.mochi-eye-r{right:10px;}
+/* Pixel-art highlights: 2 white squares per eye */
+.mochi-eye-hl{position:absolute;width:6px;height:6px;background:#fff;border-radius:1px;top:3px;left:3px;}
+.mochi-eye-hl2{position:absolute;width:3px;height:3px;background:rgba(255,255,255,0.82);border-radius:1px;bottom:4px;right:3px;}
+.mochi-nose{position:absolute;width:8px;height:5px;background:#fb7185;border-radius:50%;bottom:22px;left:50%;transform:translateX(-50%);}
+.mochi-blush-l,.mochi-blush-r{position:absolute;width:16px;height:8px;background:rgba(251,113,133,0.28);border-radius:50%;bottom:27px;}
+.mochi-blush-l{left:5px;}
+.mochi-blush-r{right:5px;}
+
+/* ── 4. BYTE ── */
+.byte-wrap{width:70px;height:112px;position:relative;}
+.byte-antenna{position:absolute;width:4px;height:16px;background:#0d9488;border-radius:2px;bottom:92px;left:50%;transform:translateX(-50%);}
+.byte-antenna::after{content:'';position:absolute;width:8px;height:8px;border-radius:50%;background:#2dd4bf;box-shadow:0 0 8px #2dd4bf;top:-8px;left:-2px;}
+.byte-head{position:absolute;width:52px;height:44px;background:linear-gradient(to bottom,#0f766e,#0d9488);border-radius:10px;bottom:52px;left:50%;transform:translateX(-50%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);}
+.byte-screen{position:absolute;width:38px;height:28px;background:#001a1a;border-radius:6px;top:8px;left:50%;transform:translateX(-50%);border:2px solid #0f766e;overflow:hidden;}
+.byte-led-eye-l,.byte-led-eye-r{position:absolute;width:9px;height:7px;background:#2dd4bf;border-radius:3px;top:6px;box-shadow:0 0 6px #2dd4bf;animation:ledBlink 3s ease-in-out infinite;}
+.byte-led-eye-l{left:5px;}
+.byte-led-eye-r{right:5px;}
+.byte-smile{position:absolute;width:18px;height:5px;border-bottom:3px solid #2dd4bf;border-radius:0 0 8px 8px;bottom:4px;left:50%;transform:translateX(-50%);}
+.byte-body{position:absolute;width:40px;height:30px;background:linear-gradient(to bottom,#0d9488,#0f766e);border-radius:8px;bottom:22px;left:50%;transform:translateX(-50%);}
+.byte-arm-l,.byte-arm-r{position:absolute;width:10px;height:22px;background:#0d9488;border-radius:5px;bottom:28px;}
+.byte-arm-l{left:5px;}
+.byte-arm-r{right:5px;}
+.byte-leg-l,.byte-leg-r{position:absolute;width:14px;height:16px;background:#0f766e;border-radius:4px 4px 6px 6px;bottom:4px;}
+.byte-leg-l{left:12px;}
+.byte-leg-r{right:12px;}
+.byte-foot-l,.byte-foot-r{position:absolute;width:16px;height:8px;background:#134e4a;border-radius:0 0 5px 5px;bottom:0;}
+.byte-foot-l{left:50%;transform:translateX(-65%);}
+.byte-foot-r{right:50%;transform:translateX(65%);}
+
+/* ── 5. EMBER ── */
+.ember-wrap{width:80px;height:115px;position:relative;}
+.ember-tail{position:absolute;width:22px;height:40px;background:linear-gradient(to top,#dc2626,#ef4444);border-radius:11px 8px 4px 14px;bottom:10px;right:0px;transform:rotate(20deg);}
+.ember-tail::after{content:'';position:absolute;width:10px;height:12px;background:#fbbf24;border-radius:5px;bottom:-4px;right:-2px;transform:rotate(-10deg);}
+.ember-body{position:absolute;width:50px;height:50px;background:radial-gradient(circle at 40% 35%,#ef4444,#b91c1c);border-radius:50% 50% 40% 40%;bottom:12px;left:50%;transform:translateX(-55%);}
+.ember-belly{position:absolute;width:28px;height:22px;background:#fca5a5;border-radius:50%;bottom:6px;left:50%;transform:translateX(-50%);}
+.ember-wing-l,.ember-wing-r{position:absolute;width:22px;height:28px;background:linear-gradient(135deg,#dc2626,#7f1d1d);border-radius:12px 4px 4px 12px;bottom:38px;}
+.ember-wing-l{left:-4px;transform:rotate(20deg);}
+.ember-wing-r{right:-4px;transform:rotate(-20deg) scaleX(-1);}
+.ember-head{position:absolute;width:50px;height:46px;background:radial-gradient(circle at 40% 35%,#f87171,#dc2626);border-radius:50%;bottom:56px;left:50%;transform:translateX(-55%);}
+.ember-horn-l,.ember-horn-r{position:absolute;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:16px solid #991b1b;top:-10px;}
+.ember-horn-l{left:6px;transform:rotate(-15deg);}
+.ember-horn-r{right:6px;transform:rotate(15deg);}
+.ember-eye-l,.ember-eye-r{position:absolute;width:13px;height:13px;border-radius:50%;background:#fff;top:12px;overflow:hidden;animation:blinkEye 5s ease-in-out infinite;}
+.ember-eye-l{left:6px;}
+.ember-eye-r{right:6px;}
+.ember-iris{width:9px;height:9px;border-radius:50%;background:#f59e0b;position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);}
+.ember-iris::after{content:'';position:absolute;width:5px;height:6px;border-radius:50%;background:#000;top:50%;left:50%;transform:translate(-50%,-50%);}
+.ember-iris-hl{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.ember-nostril{position:absolute;width:16px;height:8px;background:#ef4444;border-radius:50%;bottom:10px;left:50%;transform:translateX(-50%);}
+.ember-nostril::before,.ember-nostril::after{content:'';position:absolute;width:4px;height:4px;border-radius:50%;background:#7f1d1d;top:2px;}
+.ember-nostril::before{left:3px;}
+.ember-nostril::after{right:3px;}
+.ember-leg-l,.ember-leg-r{position:absolute;width:13px;height:14px;background:#dc2626;border-radius:4px 4px 6px 6px;bottom:0;}
+.ember-leg-l{left:8px;}
+.ember-leg-r{right:12px;}
+
+/* ── 6. BRUNO ── */
+.bruno-wrap{width:72px;height:112px;position:relative;}
+.bruno-backpack{position:absolute;width:28px;height:34px;background:linear-gradient(to bottom,#1d4ed8,#1e40af);border-radius:6px;bottom:26px;left:50%;transform:translateX(14px);z-index:1;}
+.bruno-strap-l,.bruno-strap-r{position:absolute;width:5px;height:28px;background:#1e40af;border-radius:3px;bottom:28px;z-index:0;}
+.bruno-strap-l{left:18px;}
+.bruno-strap-r{right:16px;}
+.bruno-body{position:absolute;width:44px;height:46px;background:linear-gradient(to bottom,#92400e,#78350f);border-radius:22px 22px 16px 16px;bottom:20px;left:50%;transform:translateX(-50%);z-index:2;}
+.bruno-belly{position:absolute;width:26px;height:22px;background:#b45309;border-radius:50%;bottom:6px;left:50%;transform:translateX(-50%);}
+.bruno-head{position:absolute;width:52px;height:48px;background:radial-gradient(circle at 40% 35%,#a16207,#92400e);border-radius:50%;bottom:60px;left:50%;transform:translateX(-50%);z-index:3;}
+.bruno-ear-l,.bruno-ear-r{position:absolute;width:18px;height:18px;background:#78350f;border-radius:50%;top:-6px;}
+.bruno-ear-l{left:2px;}
+.bruno-ear-r{right:2px;}
+.bruno-ear-inner-l,.bruno-ear-inner-r{position:absolute;width:10px;height:10px;background:#92400e;border-radius:50%;top:4px;left:50%;transform:translateX(-50%);}
+.bruno-eye-l,.bruno-eye-r{position:absolute;width:13px;height:14px;border-radius:50%;background:#1a1a1a;top:13px;animation:blinkEye 5s ease-in-out infinite;}
+.bruno-eye-l{left:8px;}
+.bruno-eye-r{right:8px;}
+.bruno-eye-hl{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.9);top:2px;left:2px;}
+.bruno-muzzle{position:absolute;width:22px;height:14px;background:#b45309;border-radius:50%;bottom:12px;left:50%;transform:translateX(-50%);}
+.bruno-nose{position:absolute;width:8px;height:6px;background:#1a1a1a;border-radius:50%;top:1px;left:50%;transform:translateX(-50%);}
+.bruno-arm-l,.bruno-arm-r{position:absolute;width:14px;height:20px;background:#92400e;border-radius:7px;bottom:30px;z-index:2;}
+.bruno-arm-l{left:3px;}
+.bruno-arm-r{right:3px;}
+.bruno-leg-l,.bruno-leg-r{position:absolute;width:16px;height:18px;background:#78350f;border-radius:5px 5px 8px 8px;bottom:2px;z-index:2;}
+.bruno-leg-l{left:8px;}
+.bruno-leg-r{right:8px;}
+.bruno-foot-l,.bruno-foot-r{position:absolute;width:18px;height:10px;background:#451a03;border-radius:0 0 8px 8px;bottom:0;}
+.bruno-foot-l{left:6px;}
+.bruno-foot-r{right:6px;}
+
+/* ── 7. MIST ── */
+.mist-wrap{width:78px;height:110px;position:relative;}
+.mist-glow{position:absolute;width:86px;height:86px;border-radius:50%;background:radial-gradient(circle,rgba(186,230,253,0.2),transparent 70%);top:8px;left:50%;transform:translateX(-50%);animation:mistGlow 3s ease-in-out infinite;}
+.mist-body{position:absolute;width:68px;height:70px;background:radial-gradient(circle at 40% 35%,#e0f2fe,#bae6fd,#7dd3fc);border-radius:50% 50% 45% 45%;bottom:10px;left:50%;transform:translateX(-50%);box-shadow:0 0 20px rgba(125,211,252,0.4),0 0 40px rgba(125,211,252,0.15);}
+.mist-bottom{position:absolute;width:68px;height:22px;bottom:8px;left:50%;transform:translateX(-50%);overflow:hidden;}
+.mist-wave{position:absolute;bottom:0;left:0;right:0;height:22px;background:#7dd3fc;border-radius:0 0 8px 8px;}
+.mist-wave::before{content:'';position:absolute;width:30px;height:14px;background:#bae6fd;border-radius:50% 50% 0 0;bottom:0;left:2px;}
+.mist-wave::after{content:'';position:absolute;width:28px;height:14px;background:#bae6fd;border-radius:50% 50% 0 0;bottom:0;right:2px;}
+.mist-moon{position:absolute;width:28px;height:28px;background:#fef9c3;border-radius:50%;top:-12px;left:50%;transform:translateX(-50%);box-shadow:0 0 12px rgba(254,249,195,0.7);}
+.mist-moon::after{content:'';position:absolute;width:20px;height:20px;background:#0f172a;border-radius:50%;top:0;left:8px;}
+.mist-eye-l,.mist-eye-r{position:absolute;width:14px;height:16px;border-radius:50%;background:#1e3a5f;top:22px;animation:blinkEye 5s ease-in-out infinite;}
+.mist-eye-l{left:14px;}
+.mist-eye-r{right:14px;}
+.mist-eye-hl{position:absolute;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.85);top:2px;left:2px;}
+.mist-blush-l,.mist-blush-r{position:absolute;width:14px;height:7px;background:rgba(186,230,253,0.6);border-radius:50%;top:42px;}
+.mist-blush-l{left:10px;}
+.mist-blush-r{right:10px;}
+
+/* ── 8. MARCO ── */
+.marco-wrap{width:76px;height:108px;position:relative;}
+.marco-hat{position:absolute;width:52px;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:24px solid #92400e;bottom:80px;left:50%;transform:translateX(-50%);}
+.marco-hat-brim{position:absolute;width:62px;height:10px;background:#78350f;border-radius:4px;bottom:78px;left:50%;transform:translateX(-50%);}
+.marco-hat-band{position:absolute;width:50px;height:5px;background:#451a03;border-radius:2px;bottom:80px;left:50%;transform:translateX(-50%);}
+.marco-globe{position:absolute;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fbbf24,#f59e0b,#d97706);box-shadow:0 4px 16px rgba(245,158,11,0.4);bottom:14px;left:50%;transform:translateX(-50%);overflow:hidden;}
+.marco-gridline-h{position:absolute;width:100%;height:1.5px;background:rgba(180,83,9,0.45);}
+.marco-gridline-h:nth-child(1){top:18%;}
+.marco-gridline-h:nth-child(2){top:38%;}
+.marco-gridline-h:nth-child(3){top:58%;}
+.marco-gridline-h:nth-child(4){top:78%;}
+.marco-gridline-v{position:absolute;height:100%;width:1.5px;background:rgba(180,83,9,0.35);}
+.marco-gridline-v:nth-child(5){left:22%;}
+.marco-gridline-v:nth-child(6){left:42%;}
+.marco-gridline-v:nth-child(7){left:62%;}
+.marco-gridline-v:nth-child(8){left:82%;}
+.marco-face{position:absolute;width:100%;height:100%;top:0;left:0;}
+.marco-eye-l,.marco-eye-r{position:absolute;width:12px;height:13px;border-radius:50%;background:#1a1a1a;top:20px;animation:blinkEye 5s ease-in-out infinite;}
+.marco-eye-l{left:10px;}
+.marco-eye-r{right:10px;}
+.marco-eye-hl{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.9);top:2px;left:1px;}
+.marco-smile{position:absolute;width:22px;height:10px;border-bottom:3px solid #92400e;border-radius:0 0 11px 11px;bottom:12px;left:50%;transform:translateX(-50%);}
+.marco-stand{position:absolute;width:20px;height:8px;background:#b45309;border-radius:4px;bottom:8px;left:50%;transform:translateX(-50%);}
+.marco-stand::after{content:'';position:absolute;width:32px;height:6px;background:#92400e;border-radius:3px;bottom:-4px;left:50%;transform:translateX(-50%);}
+
+/* ── 9. CRASH ── */
+.crash-wrap{width:110px;height:150px;position:relative;}
+.crash-shoe-l,.crash-shoe-r{position:absolute;width:36px;height:20px;background:radial-gradient(ellipse at 30% 25%,#dc2626,#991b1b 60%,#7f1d1d);border-radius:18px 20px 14px 14px / 14px 14px 12px 12px;bottom:0;box-shadow:0 4px 8px rgba(0,0,0,0.5),inset 0 -2px 4px rgba(0,0,0,0.3);}
+.crash-shoe-l{left:8px;}
+.crash-shoe-r{right:8px;}
+.crash-shoe-l::before,.crash-shoe-r::before{content:'';position:absolute;width:32px;height:7px;background:linear-gradient(to right,#ef4444,#b91c1c);border-radius:6px 6px 0 0;top:-4px;left:2px;}
+.crash-shoe-l::after,.crash-shoe-r::after{content:'';position:absolute;width:14px;height:5px;background:rgba(255,255,255,0.25);border-radius:4px;top:4px;left:6px;}
+.crash-jean-l,.crash-jean-r{position:absolute;width:26px;height:26px;background:linear-gradient(160deg,#2563eb,#1d4ed8 50%,#1e3a8a);border-radius:6px 6px 2px 2px;bottom:16px;}
+.crash-jean-l{left:11px;}
+.crash-jean-r{right:11px;}
+.crash-jean-l::before,.crash-jean-r::before{content:'';position:absolute;width:100%;height:5px;background:#1e40af;border-radius:2px;bottom:-1px;left:0;border-bottom:2px solid #1d4ed8;}
+.crash-jean-l::after,.crash-jean-r::after{content:'';position:absolute;width:1.5px;height:70%;background:rgba(255,255,255,0.12);border-radius:1px;top:4px;left:50%;transform:translateX(-50%);}
+.crash-body{position:absolute;width:52px;height:44px;background:radial-gradient(ellipse at 40% 28%,#fb923c,#ea580c 60%,#c2410c);border-radius:24px 24px 18px 18px;bottom:36px;left:50%;transform:translateX(-50%);box-shadow:0 4px 8px rgba(0,0,0,0.3);}
+.crash-body::before{content:'';position:absolute;width:24px;height:30px;background:radial-gradient(ellipse at 50% 30%,#fed7aa,#fbbf78);border-radius:12px 12px 10px 10px;top:5px;left:50%;transform:translateX(-50%);}
+.crash-arm-l,.crash-arm-r{position:absolute;width:18px;height:28px;background:linear-gradient(to bottom,#fb923c,#ea580c);border-radius:9px;bottom:46px;box-shadow:0 2px 5px rgba(0,0,0,0.25);}
+.crash-arm-l{left:0px;transform:rotate(12deg);transform-origin:top center;}
+.crash-arm-r{right:0px;transform:rotate(-12deg);transform-origin:top center;}
+.crash-glove-l,.crash-glove-r{position:absolute;width:22px;height:18px;background:radial-gradient(ellipse at 40% 30%,#ffffff,#f0ede0);border-radius:11px 11px 8px 8px;bottom:32px;box-shadow:0 2px 5px rgba(0,0,0,0.2);}
+.crash-glove-l{left:-2px;}
+.crash-glove-r{right:-2px;}
+.crash-head{position:absolute;width:96px;height:80px;background:radial-gradient(ellipse at 38% 30%,#fc9e4f,#fb923c 40%,#ea580c 75%,#c2410c);border-radius:52% 52% 46% 46% / 56% 56% 44% 44%;bottom:68px;left:50%;transform:translateX(-50%);z-index:5;box-shadow:0 6px 14px rgba(0,0,0,0.3);}
+.crash-hair{position:absolute;top:-32px;left:50%;transform:translateX(-50%);width:80px;height:36px;z-index:6;}
+.crash-spike{position:absolute;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:28px solid #431407;bottom:0;filter:drop-shadow(0 -2px 2px rgba(0,0,0,0.3));}
+.crash-spike:nth-child(1){left:2px;border-bottom-width:22px;border-left-width:6px;border-right-width:6px;}
+.crash-spike:nth-child(2){left:16px;border-bottom-width:30px;}
+.crash-spike:nth-child(3){left:30px;border-bottom-width:36px;border-left-width:9px;border-right-width:9px;}
+.crash-spike:nth-child(4){left:45px;border-bottom-width:34px;border-left-width:9px;border-right-width:9px;}
+.crash-spike:nth-child(5){left:60px;border-bottom-width:28px;}
+.crash-spike:nth-child(6){left:72px;border-bottom-width:20px;border-left-width:6px;border-right-width:6px;}
+.crash-brow-l,.crash-brow-r{position:absolute;width:26px;height:8px;background:#2d0d03;border-radius:4px 4px 2px 2px;top:12px;z-index:7;box-shadow:0 2px 4px rgba(0,0,0,0.4);}
+.crash-brow-l{left:7px;transform:rotate(20deg);}
+.crash-brow-r{right:7px;transform:rotate(-20deg);}
+.crash-eye-l,.crash-eye-r{position:absolute;width:20px;height:22px;border-radius:50%;background:#fff;top:22px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.25);animation:blinkEye 4s ease-in-out infinite;}
+.crash-eye-l{left:10px;}
+.crash-eye-r{right:10px;}
+.crash-iris-inner{width:14px;height:15px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#3b82f6,#1d4ed8 55%,#1e3a8a);position:absolute;top:50%;left:50%;transform:translate(-50%,-46%);}
+.crash-iris-inner::after{content:'';position:absolute;width:9px;height:10px;border-radius:50%;background:radial-gradient(ellipse at 38% 28%,#111,#000);top:50%;left:50%;transform:translate(-50%,-50%);}
+.crash-eye-hl1{position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.95);top:2px;left:2px;z-index:2;}
+.crash-eye-hl2{position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.65);bottom:4px;right:2px;z-index:2;}
+.crash-snout{position:absolute;width:62px;height:42px;background:radial-gradient(ellipse at 50% 35%,#fef9e7,#fde68a 45%,#f5c542 80%,#e8a818);border-radius:50% 50% 48% 48% / 55% 55% 45% 45%;bottom:3px;left:50%;transform:translateX(-50%);box-shadow:0 3px 8px rgba(0,0,0,0.2);z-index:6;}
+.crash-snout::before{content:'';position:absolute;width:11px;height:8px;border-radius:50%;background:rgba(100,40,5,0.5);top:8px;left:8px;}
+.crash-snout::after{content:'';position:absolute;width:11px;height:8px;border-radius:50%;background:rgba(100,40,5,0.5);top:8px;right:8px;}
+.crash-mouth{position:absolute;width:44px;height:18px;border-radius:0 0 22px 22px;background:#7c1d0a;bottom:4px;left:50%;transform:translateX(-50%);overflow:hidden;z-index:7;}
+.crash-teeth{position:absolute;width:40px;height:10px;background:#fff;border-radius:2px 2px 0 0;top:0px;left:2px;}
+.crash-teeth::before{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.6);left:12px;top:0;}
+.crash-teeth::after{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.6);right:12px;top:0;}
+.crash-lower-teeth{position:absolute;width:34px;height:7px;background:#f5f0e8;border-radius:0 0 3px 3px;bottom:1px;left:50%;transform:translateX(-50%);}
+.crash-blush-l,.crash-blush-r{position:absolute;width:18px;height:10px;background:rgba(252,100,50,0.35);border-radius:50%;bottom:18px;z-index:6;}
+.crash-blush-l{left:5px;}
+.crash-blush-r{right:5px;}
+
+/* ── 10. NOVA ── */
+.nova-wrap{width:76px;height:114px;position:relative;}
+.nova-cape{position:absolute;width:58px;height:64px;background:linear-gradient(170deg,#1a0533 0%,#0f0520 60%,#0a0318 100%);border-radius:10px 10px 24px 24px;bottom:18px;left:50%;transform:translateX(-50%);z-index:1;box-shadow:-3px 4px 10px rgba(109,40,217,0.3),3px 4px 10px rgba(109,40,217,0.3);}
+.nova-cape::before{content:'';position:absolute;width:18px;height:40px;background:linear-gradient(to bottom right,#1a0533,#0a0318);border-radius:0 0 12px 16px;bottom:-10px;left:-10px;transform:rotate(10deg);}
+.nova-cape::after{content:'';position:absolute;width:18px;height:40px;background:linear-gradient(to bottom left,#1a0533,#0a0318);border-radius:0 0 16px 12px;bottom:-10px;right:-10px;transform:rotate(-10deg);}
+.nova-leg-l,.nova-leg-r{position:absolute;width:14px;height:22px;background:linear-gradient(to bottom,#1a0533,#0f0520);border-radius:4px 4px 6px 6px;bottom:0;z-index:3;}
+.nova-leg-l{left:18px;}
+.nova-leg-r{right:18px;}
+.nova-leg-l::after,.nova-leg-r::after{content:'';position:absolute;width:16px;height:10px;background:#2e1065;border-radius:4px;bottom:-2px;left:-1px;}
+.nova-body{position:absolute;width:44px;height:40px;background:radial-gradient(ellipse at 40% 30%,#2e1065,#1a0533 60%,#0f0520);border-radius:18px 18px 14px 14px;bottom:20px;left:50%;transform:translateX(-50%);z-index:3;box-shadow:0 0 12px rgba(109,40,217,0.4);}
+.nova-body::before{content:'';position:absolute;width:12px;height:14px;background:radial-gradient(ellipse at 40% 30%,#a78bfa,#6d28d9 55%,#4c1d95);border-radius:50% 50% 40% 40%;top:8px;left:50%;transform:translateX(-50%);box-shadow:0 0 8px rgba(167,139,250,0.7);}
+.nova-arm-l,.nova-arm-r{position:absolute;width:12px;height:22px;background:linear-gradient(to bottom,#2e1065,#1a0533);border-radius:6px;bottom:32px;z-index:3;}
+.nova-arm-l{left:6px;transform:rotate(8deg);}
+.nova-arm-r{right:6px;transform:rotate(-8deg);}
+.nova-fist-l,.nova-fist-r{position:absolute;width:14px;height:13px;background:radial-gradient(ellipse at 40% 30%,#4c1d95,#2e1065);border-radius:7px;bottom:22px;z-index:3;box-shadow:0 0 8px rgba(0,229,255,0.5);}
+.nova-fist-l{left:4px;}
+.nova-fist-r{right:4px;}
+.nova-fist-l::after,.nova-fist-r::after{content:'';position:absolute;width:8px;height:3px;background:rgba(0,229,255,0.6);border-radius:2px;top:4px;left:50%;transform:translateX(-50%);box-shadow:0 0 6px rgba(0,229,255,0.8);}
+.nova-head{position:absolute;width:54px;height:52px;background:radial-gradient(ellipse at 38% 30%,#2e1065,#1a0533 55%,#0f0520);border-radius:50% 50% 44% 44%;bottom:52px;left:50%;transform:translateX(-50%);z-index:5;box-shadow:0 0 16px rgba(109,40,217,0.5);}
+.nova-crown{position:absolute;top:-24px;left:50%;transform:translateX(-50%);width:58px;height:28px;z-index:6;}
+.nova-star{position:absolute;width:0;height:0;bottom:0;}
+.nova-star:nth-child(1){left:1px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:22px solid #6d28d9;filter:drop-shadow(0 -2px 4px rgba(167,139,250,0.7));}
+.nova-star:nth-child(2){left:12px;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:28px solid #7c3aed;filter:drop-shadow(0 -3px 5px rgba(167,139,250,0.9));}
+.nova-star:nth-child(3){left:25px;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:32px solid #8b5cf6;filter:drop-shadow(0 -4px 8px rgba(167,139,250,1));}
+.nova-star:nth-child(4){left:38px;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:28px solid #7c3aed;filter:drop-shadow(0 -3px 5px rgba(167,139,250,0.9));}
+.nova-star:nth-child(5){left:50px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:22px solid #6d28d9;filter:drop-shadow(0 -2px 4px rgba(167,139,250,0.7));}
+.nova-eye-l,.nova-eye-r{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#67e8f9,#00e5ff 50%,#0891b2);top:14px;box-shadow:0 0 10px rgba(0,229,255,0.9),0 0 20px rgba(0,229,255,0.5);animation:novaEyePulse 2s ease-in-out infinite;}
+.nova-eye-l{left:9px;}
+.nova-eye-r{right:9px;}
+.nova-eye-l::after,.nova-eye-r::after{content:'';position:absolute;width:4px;height:10px;border-radius:2px;background:rgba(0,30,50,0.6);top:50%;left:50%;transform:translate(-50%,-50%);}
+
+/* ── 11. LUNA ── */
+.luna-wrap{width:72px;height:110px;position:relative;}
+.luna-tail{position:absolute;width:12px;height:60px;background:linear-gradient(to top,#0d0d0d,#1a1a2e);border-radius:6px 6px 4px 16px;bottom:12px;right:-8px;transform:rotate(-20deg);transform-origin:bottom center;z-index:1;}
+.luna-tail::after{content:'';position:absolute;width:18px;height:18px;border:5px solid #1a1a2e;border-radius:50%;top:-14px;right:-10px;border-left-color:transparent;border-bottom-color:transparent;}
+.luna-leg-l,.luna-leg-r{position:absolute;width:13px;height:20px;background:linear-gradient(to bottom,#1a1a2e,#0d0d0d);border-radius:5px 5px 6px 6px;bottom:0;z-index:3;}
+.luna-leg-l{left:16px;}
+.luna-leg-r{right:16px;}
+.luna-leg-l::after,.luna-leg-r::after{content:'';position:absolute;width:15px;height:9px;background:#e8e4d0;border-radius:5px;bottom:-1px;left:-1px;}
+.luna-body{position:absolute;width:42px;height:38px;background:radial-gradient(ellipse at 42% 30%,#1a1a2e,#0d0d0d 65%,#050510);border-radius:18px 18px 14px 14px;bottom:18px;left:50%;transform:translateX(-50%);z-index:2;}
+.luna-paw-l,.luna-paw-r{position:absolute;width:12px;height:16px;background:#1a1a2e;border-radius:6px 6px 8px 8px;bottom:22px;z-index:3;}
+.luna-paw-l{left:4px;}
+.luna-paw-r{right:4px;}
+.luna-paw-l::after,.luna-paw-r::after{content:'';position:absolute;width:13px;height:7px;background:#e8e4d0;border-radius:4px;bottom:-1px;left:-1px;}
+.luna-head{position:absolute;width:56px;height:52px;background:radial-gradient(ellipse at 38% 32%,#1a1a2e,#0d0d0d 60%,#050510);border-radius:50% 50% 42% 42%;bottom:46px;left:50%;transform:translateX(-50%);z-index:4;}
+.luna-ear-l,.luna-ear-r{position:absolute;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:20px solid #0d0d0d;top:-14px;z-index:5;}
+.luna-ear-l{left:4px;transform:rotate(-8deg);}
+.luna-ear-r{right:4px;transform:rotate(8deg);}
+.luna-ear-l::after,.luna-ear-r::after{content:'';position:absolute;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid #fb7185;bottom:-20px;left:-7px;}
+.luna-crescent{position:absolute;width:18px;height:18px;border-radius:50%;background:transparent;border:5px solid #fef9c3;top:6px;left:50%;transform:translateX(-50%);z-index:6;clip-path:polygon(0 0,60% 0,60% 100%,0 100%);box-shadow:0 0 6px rgba(254,249,195,0.6);}
+.luna-eye-l,.luna-eye-r{position:absolute;width:15px;height:12px;border-radius:50% 50% 40% 40% / 60% 60% 40% 40%;background:radial-gradient(ellipse at 40% 35%,#bef264,#a3e635 50%,#65a30d);top:20px;box-shadow:0 0 8px rgba(163,230,53,0.8);overflow:hidden;animation:blinkEye 5s ease-in-out infinite;}
+.luna-eye-l{left:9px;}
+.luna-eye-r{right:9px;}
+.luna-eye-l::after,.luna-eye-r::after{content:'';position:absolute;width:3px;height:10px;border-radius:2px;background:rgba(0,0,0,0.85);top:50%;left:50%;transform:translate(-50%,-50%);}
+.luna-nose{position:absolute;width:8px;height:5px;background:#fda4af;border-radius:50% 50% 40% 40%;top:34px;left:50%;transform:translateX(-50%);z-index:6;}
+.luna-nose::after{content:'';position:absolute;width:10px;height:5px;border-bottom:1.5px solid rgba(100,30,30,0.5);border-radius:0 0 5px 5px;bottom:-5px;left:-1px;}
+
+/* ── 12. REX ── */
+.rex-wrap{width:80px;height:116px;position:relative;}
+.rex-leg-l,.rex-leg-r{position:absolute;width:18px;height:24px;background:linear-gradient(to bottom,#16a34a,#15803d);border-radius:6px 6px 8px 8px;bottom:0;z-index:3;}
+.rex-leg-l{left:16px;}
+.rex-leg-r{right:16px;}
+.rex-leg-l::after,.rex-leg-r::after{content:'';position:absolute;width:22px;height:12px;background:radial-gradient(ellipse at 40% 30%,#22c55e,#16a34a);border-radius:10px;bottom:-4px;left:-2px;}
+.rex-body{position:absolute;width:54px;height:48px;background:radial-gradient(ellipse at 40% 30%,#22c55e,#16a34a 55%,#15803d);border-radius:22px 22px 18px 18px;bottom:22px;left:50%;transform:translateX(-50%);z-index:2;}
+.rex-body::before{content:'';position:absolute;width:30px;height:32px;background:radial-gradient(ellipse at 50% 40%,#bbf7d0,#86efac 60%,#4ade80);border-radius:15px 15px 14px 14px;top:8px;left:50%;transform:translateX(-50%);}
+.rex-body::after{content:'';position:absolute;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #15803d;top:-12px;left:50%;transform:translateX(-50%);filter:drop-shadow(-12px 0 0 #15803d) drop-shadow(12px 0 0 #15803d);}
+.rex-arm-l,.rex-arm-r{position:absolute;width:12px;height:14px;background:linear-gradient(to bottom,#22c55e,#16a34a);border-radius:6px;bottom:46px;z-index:3;}
+.rex-arm-l{left:4px;transform:rotate(30deg);}
+.rex-arm-r{right:4px;transform:rotate(-30deg);}
+.rex-arm-l::after,.rex-arm-r::after{content:'';position:absolute;width:10px;height:8px;background:#22c55e;border-radius:5px 5px 4px 4px;bottom:-5px;left:-1px;}
+.rex-head{position:absolute;width:68px;height:60px;background:radial-gradient(ellipse at 38% 30%,#4ade80,#22c55e 45%,#16a34a 75%,#15803d);border-radius:50% 50% 44% 44% / 55% 55% 45% 45%;bottom:60px;left:50%;transform:translateX(-50%);z-index:4;}
+.rex-head::before{content:'';position:absolute;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:20px solid #15803d;top:-16px;left:50%;transform:translateX(-50%);filter:drop-shadow(-10px 2px 0 #15803d) drop-shadow(10px 2px 0 #16a34a);}
+.rex-eye-l,.rex-eye-r{position:absolute;width:18px;height:18px;border-radius:50%;background:#1a1a1a;top:14px;overflow:hidden;animation:blinkEye 3.5s ease-in-out infinite;}
+.rex-eye-l{left:11px;}
+.rex-eye-r{right:11px;}
+.rex-eye-l::before,.rex-eye-r::before{content:'';position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;top:2px;left:2px;}
+.rex-eye-l::after,.rex-eye-r::after{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.7);bottom:4px;right:3px;}
+.rex-mouth{position:absolute;width:42px;height:18px;border-bottom:3px solid #15803d;border-radius:0 0 21px 21px;bottom:8px;left:50%;transform:translateX(-50%);overflow:hidden;z-index:5;background:rgba(21,128,61,0.1);}
+.rex-teeth{position:absolute;width:36px;height:8px;background:#fff;border-radius:2px 2px 0 0;top:0;left:3px;}
+.rex-teeth::before{content:'';position:absolute;width:1.5px;height:100%;background:rgba(200,200,200,0.6);left:10px;}
+.rex-teeth::after{content:'';position:absolute;width:1.5px;height:100%;background:rgba(200,200,200,0.6);right:10px;}
+.rex-teeth-low{position:absolute;width:30px;height:6px;background:#f0fdf4;border-radius:0 0 4px 4px;bottom:2px;left:50%;transform:translateX(-50%);}
+.rex-blush-l,.rex-blush-r{position:absolute;width:14px;height:8px;background:rgba(74,222,128,0.4);border-radius:50%;bottom:20px;z-index:5;}
+.rex-blush-l{left:6px;}
+.rex-blush-r{right:6px;}
+
+/* ══════════════════════════════════════════
+   NEW CHARACTERS 13–17
+══════════════════════════════════════════ */
+
+/* ── 13. SUNNY ── */
+.sunny-wrap{width:88px;height:100px;position:relative;}
+.sunny-ray{position:absolute;width:8px;height:16px;background:linear-gradient(to top,#f59e0b,#fbbf24);border-radius:4px;top:50%;left:50%;transform-origin:4px 38px;}
+.sunny-ray:nth-child(1){transform:translateX(-4px) translateY(-38px) rotate(0deg);}
+.sunny-ray:nth-child(2){transform:translateX(-4px) translateY(-38px) rotate(45deg);}
+.sunny-ray:nth-child(3){transform:translateX(-4px) translateY(-38px) rotate(90deg);}
+.sunny-ray:nth-child(4){transform:translateX(-4px) translateY(-38px) rotate(135deg);}
+.sunny-ray:nth-child(5){transform:translateX(-4px) translateY(-38px) rotate(180deg);}
+.sunny-ray:nth-child(6){transform:translateX(-4px) translateY(-38px) rotate(225deg);}
+.sunny-ray:nth-child(7){transform:translateX(-4px) translateY(-38px) rotate(270deg);}
+.sunny-ray:nth-child(8){transform:translateX(-4px) translateY(-38px) rotate(315deg);}
+.sunny-face{position:absolute;width:72px;height:72px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#fef3c7,#fbbf24 50%,#f59e0b 80%);bottom:14px;left:50%;transform:translateX(-50%);animation:sunnyGlow 2.8s ease-in-out infinite;z-index:2;}
+.sunny-nose{position:absolute;width:8px;height:6px;background:#f59e0b;border-radius:50%;bottom:26px;left:50%;transform:translateX(-50%);z-index:3;}
+.sunny-eye-l,.sunny-eye-r{position:absolute;width:14px;height:15px;border-radius:50%;background:#fff;top:15px;overflow:hidden;z-index:3;animation:blinkEye 4.2s ease-in-out infinite;}
+.sunny-eye-l{left:12px;}
+.sunny-eye-r{right:12px;}
+.sunny-pupil{width:9px;height:10px;border-radius:50%;background:#1a1a1a;position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);}
+.sunny-pupil::after{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.sunny-eye-hl{position:absolute;width:6px;height:8px;border-radius:50%;background:rgba(255,255,255,0.85);top:1px;left:1px;}
+.sunny-smile{position:absolute;width:32px;height:14px;border-bottom:3px solid #d97706;border-radius:0 0 16px 16px;bottom:14px;left:50%;transform:translateX(-50%);z-index:3;}
+.sunny-blush-l,.sunny-blush-r{position:absolute;width:14px;height:8px;background:rgba(251,113,133,0.45);border-radius:50%;bottom:19px;z-index:3;}
+.sunny-blush-l{left:8px;}
+.sunny-blush-r{right:8px;}
+.sunny-hand-l,.sunny-hand-r{position:absolute;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fde68a,#fbbf24 60%,#f59e0b);bottom:34px;z-index:2;box-shadow:0 2px 5px rgba(0,0,0,0.15);}
+.sunny-hand-l{left:-2px;}
+.sunny-hand-r{right:-2px;}
+
+/* ── 14. BISCUIT ── */
+.biscuit-wrap{width:80px;height:110px;position:relative;}
+.biscuit-leg-l,.biscuit-leg-r{position:absolute;width:14px;height:16px;background:#b45309;border-radius:6px 6px 8px 8px;bottom:0;z-index:2;}
+.biscuit-leg-l{left:16px;}
+.biscuit-leg-r{right:16px;}
+.biscuit-leg-l::after,.biscuit-leg-r::after{content:'';position:absolute;width:16px;height:8px;background:#92400e;border-radius:0 0 7px 7px;bottom:0;left:-1px;}
+.biscuit-body{position:absolute;width:68px;height:60px;background:radial-gradient(ellipse at 38% 30%,#d97706,#b45309 55%,#92400e);border-radius:34px 34px 26px 26px;bottom:12px;left:50%;transform:translateX(-50%);z-index:2;box-shadow:0 4px 12px rgba(0,0,0,0.25),inset 0 -3px 6px rgba(0,0,0,0.15);}
+.biscuit-body::before{content:'';position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,0.12);top:12px;left:10px;box-shadow:14px 0 0 rgba(0,0,0,0.1),28px 0 0 rgba(0,0,0,0.12),42px 0 0 rgba(0,0,0,0.1),7px 14px 0 rgba(0,0,0,0.1),21px 14px 0 rgba(0,0,0,0.12),35px 14px 0 rgba(0,0,0,0.1),0px 28px 0 rgba(0,0,0,0.09),14px 28px 0 rgba(0,0,0,0.1),28px 28px 0 rgba(0,0,0,0.09),42px 28px 0 rgba(0,0,0,0.1);}
+.biscuit-frosting{position:absolute;width:64px;height:22px;background:#fef9c3;border-radius:12px 12px 0 0;top:0;left:50%;transform:translateX(-50%);z-index:3;}
+.biscuit-frosting::before{content:'';position:absolute;width:14px;height:12px;border-radius:50%;background:#fef9c3;bottom:-8px;left:4px;box-shadow:16px 0 0 #fef9c3,32px 0 0 #fef9c3,48px 0 0 #fef9c3;}
+.biscuit-frosting::after{content:'';position:absolute;width:10px;height:8px;border-radius:50%;background:#fef9c3;bottom:-12px;left:12px;box-shadow:20px -4px 0 #fef9c3;}
+.biscuit-arm-l,.biscuit-arm-r{position:absolute;width:13px;height:18px;background:#b45309;border-radius:7px;bottom:28px;z-index:2;}
+.biscuit-arm-l{left:2px;transform:rotate(10deg);}
+.biscuit-arm-r{right:2px;transform:rotate(-10deg);}
+.biscuit-arm-l::after,.biscuit-arm-r::after{content:'';position:absolute;width:14px;height:12px;border-radius:7px;background:#92400e;bottom:-5px;left:-1px;}
+.biscuit-eye-l,.biscuit-eye-r{position:absolute;width:13px;height:14px;border-radius:50%;background:#1a1a1a;top:14px;z-index:4;animation:blinkEye 4.8s ease-in-out infinite;}
+.biscuit-eye-l{left:12px;}
+.biscuit-eye-r{right:12px;}
+.biscuit-eye-l::before,.biscuit-eye-r::before{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:#1a1a1a;top:-4px;left:2px;box-shadow:5px 0 0 #1a1a1a,9px 1px 0 #1a1a1a;}
+.biscuit-eye-hl{position:absolute;width:4px;height:5px;border-radius:50%;background:rgba(255,255,255,0.9);top:2px;left:2px;}
+.biscuit-nose{position:absolute;width:7px;height:5px;background:#fb7185;border-radius:50%;top:30px;left:50%;transform:translateX(-50%);z-index:4;}
+.biscuit-mouth{position:absolute;width:34px;height:14px;border-radius:0 0 17px 17px;background:#7c2d12;bottom:10px;left:50%;transform:translateX(-50%);z-index:4;overflow:hidden;}
+.biscuit-teeth{position:absolute;width:30px;height:8px;background:#fff;border-radius:2px 2px 0 0;top:0;left:2px;}
+.biscuit-teeth::before{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.5);left:9px;}
+.biscuit-teeth::after{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.5);right:9px;}
+.biscuit-blush-l,.biscuit-blush-r{position:absolute;width:13px;height:7px;background:rgba(253,164,175,0.55);border-radius:50%;bottom:22px;z-index:4;}
+.biscuit-blush-l{left:8px;}
+.biscuit-blush-r{right:8px;}
+
+/* ── 15. RONIN ── */
+.ronin-wrap{width:76px;height:118px;position:relative;}
+.ronin-hakama-l,.ronin-hakama-r{position:absolute;width:22px;height:36px;background:linear-gradient(160deg,#1e293b,#0f172a 70%);border-radius:4px 4px 10px 10px;bottom:0;z-index:2;}
+.ronin-hakama-l{left:8px;transform:skewX(-4deg);}
+.ronin-hakama-r{right:8px;transform:skewX(4deg);}
+.ronin-hakama-l::after,.ronin-hakama-r::after{content:'';position:absolute;width:24px;height:9px;background:#334155;border-radius:0 0 6px 6px;bottom:-1px;left:-1px;}
+.ronin-body{position:absolute;width:42px;height:42px;background:linear-gradient(170deg,#1e293b,#0f172a 65%);border-radius:12px 12px 8px 8px;bottom:32px;left:50%;transform:translateX(-50%);z-index:3;}
+.ronin-body::before{content:'';position:absolute;width:2px;height:28px;background:#334155;top:4px;left:50%;transform:translateX(-4px);border-radius:1px;}
+.ronin-body::after{content:'';position:absolute;width:2px;height:28px;background:#334155;top:4px;left:50%;transform:translateX(2px);border-radius:1px;}
+.ronin-obi{position:absolute;width:44px;height:10px;background:#dc2626;border-radius:3px;bottom:56px;left:50%;transform:translateX(-50%);z-index:4;}
+.ronin-obi::after{content:'';position:absolute;width:10px;height:12px;background:#b91c1c;border-radius:4px;top:-1px;right:-6px;}
+.ronin-arm-l,.ronin-arm-r{position:absolute;width:12px;height:24px;background:#1e293b;border-radius:6px;bottom:44px;z-index:3;}
+.ronin-arm-l{left:4px;transform:rotate(8deg);}
+.ronin-arm-r{right:8px;transform:rotate(-20deg);}
+.ronin-arm-l::after,.ronin-arm-r::after{content:'';position:absolute;width:10px;height:9px;border-radius:5px;background:#e2e8f0;bottom:-4px;left:1px;}
+.ronin-tsuka{position:absolute;width:6px;height:28px;background:#334155;border-radius:3px;bottom:36px;right:4px;transform:rotate(-18deg);z-index:5;}
+.ronin-tsuka::before{content:'';position:absolute;width:14px;height:5px;background:#64748b;border-radius:3px;top:0px;left:-4px;}
+.ronin-head{position:absolute;width:44px;height:46px;background:radial-gradient(ellipse at 42% 32%,#f1f5f9,#e2e8f0 55%,#cbd5e1);border-radius:40% 40% 36% 36% / 44% 44% 36% 36%;bottom:70px;left:50%;transform:translateX(-50%);z-index:5;box-shadow:0 4px 10px rgba(0,0,0,0.3);}
+.ronin-hair{position:absolute;width:44px;height:22px;background:#1a1a1a;border-radius:22px 22px 0 0;top:0;left:0;z-index:6;}
+.ronin-hair::before{content:'';position:absolute;width:10px;height:14px;background:#1a1a1a;border-radius:0 0 6px 6px;bottom:-10px;left:6px;}
+.ronin-hair::after{content:'';position:absolute;width:9px;height:12px;background:#1a1a1a;border-radius:0 0 5px 5px;bottom:-8px;left:20px;}
+.ronin-eye-l,.ronin-eye-r{position:absolute;width:12px;height:7px;border-radius:50% 50% 40% 40% / 60% 60% 40% 40%;background:#1a1a1a;top:20px;z-index:7;}
+.ronin-eye-l{left:5px;}
+.ronin-eye-r{right:5px;}
+.ronin-eye-l::after,.ronin-eye-r::after{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.75);top:1px;left:2px;}
+.ronin-mouth{position:absolute;width:16px;height:3px;background:#94a3b8;border-radius:2px;bottom:10px;left:50%;transform:translateX(-50%);z-index:7;}
+.ronin-mouth::after{content:'';position:absolute;width:6px;height:3px;border-bottom:2px solid #64748b;border-radius:0 0 3px 3px;right:-2px;bottom:-2px;}
+
+/* ── 16. APEX ── */
+.apex-wrap{width:78px;height:116px;position:relative;}
+.apex-boot-l,.apex-boot-r{position:absolute;width:16px;height:18px;background:linear-gradient(to bottom,#1e293b,#0f172a);border-radius:4px 4px 7px 7px;bottom:0;z-index:2;}
+.apex-boot-l{left:14px;}
+.apex-boot-r{right:14px;}
+.apex-boot-l::after,.apex-boot-r::after{content:'';position:absolute;width:18px;height:8px;background:#0f172a;border-radius:0 0 6px 6px;bottom:0;left:-1px;}
+.apex-leg-l,.apex-leg-r{position:absolute;width:14px;height:24px;background:#1e293b;border-radius:4px 4px 2px 2px;bottom:16px;z-index:2;}
+.apex-leg-l{left:15px;}
+.apex-leg-r{right:15px;}
+.apex-body{position:absolute;width:46px;height:44px;background:linear-gradient(170deg,#1e293b,#0f172a 70%);border-radius:10px 10px 8px 8px;bottom:36px;left:50%;transform:translateX(-50%);z-index:3;box-shadow:0 0 12px rgba(0,229,255,0.12);}
+.apex-body::before{content:'';position:absolute;width:36px;height:2px;background:linear-gradient(to right,transparent,rgba(0,229,255,0.4),transparent);top:12px;left:50%;transform:translateX(-50%);}
+.apex-body::after{content:'';position:absolute;width:26px;height:2px;background:linear-gradient(to right,transparent,rgba(0,229,255,0.3),transparent);top:22px;left:50%;transform:translateX(-50%);}
+.apex-accent-1,.apex-accent-2,.apex-accent-3{position:absolute;height:1.5px;background:rgba(0,229,255,0.5);border-radius:1px;z-index:4;animation:apexAccent 2s ease-in-out infinite;}
+.apex-accent-1{width:20px;bottom:62px;left:50%;transform:translateX(-50%);}
+.apex-accent-2{width:14px;bottom:72px;left:50%;transform:translateX(-50%);animation-delay:0.4s;}
+.apex-accent-3{width:10px;bottom:82px;left:50%;transform:translateX(-50%);animation-delay:0.8s;}
+.apex-shoulder-l,.apex-shoulder-r{position:absolute;width:14px;height:20px;background:linear-gradient(to bottom,#374151,#1e293b);border-radius:6px 6px 4px 4px;bottom:58px;z-index:4;}
+.apex-shoulder-l{left:2px;}
+.apex-shoulder-r{right:2px;}
+.apex-arm-l,.apex-arm-r{position:absolute;width:12px;height:28px;background:#1e293b;border-radius:6px;bottom:34px;z-index:3;}
+.apex-arm-l{left:3px;}
+.apex-arm-r{right:3px;}
+.apex-arm-l::after,.apex-arm-r::after{content:'';position:absolute;width:14px;height:8px;background:#374151;border-radius:4px;bottom:-2px;left:-1px;box-shadow:0 0 4px rgba(0,229,255,0.3);}
+.apex-head{position:absolute;width:52px;height:48px;background:linear-gradient(160deg,#1e293b,#0f172a 65%);border-radius:30% 30% 24% 24% / 34% 34% 22% 22%;bottom:72px;left:50%;transform:translateX(-50%);z-index:5;box-shadow:0 4px 12px rgba(0,0,0,0.4);}
+.apex-head::before{content:'';position:absolute;width:52px;height:5px;background:#374151;border-radius:4px 4px 0 0;top:0;left:0;}
+.apex-visor{position:absolute;width:44px;height:14px;background:linear-gradient(to right,#00b4cc,#00e5ff 50%,#00b4cc);border-radius:4px;top:14px;left:50%;transform:translateX(-50%);z-index:6;box-shadow:0 0 8px rgba(0,229,255,0.9),0 0 18px rgba(0,229,255,0.4);animation:apexVisor 2.5s ease-in-out infinite;}
+.apex-visor::after{content:'';position:absolute;width:38px;height:3px;background:rgba(255,255,255,0.3);border-radius:2px;top:3px;left:3px;}
+.apex-head::after{content:'';position:absolute;width:40px;height:14px;background:#1e293b;border-radius:0 0 10px 10px;bottom:2px;left:50%;transform:translateX(-50%);}
+
+/* ── 17. BOLT ── */
+.bolt-wrap{width:74px;height:114px;position:relative;}
+.bolt-shoe-l,.bolt-shoe-r{position:absolute;width:22px;height:13px;background:radial-gradient(ellipse at 35% 25%,#e2e8f0,#cbd5e1 60%,#94a3b8);border-radius:11px 14px 10px 10px;bottom:0;z-index:2;}
+.bolt-shoe-l{left:10px;}
+.bolt-shoe-r{right:10px;}
+.bolt-shoe-l::before,.bolt-shoe-r::before{content:'';position:absolute;width:16px;height:4px;background:#1d4ed8;border-radius:2px;top:4px;left:3px;}
+.bolt-leg-l,.bolt-leg-r{position:absolute;width:14px;height:22px;background:#1e293b;border-radius:4px 4px 3px 3px;bottom:11px;z-index:2;}
+.bolt-leg-l{left:13px;}
+.bolt-leg-r{right:13px;}
+.bolt-shorts{position:absolute;width:40px;height:20px;background:linear-gradient(to bottom,#1d4ed8,#1e40af);border-radius:8px 8px 6px 6px;bottom:30px;left:50%;transform:translateX(-50%);z-index:3;}
+.bolt-shorts::after{content:'';position:absolute;width:2px;height:14px;background:rgba(255,255,255,0.15);top:3px;left:50%;transform:translateX(-50%);}
+.bolt-body{position:absolute;width:44px;height:38px;background:linear-gradient(170deg,#2563eb,#1d4ed8 60%,#1e40af);border-radius:14px 14px 10px 10px;bottom:46px;left:50%;transform:translateX(-50%);z-index:3;}
+.bolt-body::before{content:'';position:absolute;width:24px;height:5px;background:rgba(255,255,255,0.2);border-radius:3px;top:4px;left:50%;transform:translateX(-50%);}
+.bolt-lightning{position:absolute;width:0;height:0;border-left:8px solid transparent;border-right:5px solid transparent;border-top:14px solid #fbbf24;top:12px;left:50%;transform:translateX(-50%) translateX(-2px);z-index:4;filter:drop-shadow(0 0 3px rgba(251,191,36,0.7));}
+.bolt-lightning::after{content:'';position:absolute;width:0;height:0;border-left:5px solid transparent;border-right:8px solid transparent;border-bottom:14px solid #fbbf24;top:4px;left:-6px;filter:drop-shadow(0 0 3px rgba(251,191,36,0.7));}
+.bolt-arm-l,.bolt-arm-r{position:absolute;width:12px;height:26px;background:#2563eb;border-radius:6px;bottom:52px;z-index:3;}
+.bolt-arm-l{left:4px;transform:rotate(14deg);}
+.bolt-arm-r{right:4px;transform:rotate(-8deg);}
+.bolt-arm-l::after,.bolt-arm-r::after{content:'';position:absolute;width:11px;height:10px;border-radius:6px;background:#e2e8f0;bottom:-4px;left:1px;}
+.bolt-head{position:absolute;width:50px;height:48px;background:radial-gradient(ellipse at 38% 30%,#f1f5f9,#e2e8f0 55%,#cbd5e1);border-radius:48% 48% 40% 40% / 52% 52% 40% 40%;bottom:76px;left:50%;transform:translateX(-50%);z-index:5;}
+.bolt-head::after{content:'';position:absolute;width:38px;height:12px;background:#e2e8f0;border-radius:0 0 10px 10px;bottom:0;left:50%;transform:translateX(-50%);}
+.bolt-hair{position:absolute;top:-22px;left:50%;transform:translateX(-50%);width:48px;height:26px;z-index:6;}
+.bolt-spike{position:absolute;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:24px solid #1a1a1a;bottom:0;}
+.bolt-spike:nth-child(1){left:0;border-bottom-width:18px;border-left-width:5px;border-right-width:5px;transform:rotate(-15deg);}
+.bolt-spike:nth-child(2){left:10px;border-bottom-width:26px;transform:rotate(-8deg);}
+.bolt-spike:nth-child(3){left:22px;border-bottom-width:28px;border-left-width:8px;border-right-width:8px;}
+.bolt-spike:nth-child(4){left:35px;border-bottom-width:22px;transform:rotate(10deg);}
+.bolt-eye-l,.bolt-eye-r{position:absolute;width:14px;height:15px;border-radius:50%;background:#fff;top:16px;overflow:hidden;z-index:7;animation:blinkEye 3.8s ease-in-out infinite;}
+.bolt-eye-l{left:7px;}
+.bolt-eye-r{right:7px;}
+.bolt-iris{width:10px;height:11px;border-radius:50%;background:#1a1a1a;position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);}
+.bolt-iris::after{content:'';position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.bolt-brow-l,.bolt-brow-r{position:absolute;width:14px;height:4px;background:#1a1a1a;border-radius:3px;top:10px;z-index:8;}
+.bolt-brow-l{left:6px;transform:rotate(-8deg);}
+.bolt-brow-r{right:6px;transform:rotate(6deg);}
+.bolt-mouth{position:absolute;width:30px;height:12px;border-radius:0 0 15px 15px;background:#7c1d0a;bottom:8px;left:50%;transform:translateX(-50%);overflow:hidden;z-index:7;}
+.bolt-teeth{position:absolute;width:26px;height:7px;background:#fff;border-radius:2px 2px 0 0;top:0;left:2px;}
+.bolt-teeth::before{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.5);left:8px;}
+.bolt-teeth::after{content:'';position:absolute;width:2px;height:100%;background:rgba(180,160,140,0.5);right:8px;}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Обери свого компаньона</h1>
+  <p>17 унікальних компаньонів — знайди свого</p>
+</div>
+
+<div class="grid">
+
+  <!-- 1. LUMIX -->
+  <div class="card" onclick="toggleSel(this)" data-name="Lumix">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-lumix" style="animation-duration:3.8s;">
+        <div class="lumix-wrap">
+          <div class="lumix-sparkle">✦</div>
+          <div class="lumix-sparkle">✧</div>
+          <div class="lumix-sparkle">✦</div>
+          <div class="lumix-glow"></div>
+          <div class="lumix-ear-l"><div class="lumix-ear-inner-l"></div></div>
+          <div class="lumix-ear-r"><div class="lumix-ear-inner-r"></div></div>
+          <div class="lumix-orb"></div>
+          <div class="lumix-eyes">
+            <div class="lumix-eye"><div class="lumix-pupil"></div></div>
+            <div class="lumix-eye"><div class="lumix-pupil"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Lumix</div>
+    <div class="char-fam">Дух</div>
+  </div>
+
+  <!-- 2. KITSUNE -->
+  <div class="card" onclick="toggleSel(this)" data-name="Kitsune">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-kitsune" style="animation-duration:3.4s;animation-delay:-1.1s;">
+        <div class="kitsune-wrap">
+          <div class="kit-tail"></div>
+          <div class="kit-leg-l"><div class="kit-foot-l"></div></div>
+          <div class="kit-leg-r"><div class="kit-foot-r"></div></div>
+          <div class="kit-body"><div class="kit-belly"></div></div>
+          <div class="kit-paw-l"></div>
+          <div class="kit-paw-r"></div>
+          <div class="kit-head">
+            <div class="kit-ear-l"><div class="kit-ear-inner-l"></div></div>
+            <div class="kit-ear-r"><div class="kit-ear-inner-r"></div></div>
+            <div class="kit-eye-l"><div class="kit-iris"><div class="kit-iris-hl"></div></div></div>
+            <div class="kit-eye-r"><div class="kit-iris"><div class="kit-iris-hl"></div></div></div>
+            <div class="kit-muzzle"><div class="kit-nose"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Kitsune</div>
+    <div class="char-fam">Лиса</div>
+  </div>
+
+  <!-- 3. MOCHI -->
+  <div class="card" onclick="toggleSel(this)" data-name="Mochi">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-mochi" style="animation-duration:4.1s;animation-delay:-0.7s;">
+        <div class="mochi-wrap">
+          <div class="mochi-leg-l"></div>
+          <div class="mochi-leg-r"></div>
+          <div class="mochi-body"><div class="mochi-belly"></div></div>
+          <div class="mochi-head">
+            <div class="mochi-ear-l"><div class="mochi-ear-inner-l"></div></div>
+            <div class="mochi-ear-r"><div class="mochi-ear-inner-r"></div></div>
+            <div class="mochi-eye-l"><div class="mochi-eye-hl"></div><div class="mochi-eye-hl2"></div></div>
+            <div class="mochi-eye-r"><div class="mochi-eye-hl"></div><div class="mochi-eye-hl2"></div></div>
+            <div class="mochi-blush-l"></div>
+            <div class="mochi-blush-r"></div>
+            <div class="mochi-nose"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Mochi</div>
+    <div class="char-fam">Зайчик</div>
+  </div>
+
+  <!-- 4. BYTE -->
+  <div class="card" onclick="toggleSel(this)" data-name="Byte">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-byte" style="animation-duration:3.2s;animation-delay:-2s;">
+        <div class="byte-wrap">
+          <div class="byte-antenna"></div>
+          <div class="byte-head">
+            <div class="byte-screen">
+              <div class="byte-led-eye-l"></div>
+              <div class="byte-led-eye-r"></div>
+              <div class="byte-smile"></div>
+            </div>
+          </div>
+          <div class="byte-arm-l"></div>
+          <div class="byte-arm-r"></div>
+          <div class="byte-body"></div>
+          <div class="byte-leg-l"><div class="byte-foot-l"></div></div>
+          <div class="byte-leg-r"><div class="byte-foot-r"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Byte</div>
+    <div class="char-fam">Робот</div>
+  </div>
+
+  <!-- 5. EMBER -->
+  <div class="card" onclick="toggleSel(this)" data-name="Ember">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-ember" style="animation-duration:3.7s;animation-delay:-0.4s;">
+        <div class="ember-wrap">
+          <div class="ember-tail"></div>
+          <div class="ember-wing-l"></div>
+          <div class="ember-wing-r"></div>
+          <div class="ember-body"><div class="ember-belly"></div></div>
+          <div class="ember-leg-l"></div>
+          <div class="ember-leg-r"></div>
+          <div class="ember-head">
+            <div class="ember-horn-l"></div>
+            <div class="ember-horn-r"></div>
+            <div class="ember-eye-l"><div class="ember-iris"><div class="ember-iris-hl"></div></div></div>
+            <div class="ember-eye-r"><div class="ember-iris"><div class="ember-iris-hl"></div></div></div>
+            <div class="ember-nostril"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Ember</div>
+    <div class="char-fam">Дракон</div>
+  </div>
+
+  <!-- 6. BRUNO -->
+  <div class="card" onclick="toggleSel(this)" data-name="Bruno">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-bruno" style="animation-duration:4s;animation-delay:-1.5s;">
+        <div class="bruno-wrap">
+          <div class="bruno-strap-l"></div>
+          <div class="bruno-strap-r"></div>
+          <div class="bruno-backpack"></div>
+          <div class="bruno-leg-l"><div class="bruno-foot-l"></div></div>
+          <div class="bruno-leg-r"><div class="bruno-foot-r"></div></div>
+          <div class="bruno-body"><div class="bruno-belly"></div></div>
+          <div class="bruno-arm-l"></div>
+          <div class="bruno-arm-r"></div>
+          <div class="bruno-head">
+            <div class="bruno-ear-l"><div class="bruno-ear-inner-l"></div></div>
+            <div class="bruno-ear-r"><div class="bruno-ear-inner-r"></div></div>
+            <div class="bruno-eye-l"><div class="bruno-eye-hl"></div></div>
+            <div class="bruno-eye-r"><div class="bruno-eye-hl"></div></div>
+            <div class="bruno-muzzle"><div class="bruno-nose"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Bruno</div>
+    <div class="char-fam">Ведмідь</div>
+  </div>
+
+  <!-- 7. MIST -->
+  <div class="card" onclick="toggleSel(this)" data-name="Mist">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-mist" style="animation-duration:4.4s;animation-delay:-0.9s;">
+        <div class="mist-wrap">
+          <div class="mist-glow"></div>
+          <div class="mist-body">
+            <div class="mist-moon"></div>
+            <div class="mist-eye-l"><div class="mist-eye-hl"></div></div>
+            <div class="mist-eye-r"><div class="mist-eye-hl"></div></div>
+            <div class="mist-blush-l"></div>
+            <div class="mist-blush-r"></div>
+          </div>
+          <div class="mist-bottom"><div class="mist-wave"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Mist</div>
+    <div class="char-fam">Примара</div>
+  </div>
+
+  <!-- 8. MARCO -->
+  <div class="card" onclick="toggleSel(this)" data-name="Marco">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-marco" style="animation-duration:3.5s;animation-delay:-1.8s;">
+        <div class="marco-wrap">
+          <div class="marco-hat"></div>
+          <div class="marco-hat-brim"></div>
+          <div class="marco-hat-band"></div>
+          <div class="marco-globe">
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-face">
+              <div class="marco-eye-l"><div class="marco-eye-hl"></div></div>
+              <div class="marco-eye-r"><div class="marco-eye-hl"></div></div>
+              <div class="marco-smile"></div>
+            </div>
+          </div>
+          <div class="marco-stand"></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Marco</div>
+    <div class="char-fam">Мандрівник</div>
+  </div>
+
+  <!-- 9. CRASH -->
+  <div class="card" onclick="toggleSel(this)" data-name="Crash">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-crash" style="animation-duration:3.3s;animation-delay:-0.5s;">
+        <div class="crash-wrap">
+          <div class="crash-shoe-l"></div>
+          <div class="crash-shoe-r"></div>
+          <div class="crash-jean-l"></div>
+          <div class="crash-jean-r"></div>
+          <div class="crash-arm-l"></div>
+          <div class="crash-arm-r"></div>
+          <div class="crash-glove-l"></div>
+          <div class="crash-glove-r"></div>
+          <div class="crash-body"></div>
+          <div class="crash-head">
+            <div class="crash-hair">
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+            </div>
+            <div class="crash-brow-l"></div>
+            <div class="crash-brow-r"></div>
+            <div class="crash-eye-l"><div class="crash-iris-inner"></div><div class="crash-eye-hl1"></div><div class="crash-eye-hl2"></div></div>
+            <div class="crash-eye-r"><div class="crash-iris-inner"></div><div class="crash-eye-hl1"></div><div class="crash-eye-hl2"></div></div>
+            <div class="crash-blush-l"></div>
+            <div class="crash-blush-r"></div>
+            <div class="crash-snout">
+              <div class="crash-mouth">
+                <div class="crash-teeth"></div>
+                <div class="crash-lower-teeth"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Crash</div>
+    <div class="char-fam">Бандикут</div>
+  </div>
+
+  <!-- 10. NOVA -->
+  <div class="card" onclick="toggleSel(this)" data-name="Nova">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-nova" style="animation-duration:3.9s;animation-delay:-1.3s;">
+        <div class="nova-wrap">
+          <div class="nova-cape"></div>
+          <div class="nova-leg-l"></div>
+          <div class="nova-leg-r"></div>
+          <div class="nova-body"></div>
+          <div class="nova-arm-l"></div>
+          <div class="nova-arm-r"></div>
+          <div class="nova-fist-l"></div>
+          <div class="nova-fist-r"></div>
+          <div class="nova-head">
+            <div class="nova-crown">
+              <div class="nova-star"></div>
+              <div class="nova-star"></div>
+              <div class="nova-star"></div>
+              <div class="nova-star"></div>
+              <div class="nova-star"></div>
+            </div>
+            <div class="nova-eye-l"></div>
+            <div class="nova-eye-r"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Nova</div>
+    <div class="char-fam">Герой</div>
+  </div>
+
+  <!-- 11. LUNA -->
+  <div class="card" onclick="toggleSel(this)" data-name="Luna">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-luna" style="animation-duration:4.2s;animation-delay:-2.2s;">
+        <div class="luna-wrap">
+          <div class="luna-tail"></div>
+          <div class="luna-leg-l"></div>
+          <div class="luna-leg-r"></div>
+          <div class="luna-body"></div>
+          <div class="luna-paw-l"></div>
+          <div class="luna-paw-r"></div>
+          <div class="luna-head">
+            <div class="luna-ear-l"></div>
+            <div class="luna-ear-r"></div>
+            <div class="luna-crescent"></div>
+            <div class="luna-eye-l"></div>
+            <div class="luna-eye-r"></div>
+            <div class="luna-nose"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Luna</div>
+    <div class="char-fam">Кішка</div>
+  </div>
+
+  <!-- 12. REX -->
+  <div class="card" onclick="toggleSel(this)" data-name="Rex">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-rex" style="animation-duration:3.6s;animation-delay:-0.8s;">
+        <div class="rex-wrap">
+          <div class="rex-leg-l"></div>
+          <div class="rex-leg-r"></div>
+          <div class="rex-body"></div>
+          <div class="rex-arm-l"></div>
+          <div class="rex-arm-r"></div>
+          <div class="rex-head">
+            <div class="rex-eye-l"></div>
+            <div class="rex-eye-r"></div>
+            <div class="rex-blush-l"></div>
+            <div class="rex-blush-r"></div>
+            <div class="rex-mouth">
+              <div class="rex-teeth"></div>
+              <div class="rex-teeth-low"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Rex</div>
+    <div class="char-fam">Динозавр</div>
+  </div>
+
+  <!-- 13. SUNNY -->
+  <div class="card" onclick="toggleSel(this)" data-name="Sunny">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-sunny" style="animation-duration:4.3s;animation-delay:-1.2s;">
+        <div class="sunny-wrap">
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-ray"></div>
+          <div class="sunny-face">
+            <div class="sunny-eye-l"><div class="sunny-pupil"></div><div class="sunny-eye-hl"></div></div>
+            <div class="sunny-eye-r"><div class="sunny-pupil"></div><div class="sunny-eye-hl"></div></div>
+            <div class="sunny-nose"></div>
+            <div class="sunny-smile"></div>
+            <div class="sunny-blush-l"></div>
+            <div class="sunny-blush-r"></div>
+          </div>
+          <div class="sunny-hand-l"></div>
+          <div class="sunny-hand-r"></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Санні</div>
+    <div class="char-fam">☀️ Сонячний</div>
+  </div>
+
+  <!-- 14. BISCUIT -->
+  <div class="card" onclick="toggleSel(this)" data-name="Biscuit">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-biscuit" style="animation-duration:3.7s;animation-delay:-2.5s;">
+        <div class="biscuit-wrap">
+          <div class="biscuit-leg-l"></div>
+          <div class="biscuit-leg-r"></div>
+          <div class="biscuit-arm-l"></div>
+          <div class="biscuit-arm-r"></div>
+          <div class="biscuit-body">
+            <div class="biscuit-frosting"></div>
+            <div class="biscuit-eye-l"><div class="biscuit-eye-hl"></div></div>
+            <div class="biscuit-eye-r"><div class="biscuit-eye-hl"></div></div>
+            <div class="biscuit-nose"></div>
+            <div class="biscuit-blush-l"></div>
+            <div class="biscuit-blush-r"></div>
+            <div class="biscuit-mouth"><div class="biscuit-teeth"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Бісквіт</div>
+    <div class="char-fam">🍪 Солодкий</div>
+  </div>
+
+  <!-- 15. RONIN -->
+  <div class="card" onclick="toggleSel(this)" data-name="Ronin">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-ronin" style="animation-duration:4.0s;animation-delay:-0.3s;">
+        <div class="ronin-wrap">
+          <div class="ronin-hakama-l"></div>
+          <div class="ronin-hakama-r"></div>
+          <div class="ronin-arm-l"></div>
+          <div class="ronin-body"></div>
+          <div class="ronin-obi"></div>
+          <div class="ronin-arm-r"></div>
+          <div class="ronin-tsuka"></div>
+          <div class="ronin-head">
+            <div class="ronin-hair"></div>
+            <div class="ronin-eye-l"></div>
+            <div class="ronin-eye-r"></div>
+            <div class="ronin-mouth"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Ронін</div>
+    <div class="char-fam">⚔️ Воїн</div>
+  </div>
+
+  <!-- 16. APEX -->
+  <div class="card" onclick="toggleSel(this)" data-name="Apex">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-apex" style="animation-duration:3.5s;animation-delay:-1.7s;">
+        <div class="apex-wrap">
+          <div class="apex-boot-l"></div>
+          <div class="apex-boot-r"></div>
+          <div class="apex-leg-l"></div>
+          <div class="apex-leg-r"></div>
+          <div class="apex-arm-l"></div>
+          <div class="apex-arm-r"></div>
+          <div class="apex-body"></div>
+          <div class="apex-accent-1"></div>
+          <div class="apex-accent-2"></div>
+          <div class="apex-accent-3"></div>
+          <div class="apex-shoulder-l"></div>
+          <div class="apex-shoulder-r"></div>
+          <div class="apex-head">
+            <div class="apex-visor"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Апекс</div>
+    <div class="char-fam">⚡ Кіберпанк</div>
+  </div>
+
+  <!-- 17. BOLT -->
+  <div class="card" onclick="toggleSel(this)" data-name="Bolt">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-bolt" style="animation-duration:3.2s;animation-delay:-0.6s;">
+        <div class="bolt-wrap">
+          <div class="bolt-shoe-l"></div>
+          <div class="bolt-shoe-r"></div>
+          <div class="bolt-leg-l"></div>
+          <div class="bolt-leg-r"></div>
+          <div class="bolt-shorts"></div>
+          <div class="bolt-arm-l"></div>
+          <div class="bolt-arm-r"></div>
+          <div class="bolt-body">
+            <div class="bolt-lightning"></div>
+          </div>
+          <div class="bolt-head">
+            <div class="bolt-hair">
+              <div class="bolt-spike"></div>
+              <div class="bolt-spike"></div>
+              <div class="bolt-spike"></div>
+              <div class="bolt-spike"></div>
+            </div>
+            <div class="bolt-brow-l"></div>
+            <div class="bolt-brow-r"></div>
+            <div class="bolt-eye-l"><div class="bolt-iris"></div></div>
+            <div class="bolt-eye-r"><div class="bolt-iris"></div></div>
+            <div class="bolt-mouth"><div class="bolt-teeth"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Болт</div>
+    <div class="char-fam">🏃 Спортсмен</div>
+  </div>
+
+</div><!-- /grid -->
+
+<!-- Selected tray -->
+<div id="sel-tray" style="
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  background:rgba(3,3,16,0.97);border-bottom:1px solid rgba(255,255,255,0.08);
+  padding:8px 12px;display:none;align-items:center;gap:8px;
+  min-height:56px;backdrop-filter:blur(12px);flex-wrap:wrap;
+"></div>
+
+<div class="bottom-bar">
+  <div class="sel-count">Обрано: <span id="sel-num">0</span> / <span id="sel-max">6</span></div>
+  <button class="btn-confirm" onclick="doApprove()">Підтвердити →</button>
+</div>
+
+<style>
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes dragFloat{0%,100%{transform:scale(1.12) rotate(-2deg)}50%{transform:scale(1.15) rotate(2deg)}}
+.tray-chip{
+  display:flex;align-items:center;gap:5px;
+  background:rgba(124,58,237,0.18);border:1.5px solid rgba(124,58,237,0.45);
+  border-radius:20px;padding:4px 10px 4px 6px;
+  font-size:12px;font-weight:700;color:#e2e8f0;
+  animation:popIn 0.25s ease;cursor:pointer;
+  user-select:none;-webkit-user-select:none;
+}
+.tray-chip:hover{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5);}
+.tray-chip .chip-x{color:#f87171;font-size:14px;line-height:1;}
+.card.dragging{opacity:0.4;transform:scale(0.95);transition:none;}
+.drag-ghost{
+  position:fixed;pointer-events:none;z-index:999;
+  transform:scale(1.12) rotate(-3deg);
+  filter:drop-shadow(0 8px 24px rgba(124,58,237,0.6));
+  animation:dragFloat 0.6s ease-in-out infinite;
+}
+.card.drop-target{box-shadow:0 0 0 3px rgba(94,231,176,0.7),0 0 20px rgba(94,231,176,0.3);}
+</style>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── Config ── */
+  const MAX_SEL = 6;
+  let selCount = 0;
+  const selected = []; /* ordered list of card elements */
+
+  /* ── Tray ── */
+  function renderTray(){
+    const tray = document.getElementById('sel-tray');
+    if(selected.length === 0){ tray.style.display='none'; document.body.style.paddingTop=''; return; }
+    tray.style.display='flex';
+    document.body.style.paddingTop='60px';
+    tray.innerHTML = selected.map(function(card,i){
+      const icon = card.querySelector('.char-name')?.textContent || card.dataset.name;
+      return '<div class="tray-chip" data-idx="'+i+'" onclick="removeByIdx('+i+')">'
+           + '<span class="chip-x">×</span>'
+           + '<span>'+icon+'</span>'
+           + '</div>';
+    }).join('');
+    /* drag-to-reorder chips */
+    tray.querySelectorAll('.tray-chip').forEach(function(chip){
+      chip.draggable = true;
+      chip.addEventListener('dragstart', function(e){
+        e.dataTransfer.setData('chip-idx', chip.dataset.idx);
+      });
+      chip.addEventListener('dragover', function(e){ e.preventDefault(); });
+      chip.addEventListener('drop', function(e){
+        e.preventDefault();
+        const from = parseInt(e.dataTransfer.getData('chip-idx'));
+        const to   = parseInt(chip.dataset.idx);
+        if(from === to) return;
+        const moved = selected.splice(from,1)[0];
+        selected.splice(to,0,moved);
+        renderTray();
+      });
+    });
+  }
+
+  window.removeByIdx = function(i){
+    const card = selected[i];
+    if(!card) return;
+    selected.splice(i,1);
+    card.classList.remove('selected');
+    selCount--;
+    document.getElementById('sel-num').textContent = selCount;
+    renderTray();
+  };
+
+  /* ── Selection toggle ── */
+  window.toggleSel = function(card){
+    if(card.classList.contains('selected')){
+      const i = selected.indexOf(card);
+      if(i !== -1) selected.splice(i,1);
+      card.classList.remove('selected');
+      selCount = Math.max(0,selCount-1);
+    } else {
+      if(selCount >= MAX_SEL){
+        card.style.animation='shake 0.35s ease';
+        setTimeout(function(){ card.style.animation=''; },400);
+        return;
+      }
+      card.classList.add('selected');
+      selected.push(card);
+      selCount++;
+    }
+    document.getElementById('sel-num').textContent = selCount;
+    renderTray();
+  };
+
+  /* ── Confirm ── */
+  window.doApprove = function(){
+    if(selected.length === 0){ alert('Обери хоча б одного компаньона!'); return; }
+    const names = selected.map(function(c){ return c.dataset.name; }).join(', ');
+    alert('✅ Обрано: '+names);
+  };
+
+  /* ── Drag cards in grid ── */
+  let ghost = null;
+  let dragCard = null;
+  let dragOriginIdx = -1;
+
+  function cardIndex(card){
+    return Array.from(document.querySelectorAll('.card')).indexOf(card);
+  }
+
+  document.querySelectorAll('.card').forEach(function(card){
+    /* long-press or pointerdown to start drag */
+    let pressTimer = null;
+    let isDragging = false;
+    let startX, startY;
+
+    card.addEventListener('pointerdown', function(e){
+      startX = e.clientX; startY = e.clientY;
+      pressTimer = setTimeout(function(){
+        isDragging = true;
+        dragCard = card;
+        dragOriginIdx = cardIndex(card);
+        card.classList.add('dragging');
+        ghost = card.cloneNode(true);
+        ghost.className = 'drag-ghost';
+        ghost.style.width  = card.offsetWidth  + 'px';
+        ghost.style.height = card.offsetHeight + 'px';
+        ghost.style.left   = card.getBoundingClientRect().left + 'px';
+        ghost.style.top    = card.getBoundingClientRect().top  + 'px';
+        document.body.appendChild(ghost);
+        card.setPointerCapture(e.pointerId);
+      }, 350);
+    });
+
+    card.addEventListener('pointermove', function(e){
+      if(!isDragging || !ghost) return;
+      ghost.style.left = (e.clientX - ghost.offsetWidth/2)  + 'px';
+      ghost.style.top  = (e.clientY - ghost.offsetHeight/2) + 'px';
+      /* highlight drop target */
+      document.querySelectorAll('.card.drop-target').forEach(function(c){ c.classList.remove('drop-target'); });
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const target = el && el.closest('.card');
+      if(target && target !== dragCard) target.classList.add('drop-target');
+    });
+
+    card.addEventListener('pointerup', function(e){
+      clearTimeout(pressTimer);
+      if(isDragging && ghost){
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const target = el && el.closest('.card');
+        if(target && target !== dragCard){
+          /* swap DOM positions */
+          const grid = document.querySelector('.grid');
+          const cards = Array.from(grid.querySelectorAll('.card'));
+          const toIdx = cards.indexOf(target);
+          if(dragOriginIdx < toIdx){
+            grid.insertBefore(dragCard, target.nextSibling);
+          } else {
+            grid.insertBefore(dragCard, target);
+          }
+        }
+        ghost.remove(); ghost = null;
+        dragCard.classList.remove('dragging');
+        document.querySelectorAll('.card.drop-target').forEach(function(c){ c.classList.remove('drop-target'); });
+        dragCard = null;
+      }
+      isDragging = false;
+    });
+
+    card.addEventListener('pointercancel', function(){
+      clearTimeout(pressTimer);
+      if(ghost){ ghost.remove(); ghost = null; }
+      if(dragCard){ dragCard.classList.remove('dragging'); dragCard = null; }
+      document.querySelectorAll('.card.drop-target').forEach(function(c){ c.classList.remove('drop-target'); });
+      isDragging = false;
+    });
+  });
+
+  /* ── Tap-bounce reaction on char wrap ── */
+  document.querySelectorAll('.char-stage').forEach(function(stage){
+    stage.addEventListener('click', function(e){
+      e.stopPropagation();
+      const wrap = stage.querySelector('.char-wrap');
+      if(!wrap) return;
+      wrap.style.transition='transform 0.15s';
+      wrap.style.transform='scale(1.25) rotate(-5deg)';
+      setTimeout(function(){
+        wrap.style.transform='scale(1) rotate(0deg)';
+        setTimeout(function(){ wrap.style.transition=''; },200);
+      },180);
+    });
+  });
+
+  /* ── Idle animation cycle ── */
+  const behaviors = ['idle-look','idle-bounce','idle-wobble','idle-nod','idle-shake'];
+  function runCycle(el, beh, offset){
+    let idx = offset % beh.length;
+    function step(){
+      const cls = beh[idx % beh.length];
+      el.classList.add(cls);
+      idx++;
+      const dur = (parseFloat(getComputedStyle(el).animationDuration)*1000)||1400;
+      setTimeout(function(){
+        el.classList.remove(cls);
+        setTimeout(step, 2000 + Math.random()*1500);
+      }, dur);
+    }
+    setTimeout(step, offset*800 + Math.random()*1000);
+  }
+  const charWraps = [
+    {id:'cw-lumix',   off:0},  {id:'cw-kitsune', off:1},  {id:'cw-mochi',   off:2},
+    {id:'cw-byte',    off:3},  {id:'cw-ember',   off:4},  {id:'cw-bruno',   off:5},
+    {id:'cw-mist',    off:6},  {id:'cw-marco',   off:7},  {id:'cw-crash',   off:8},
+    {id:'cw-nova',    off:9},  {id:'cw-luna',    off:10}, {id:'cw-rex',     off:11},
+    {id:'cw-sunny',   off:12}, {id:'cw-biscuit', off:13}, {id:'cw-ronin',   off:14},
+    {id:'cw-apex',    off:15}, {id:'cw-bolt',    off:16},
+  ];
+  charWraps.forEach(function(cfg){
+    const el = document.getElementById(cfg.id);
+    if(el) runCycle(el, behaviors, cfg.off);
+  });
+
+})();
+</script>
+</body>
+</html>

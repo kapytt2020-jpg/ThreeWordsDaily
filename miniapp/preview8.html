@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThreeWordsDaily — Вибір компаньона</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:#030310;color:#e2e8f0;overflow-x:hidden}
+body{display:flex;flex-direction:column;min-height:100vh}
+
+/* ── Stars background ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 20% 20%,rgba(124,58,237,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(59,130,246,0.06) 0%,transparent 50%),
+    radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 25% 45%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 40% 10%,rgba(255,255,255,0.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 55% 70%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 30%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 55%,rgba(255,255,255,0.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 93% 20%,rgba(255,255,255,0.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 5% 80%,rgba(255,255,255,0.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 50% 90%,rgba(255,255,255,0.35) 0%,transparent 100%),
+    #030310;
+}
+
+/* ── Header ── */
+.header{
+  position:relative;z-index:10;
+  padding:20px 16px 12px;
+  text-align:center;
+}
+.header h1{
+  font-size:1.25rem;font-weight:700;
+  background:linear-gradient(135deg,#a78bfa,#60a5fa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:4px;
+}
+.header p{font-size:0.78rem;color:#94a3b8;}
+
+/* ── Grid ── */
+.grid{
+  position:relative;z-index:10;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
+  padding:8px 12px 100px;
+  flex:1;
+}
+
+/* ── Card ── */
+.card{
+  background:rgba(255,255,255,0.04);
+  border:1.5px solid rgba(255,255,255,0.07);
+  border-radius:18px;
+  padding:12px 8px 10px;
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;
+  transition:border-color 0.25s,box-shadow 0.25s,transform 0.15s;
+  position:relative;overflow:hidden;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.card::before{
+  content:'';position:absolute;inset:0;border-radius:18px;
+  background:radial-gradient(circle at 50% 0%,rgba(124,58,237,0.06),transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.card.selected{
+  border-color:#7c3aed;
+  box-shadow:0 0 0 2px rgba(124,58,237,0.4),0 0 20px rgba(124,58,237,0.25);
+}
+.card.selected::before{opacity:1;}
+.card:active{transform:scale(0.96);}
+
+.check-ring{
+  position:absolute;top:8px;right:8px;
+  width:20px;height:20px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.2);
+  display:flex;align-items:center;justify-content:center;
+  transition:background 0.2s,border-color 0.2s;
+  font-size:11px;color:transparent;
+}
+.card.selected .check-ring{
+  background:#7c3aed;border-color:#7c3aed;color:#fff;
+}
+
+.char-stage{
+  width:110px;height:140px;
+  position:relative;
+  display:flex;align-items:flex-end;justify-content:center;
+  overflow:visible;
+}
+
+.char-wrap{
+  position:relative;
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:floatY 3.6s ease-in-out infinite;
+}
+
+@keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes floatY2{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes floatY3{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+/* idle behaviours */
+@keyframes idleLook{0%,100%{transform:rotate(0deg)}30%{transform:rotate(-4deg)}70%{transform:rotate(4deg)}}
+@keyframes idleBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes idleWobble{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@keyframes idleNod{0%,100%{transform:rotate(0)}40%{transform:rotate(5deg)}60%{transform:rotate(5deg)}}
+@keyframes idleShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+
+.idle-look{animation:idleLook 1.4s ease-in-out 1!important;}
+.idle-bounce{animation:idleBounce 0.7s ease-in-out 2!important;}
+.idle-wobble{animation:idleWobble 1s ease-in-out 1!important;}
+.idle-nod{animation:idleNod 0.8s ease-in-out 2!important;}
+.idle-shake{animation:idleShake 0.6s ease-in-out 2!important;}
+
+/* ── Eye system ── */
+.eye{position:absolute;border-radius:50%;background:white;overflow:hidden;animation:blinkEye 5s ease-in-out infinite;}
+.iris{position:absolute;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-48%);}
+.pupil{position:absolute;border-radius:50%;background:radial-gradient(ellipse at 40% 30%,#0a0818,#000);top:50%;left:50%;transform:translate(-50%,-50%);}
+.hl1{position:absolute;border-radius:50%;background:rgba(255,255,255,0.96);top:14%;left:14%;}
+.hl2{position:absolute;border-radius:50%;background:rgba(255,255,255,0.65);bottom:22%;right:18%;}
+@keyframes blinkEye{0%,88%,100%{transform:scaleY(1)}91%,96%{transform:scaleY(0.07)}}
+
+/* ── Card labels ── */
+.char-name{
+  font-size:0.8rem;font-weight:700;color:#e2e8f0;
+  margin-top:6px;text-align:center;
+}
+.char-fam{
+  font-size:0.65rem;color:#7c3aed;
+  background:rgba(124,58,237,0.12);
+  border-radius:8px;padding:1px 6px;margin-top:2px;
+}
+
+/* ── Bottom bar ── */
+.bottom-bar{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(3,3,16,0.95);
+  border-top:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(12px);
+  padding:10px 16px 20px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;
+}
+.sel-count{font-size:0.85rem;color:#94a3b8;white-space:nowrap;}
+.sel-count span{color:#a78bfa;font-weight:700;}
+.btn-confirm{
+  flex:1;max-width:200px;
+  padding:12px 20px;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  border:none;border-radius:14px;
+  color:#fff;font-size:0.9rem;font-weight:700;
+  cursor:pointer;
+  transition:opacity 0.2s,transform 0.15s;
+  box-shadow:0 4px 16px rgba(124,58,237,0.4);
+}
+.btn-confirm:hover{opacity:0.88;}
+.btn-confirm:active{transform:scale(0.97);}
+
+/* ══════════════════════════════════════════
+   CHARACTER STYLES
+══════════════════════════════════════════ */
+
+/* ── 1. LUMIX (Spirit Orb) ── */
+.lumix-wrap{width:80px;height:100px;position:relative;}
+.lumix-glow{
+  position:absolute;
+  width:90px;height:90px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(167,139,250,0.35) 0%,transparent 70%);
+  top:50%;left:50%;transform:translate(-50%,-55%);
+  animation:lumixGlow 2.5s ease-in-out infinite;
+}
+@keyframes lumixGlow{0%,100%{opacity:0.6;transform:translate(-50%,-55%) scale(1)}50%{opacity:1;transform:translate(-50%,-55%) scale(1.12)}}
+.lumix-orb{
+  position:absolute;
+  width:68px;height:68px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#c4b5fd,#7c3aed 60%,#4c1d95);
+  box-shadow:0 0 18px 6px rgba(167,139,250,0.7),0 0 40px 10px rgba(124,58,237,0.4);
+  bottom:14px;left:50%;transform:translateX(-50%);
+}
+.lumix-ear-l,.lumix-ear-r{
+  position:absolute;
+  width:12px;height:30px;border-radius:6px 6px 4px 4px;
+  background:linear-gradient(to bottom,#c4b5fd,#7c3aed);
+  bottom:72px;
+}
+.lumix-ear-l{left:18px;transform:rotate(-8deg);}
+.lumix-ear-r{right:18px;transform:rotate(8deg);}
+.lumix-ear-inner-l,.lumix-ear-inner-r{
+  position:absolute;
+  width:5px;height:18px;border-radius:3px 3px 2px 2px;
+  background:#e9d5ff;
+  top:5px;left:50%;transform:translateX(-50%);
+}
+.lumix-eyes{position:absolute;bottom:38px;left:50%;transform:translateX(-50%);display:flex;gap:10px;width:40px;justify-content:space-between;}
+.lumix-eye{
+  width:13px;height:13px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  animation:blinkEye 4s ease-in-out infinite;
+}
+.lumix-pupil{width:8px;height:8px;border-radius:50%;background:#2d1b69;position:relative;}
+.lumix-pupil::after{content:'';position:absolute;width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,0.9);top:1px;left:1px;}
+.lumix-sparkle{
+  position:absolute;font-size:10px;color:#e9d5ff;
+  animation:sparkle 1.8s ease-in-out infinite;
+}
+@keyframes sparkle{0%,100%{opacity:0;transform:scale(0.5)}50%{opacity:1;transform:scale(1)}}
+.lumix-sparkle:nth-child(1){top:0;left:5px;animation-delay:0s;}
+.lumix-sparkle:nth-child(2){top:10px;right:2px;animation-delay:0.6s;}
+.lumix-sparkle:nth-child(3){bottom:18px;right:4px;animation-delay:1.2s;}
+
+/* ── 2. KITSUNE (Fox) ── */
+.kitsune-wrap{width:72px;height:108px;position:relative;}
+.kit-tail{
+  position:absolute;
+  width:28px;height:50px;
+  background:linear-gradient(to top,#ea580c,#fb923c);
+  border-radius:14px 14px 8px 20px;
+  bottom:14px;right:-8px;
+  transform:rotate(-15deg);
+}
+.kit-tail::after{
+  content:'';position:absolute;
+  width:12px;height:16px;
+  background:#fff;
+  border-radius:6px 6px 4px 4px;
+  bottom:2px;left:50%;transform:translateX(-50%);
+}
+.kit-body{
+  position:absolute;
+  width:40px;height:44px;
+  background:linear-gradient(to bottom,#f97316,#ea580c);
+  border-radius:20px 20px 15px 15px;
+  bottom:16px;left:50%;transform:translateX(-50%);
+}
+.kit-belly{
+  position:absolute;
+  width:22px;height:26px;
+  background:#fff5f0;
+  border-radius:11px 11px 10px 10px;
+  bottom:3px;left:50%;transform:translateX(-50%);
+}
+.kit-head{
+  position:absolute;
+  width:46px;height:42px;
+  background:linear-gradient(to bottom,#fb923c,#f97316);
+  border-radius:50% 50% 40% 40%;
+  bottom:54px;left:50%;transform:translateX(-50%);
+}
+.kit-ear-l,.kit-ear-r{
+  position:absolute;
+  width:0;height:0;
+  border-left:9px solid transparent;
+  border-right:9px solid transparent;
+  border-bottom:22px solid #ea580c;
+  top:-14px;
+}
+.kit-ear-l{left:3px;transform:rotate(-8deg);}
+.kit-ear-r{right:3px;transform:rotate(8deg);}
+.kit-ear-inner-l,.kit-ear-inner-r{
+  position:absolute;
+  width:0;height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-bottom:13px solid #fecaca;
+  top:-10px;
+}
+.kit-ear-inner-l{left:50%;transform:translateX(-50%);}
+.kit-ear-inner-r{left:50%;transform:translateX(-50%);}
+.kit-muzzle{
+  position:absolute;
+  width:20px;height:12px;
+  background:#fff5f0;
+  border-radius:50%;
+  bottom:8px;left:50%;transform:translateX(-50%);
+}
+.kit-nose{
+  position:absolute;
+  width:6px;height:4px;
+  background:#1a1a1a;
+  border-radius:50%;
+  top:2px;left:50%;transform:translateX(-50%);
+}
+.kit-eye-l,.kit-eye-r{
+  position:absolute;
+  width:11px;height:12px;
+  background:#fff;
+  border-radius:50%;
+  top:12px;
+  overflow:hidden;
+  animation:blinkEye 5s ease-in-out infinite;
+}
+.kit-eye-l{left:6px;}
+.kit-eye-r{right:6px;}
+.kit-iris{
+  width:7px;height:8px;border-radius:50%;
+  background:#15803d;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);
+}
+.kit-iris::after{
+  content:'';position:absolute;
+  width:4px;height:5px;border-radius:50%;
+  background:#000;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.kit-iris-hl{
+  position:absolute;
+  width:3px;height:3px;border-radius:50%;
+  background:rgba(255,255,255,0.9);
+  top:1px;left:1px;
+}
+.kit-paw-l,.kit-paw-r{
+  position:absolute;
+  width:13px;height:10px;
+  background:#ea580c;
+  border-radius:6px 6px 5px 5px;
+  bottom:12px;
+}
+.kit-paw-l{left:2px;}
+.kit-paw-r{right:2px;}
+.kit-leg-l,.kit-leg-r{
+  position:absolute;
+  width:12px;height:16px;
+  background:#ea580c;
+  border-radius:4px 4px 6px 6px;
+  bottom:0px;
+}
+.kit-leg-l{left:8px;}
+.kit-leg-r{right:8px;}
+.kit-foot-l,.kit-foot-r{
+  position:absolute;
+  width:15px;height:8px;
+  background:#c2410c;
+  border-radius:0 0 6px 6px;
+  bottom:-4px;
+}
+.kit-foot-l{left:50%;transform:translateX(-60%);}
+.kit-foot-r{left:50%;transform:translateX(-40%);}
+
+/* ── 3. MOCHI (Bunny) ── */
+.mochi-wrap{width:70px;height:105px;position:relative;}
+.mochi-body{
+  position:absolute;
+  width:44px;height:36px;
+  background:#fef3c7;
+  border-radius:22px 22px 18px 18px;
+  bottom:8px;left:50%;transform:translateX(-50%);
+}
+.mochi-belly{
+  position:absolute;
+  width:26px;height:20px;
+  background:#fde68a;
+  border-radius:50%;
+  bottom:4px;left:50%;transform:translateX(-50%);
+}
+.mochi-head{
+  position:absolute;
+  width:56px;height:52px;
+  background:#fef3c7;
+  border-radius:50%;
+  bottom:38px;left:50%;transform:translateX(-50%);
+}
+.mochi-ear-l,.mochi-ear-r{
+  position:absolute;
+  width:16px;height:38px;
+  background:#fef3c7;
+  border-radius:8px 8px 6px 6px;
+  top:-28px;
+}
+.mochi-ear-l{left:6px;transform:rotate(-5deg);}
+.mochi-ear-r{right:6px;transform:rotate(5deg);}
+.mochi-ear-inner-l,.mochi-ear-inner-r{
+  position:absolute;
+  width:8px;height:24px;
+  background:#fda4af;
+  border-radius:4px;
+  top:6px;left:50%;transform:translateX(-50%);
+}
+.mochi-eye-l,.mochi-eye-r{
+  position:absolute;
+  width:12px;height:13px;
+  border-radius:50%;
+  background:#1a1a1a;
+  top:14px;
+  animation:blinkEye 4.5s ease-in-out infinite;
+}
+.mochi-eye-l{left:9px;}
+.mochi-eye-r{right:9px;}
+.mochi-eye-hl{
+  position:absolute;
+  width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,0.9);
+  top:2px;left:2px;
+}
+.mochi-nose{
+  position:absolute;
+  width:7px;height:5px;
+  background:#fb7185;
+  border-radius:50%;
+  bottom:16px;left:50%;transform:translateX(-50%);
+}
+.mochi-blush-l,.mochi-blush-r{
+  position:absolute;
+  width:14px;height:8px;
+  background:rgba(251,113,133,0.35);
+  border-radius:50%;
+  bottom:20px;
+}
+.mochi-blush-l{left:3px;}
+.mochi-blush-r{right:3px;}
+.mochi-leg-l,.mochi-leg-r{
+  position:absolute;
+  width:14px;height:12px;
+  background:#fde68a;
+  border-radius:7px;
+  bottom:0;
+}
+.mochi-leg-l{left:6px;}
+.mochi-leg-r{right:6px;}
+
+/* ── 4. BYTE (Robot) ── */
+.byte-wrap{width:70px;height:112px;position:relative;}
+.byte-antenna{
+  position:absolute;
+  width:4px;height:16px;
+  background:#0d9488;
+  border-radius:2px;
+  bottom:92px;left:50%;transform:translateX(-50%);
+}
+.byte-antenna::after{
+  content:'';position:absolute;
+  width:8px;height:8px;border-radius:50%;
+  background:#2dd4bf;
+  box-shadow:0 0 8px #2dd4bf;
+  top:-8px;left:-2px;
+}
+.byte-head{
+  position:absolute;
+  width:52px;height:44px;
+  background:linear-gradient(to bottom,#0f766e,#0d9488);
+  border-radius:10px;
+  bottom:52px;left:50%;transform:translateX(-50%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.byte-screen{
+  position:absolute;
+  width:38px;height:28px;
+  background:#001a1a;
+  border-radius:6px;
+  top:8px;left:50%;transform:translateX(-50%);
+  border:2px solid #0f766e;
+  overflow:hidden;
+}
+.byte-led-eye-l,.byte-led-eye-r{
+  position:absolute;
+  width:9px;height:7px;
+  background:#2dd4bf;
+  border-radius:3px;
+  top:6px;
+  box-shadow:0 0 6px #2dd4bf;
+  animation:ledBlink 3s ease-in-out infinite;
+}
+.byte-led-eye-l{left:5px;}
+.byte-led-eye-r{right:5px;}
+@keyframes ledBlink{0%,80%,100%{opacity:1}85%,92%{opacity:0.1}}
+.byte-smile{
+  position:absolute;
+  width:18px;height:5px;
+  border-bottom:3px solid #2dd4bf;
+  border-radius:0 0 8px 8px;
+  bottom:4px;left:50%;transform:translateX(-50%);
+}
+.byte-body{
+  position:absolute;
+  width:40px;height:30px;
+  background:linear-gradient(to bottom,#0d9488,#0f766e);
+  border-radius:8px;
+  bottom:22px;left:50%;transform:translateX(-50%);
+}
+.byte-arm-l,.byte-arm-r{
+  position:absolute;
+  width:10px;height:22px;
+  background:#0d9488;
+  border-radius:5px;
+  bottom:28px;
+}
+.byte-arm-l{left:5px;}
+.byte-arm-r{right:5px;}
+.byte-leg-l,.byte-leg-r{
+  position:absolute;
+  width:14px;height:16px;
+  background:#0f766e;
+  border-radius:4px 4px 6px 6px;
+  bottom:4px;
+}
+.byte-leg-l{left:12px;}
+.byte-leg-r{right:12px;}
+.byte-foot-l,.byte-foot-r{
+  position:absolute;
+  width:16px;height:8px;
+  background:#134e4a;
+  border-radius:0 0 5px 5px;
+  bottom:0;
+}
+.byte-foot-l{left:50%;transform:translateX(-65%);}
+.byte-foot-r{right:50%;transform:translateX(65%);}
+
+/* ── 5. EMBER (Dragon) ── */
+.ember-wrap{width:80px;height:115px;position:relative;}
+.ember-tail{
+  position:absolute;
+  width:22px;height:40px;
+  background:linear-gradient(to top,#dc2626,#ef4444);
+  border-radius:11px 8px 4px 14px;
+  bottom:10px;right:0px;
+  transform:rotate(20deg);
+}
+.ember-tail::after{
+  content:'';position:absolute;
+  width:10px;height:12px;
+  background:#fbbf24;
+  border-radius:5px;
+  bottom:-4px;right:-2px;
+  transform:rotate(-10deg);
+}
+.ember-body{
+  position:absolute;
+  width:50px;height:50px;
+  background:radial-gradient(circle at 40% 35%,#ef4444,#b91c1c);
+  border-radius:50% 50% 40% 40%;
+  bottom:12px;left:50%;transform:translateX(-55%);
+}
+.ember-belly{
+  position:absolute;
+  width:28px;height:22px;
+  background:#fca5a5;
+  border-radius:50%;
+  bottom:6px;left:50%;transform:translateX(-50%);
+}
+.ember-wing-l,.ember-wing-r{
+  position:absolute;
+  width:22px;height:28px;
+  background:linear-gradient(135deg,#dc2626,#7f1d1d);
+  border-radius:12px 4px 4px 12px;
+  bottom:38px;
+}
+.ember-wing-l{left:-4px;transform:rotate(20deg);}
+.ember-wing-r{right:-4px;transform:rotate(-20deg) scaleX(-1);}
+.ember-head{
+  position:absolute;
+  width:50px;height:46px;
+  background:radial-gradient(circle at 40% 35%,#f87171,#dc2626);
+  border-radius:50%;
+  bottom:56px;left:50%;transform:translateX(-55%);
+}
+.ember-horn-l,.ember-horn-r{
+  position:absolute;
+  width:0;height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-bottom:16px solid #991b1b;
+  top:-10px;
+}
+.ember-horn-l{left:6px;transform:rotate(-15deg);}
+.ember-horn-r{right:6px;transform:rotate(15deg);}
+.ember-eye-l,.ember-eye-r{
+  position:absolute;
+  width:13px;height:13px;
+  border-radius:50%;background:#fff;
+  top:12px;
+  overflow:hidden;
+  animation:blinkEye 5s ease-in-out infinite;
+}
+.ember-eye-l{left:6px;}
+.ember-eye-r{right:6px;}
+.ember-iris{
+  width:9px;height:9px;border-radius:50%;
+  background:#f59e0b;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-48%);
+}
+.ember-iris::after{
+  content:'';position:absolute;
+  width:5px;height:6px;border-radius:50%;
+  background:#000;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.ember-iris-hl{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:rgba(255,255,255,0.9);top:1px;left:1px;
+}
+.ember-nostril{
+  position:absolute;
+  width:16px;height:8px;
+  background:#ef4444;
+  border-radius:50%;
+  bottom:10px;left:50%;transform:translateX(-50%);
+}
+.ember-nostril::before,.ember-nostril::after{
+  content:'';position:absolute;
+  width:4px;height:4px;border-radius:50%;
+  background:#7f1d1d;top:2px;
+}
+.ember-nostril::before{left:3px;}
+.ember-nostril::after{right:3px;}
+.ember-leg-l,.ember-leg-r{
+  position:absolute;
+  width:13px;height:14px;
+  background:#dc2626;
+  border-radius:4px 4px 6px 6px;
+  bottom:0;
+}
+.ember-leg-l{left:8px;}
+.ember-leg-r{right:12px;}
+
+/* ── 6. BRUNO (Bear + Backpack) ── */
+.bruno-wrap{width:72px;height:112px;position:relative;}
+.bruno-backpack{
+  position:absolute;
+  width:28px;height:34px;
+  background:linear-gradient(to bottom,#1d4ed8,#1e40af);
+  border-radius:6px;
+  bottom:26px;left:50%;transform:translateX(14px);
+  z-index:1;
+}
+.bruno-strap-l,.bruno-strap-r{
+  position:absolute;
+  width:5px;height:28px;
+  background:#1e40af;
+  border-radius:3px;
+  bottom:28px;
+  z-index:0;
+}
+.bruno-strap-l{left:18px;}
+.bruno-strap-r{right:16px;}
+.bruno-body{
+  position:absolute;
+  width:44px;height:46px;
+  background:linear-gradient(to bottom,#92400e,#78350f);
+  border-radius:22px 22px 16px 16px;
+  bottom:20px;left:50%;transform:translateX(-50%);
+  z-index:2;
+}
+.bruno-belly{
+  position:absolute;
+  width:26px;height:22px;
+  background:#b45309;
+  border-radius:50%;
+  bottom:6px;left:50%;transform:translateX(-50%);
+}
+.bruno-head{
+  position:absolute;
+  width:52px;height:48px;
+  background:radial-gradient(circle at 40% 35%,#a16207,#92400e);
+  border-radius:50%;
+  bottom:60px;left:50%;transform:translateX(-50%);
+  z-index:3;
+}
+.bruno-ear-l,.bruno-ear-r{
+  position:absolute;
+  width:18px;height:18px;
+  background:#78350f;
+  border-radius:50%;
+  top:-6px;
+}
+.bruno-ear-l{left:2px;}
+.bruno-ear-r{right:2px;}
+.bruno-ear-inner-l,.bruno-ear-inner-r{
+  position:absolute;
+  width:10px;height:10px;
+  background:#92400e;
+  border-radius:50%;
+  top:4px;left:50%;transform:translateX(-50%);
+}
+.bruno-eye-l,.bruno-eye-r{
+  position:absolute;
+  width:13px;height:14px;
+  border-radius:50%;background:#1a1a1a;
+  top:13px;
+  animation:blinkEye 5s ease-in-out infinite;
+}
+.bruno-eye-l{left:8px;}
+.bruno-eye-r{right:8px;}
+.bruno-eye-hl{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,0.9);top:2px;left:2px;
+}
+.bruno-muzzle{
+  position:absolute;
+  width:22px;height:14px;
+  background:#b45309;
+  border-radius:50%;
+  bottom:12px;left:50%;transform:translateX(-50%);
+}
+.bruno-nose{
+  position:absolute;
+  width:8px;height:6px;
+  background:#1a1a1a;
+  border-radius:50%;
+  top:1px;left:50%;transform:translateX(-50%);
+}
+.bruno-arm-l,.bruno-arm-r{
+  position:absolute;
+  width:14px;height:20px;
+  background:#92400e;
+  border-radius:7px;
+  bottom:30px;
+  z-index:2;
+}
+.bruno-arm-l{left:3px;}
+.bruno-arm-r{right:3px;}
+.bruno-leg-l,.bruno-leg-r{
+  position:absolute;
+  width:16px;height:18px;
+  background:#78350f;
+  border-radius:5px 5px 8px 8px;
+  bottom:2px;
+  z-index:2;
+}
+.bruno-leg-l{left:8px;}
+.bruno-leg-r{right:8px;}
+.bruno-foot-l,.bruno-foot-r{
+  position:absolute;
+  width:18px;height:10px;
+  background:#451a03;
+  border-radius:0 0 8px 8px;
+  bottom:0;
+}
+.bruno-foot-l{left:6px;}
+.bruno-foot-r{right:6px;}
+
+/* ── 7. MIST (Moon Ghost) ── */
+.mist-wrap{width:78px;height:110px;position:relative;}
+.mist-glow{
+  position:absolute;
+  width:86px;height:86px;border-radius:50%;
+  background:radial-gradient(circle,rgba(186,230,253,0.2),transparent 70%);
+  top:8px;left:50%;transform:translateX(-50%);
+  animation:mistGlow 3s ease-in-out infinite;
+}
+@keyframes mistGlow{0%,100%{opacity:0.5;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.08)}}
+.mist-body{
+  position:absolute;
+  width:68px;height:70px;
+  background:radial-gradient(circle at 40% 35%,#e0f2fe,#bae6fd,#7dd3fc);
+  border-radius:50% 50% 45% 45%;
+  bottom:10px;left:50%;transform:translateX(-50%);
+  box-shadow:0 0 20px rgba(125,211,252,0.4),0 0 40px rgba(125,211,252,0.15);
+}
+.mist-bottom{
+  position:absolute;
+  width:68px;height:22px;
+  bottom:8px;left:50%;transform:translateX(-50%);
+  overflow:hidden;
+}
+.mist-wave{
+  position:absolute;bottom:0;left:0;right:0;height:22px;
+  background:#7dd3fc;
+  border-radius:0 0 8px 8px;
+}
+.mist-wave::before{
+  content:'';position:absolute;
+  width:30px;height:14px;
+  background:#bae6fd;
+  border-radius:50% 50% 0 0;
+  bottom:0;left:2px;
+}
+.mist-wave::after{
+  content:'';position:absolute;
+  width:28px;height:14px;
+  background:#bae6fd;
+  border-radius:50% 50% 0 0;
+  bottom:0;right:2px;
+}
+.mist-moon{
+  position:absolute;
+  width:28px;height:28px;
+  background:#fef9c3;
+  border-radius:50%;
+  top:-12px;left:50%;transform:translateX(-50%);
+  box-shadow:0 0 12px rgba(254,249,195,0.7);
+}
+.mist-moon::after{
+  content:'';position:absolute;
+  width:20px;height:20px;
+  background:#0f172a;
+  border-radius:50%;
+  top:0;left:8px;
+}
+.mist-eye-l,.mist-eye-r{
+  position:absolute;
+  width:14px;height:16px;
+  border-radius:50%;
+  background:#1e3a5f;
+  top:22px;
+  animation:blinkEye 5s ease-in-out infinite;
+}
+.mist-eye-l{left:14px;}
+.mist-eye-r{right:14px;}
+.mist-eye-hl{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,0.85);top:2px;left:2px;
+}
+.mist-blush-l,.mist-blush-r{
+  position:absolute;
+  width:14px;height:7px;
+  background:rgba(186,230,253,0.6);
+  border-radius:50%;
+  top:42px;
+}
+.mist-blush-l{left:10px;}
+.mist-blush-r{right:10px;}
+
+/* ── 8. MARCO (Globe) ── */
+.marco-wrap{width:76px;height:108px;position:relative;}
+.marco-hat{
+  position:absolute;
+  width:52px;height:0;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-bottom:24px solid #92400e;
+  bottom:80px;left:50%;transform:translateX(-50%);
+}
+.marco-hat-brim{
+  position:absolute;
+  width:62px;height:10px;
+  background:#78350f;
+  border-radius:4px;
+  bottom:78px;left:50%;transform:translateX(-50%);
+}
+.marco-hat-band{
+  position:absolute;
+  width:50px;height:5px;
+  background:#451a03;
+  border-radius:2px;
+  bottom:80px;left:50%;transform:translateX(-50%);
+}
+.marco-globe{
+  position:absolute;
+  width:62px;height:62px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fbbf24,#f59e0b,#d97706);
+  box-shadow:0 4px 16px rgba(245,158,11,0.4);
+  bottom:14px;left:50%;transform:translateX(-50%);
+  overflow:hidden;
+}
+.marco-gridline-h{
+  position:absolute;width:100%;height:1.5px;
+  background:rgba(180,83,9,0.45);
+}
+.marco-gridline-h:nth-child(1){top:18%;}
+.marco-gridline-h:nth-child(2){top:38%;}
+.marco-gridline-h:nth-child(3){top:58%;}
+.marco-gridline-h:nth-child(4){top:78%;}
+.marco-gridline-v{
+  position:absolute;height:100%;width:1.5px;
+  background:rgba(180,83,9,0.35);
+}
+.marco-gridline-v:nth-child(5){left:22%;}
+.marco-gridline-v:nth-child(6){left:42%;}
+.marco-gridline-v:nth-child(7){left:62%;}
+.marco-gridline-v:nth-child(8){left:82%;}
+.marco-face{
+  position:absolute;
+  width:100%;height:100%;
+  top:0;left:0;
+}
+.marco-eye-l,.marco-eye-r{
+  position:absolute;
+  width:12px;height:13px;
+  border-radius:50%;background:#1a1a1a;
+  top:20px;
+  animation:blinkEye 5s ease-in-out infinite;
+}
+.marco-eye-l{left:10px;}
+.marco-eye-r{right:10px;}
+.marco-eye-hl{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:rgba(255,255,255,0.9);top:2px;left:1px;
+}
+.marco-smile{
+  position:absolute;
+  width:22px;height:10px;
+  border-bottom:3px solid #92400e;
+  border-radius:0 0 11px 11px;
+  bottom:12px;left:50%;transform:translateX(-50%);
+}
+.marco-stand{
+  position:absolute;
+  width:20px;height:8px;
+  background:#b45309;
+  border-radius:4px;
+  bottom:8px;left:50%;transform:translateX(-50%);
+}
+.marco-stand::after{
+  content:'';position:absolute;
+  width:32px;height:6px;
+  background:#92400e;
+  border-radius:3px;
+  bottom:-4px;left:50%;transform:translateX(-50%);
+}
+
+/* ══════════════════════════════════════════
+   9. CRASH BANDICOOT — Full detailed
+══════════════════════════════════════════ */
+.crash-wrap{width:100px;height:132px;position:relative;}
+
+/* shoes */
+.crash-shoe-l,.crash-shoe-r{
+  position:absolute;
+  width:28px;height:16px;
+  background:radial-gradient(circle at 30% 30%,#b91c1c,#7f1d1d);
+  border-radius:12px 14px 10px 10px;
+  bottom:0;
+  box-shadow:0 3px 6px rgba(0,0,0,0.4);
+}
+.crash-shoe-l{left:10px;}
+.crash-shoe-r{right:10px;}
+/* shoe highlight */
+.crash-shoe-l::after,.crash-shoe-r::after{
+  content:'';position:absolute;
+  width:10px;height:4px;
+  background:rgba(255,255,255,0.2);
+  border-radius:3px;
+  top:3px;left:5px;
+}
+
+/* jeans legs */
+.crash-jean-l,.crash-jean-r{
+  position:absolute;
+  width:22px;height:22px;
+  background:linear-gradient(to bottom,#1d4ed8,#1e40af);
+  border-radius:5px 5px 0 0;
+  bottom:12px;
+}
+.crash-jean-l{left:13px;}
+.crash-jean-r{right:13px;}
+/* jeans cuff */
+.crash-jean-l::after,.crash-jean-r::after{
+  content:'';position:absolute;
+  width:24px;height:6px;
+  background:#1e40af;
+  border-radius:2px;
+  bottom:-2px;left:-1px;
+  border-bottom:2px solid #1d4ed8;
+}
+
+/* body */
+.crash-body{
+  position:absolute;
+  width:48px;height:42px;
+  background:radial-gradient(circle at 40% 30%,#fb923c,#ea580c);
+  border-radius:22px 22px 16px 16px;
+  bottom:28px;left:50%;transform:translateX(-50%);
+}
+/* chest stripe */
+.crash-body::after{
+  content:'';position:absolute;
+  width:20px;height:26px;
+  background:#fed7aa;
+  border-radius:10px;
+  top:6px;left:50%;transform:translateX(-50%);
+}
+
+/* gloves / arms */
+.crash-arm-l,.crash-arm-r{
+  position:absolute;
+  width:16px;height:24px;
+  background:#fb923c;
+  border-radius:8px;
+  bottom:38px;
+}
+.crash-arm-l{left:2px;transform:rotate(10deg);}
+.crash-arm-r{right:2px;transform:rotate(-10deg);}
+.crash-glove-l,.crash-glove-r{
+  position:absolute;
+  width:18px;height:15px;
+  background:#fffbeb;
+  border-radius:9px 9px 7px 7px;
+  bottom:28px;
+}
+.crash-glove-l{left:0px;}
+.crash-glove-r{right:0px;}
+/* glove fingers hint */
+.crash-glove-l::after,.crash-glove-r::after{
+  content:'';position:absolute;
+  width:16px;height:5px;
+  border-top:2px solid rgba(180,180,160,0.5);
+  border-radius:2px;
+  top:4px;left:1px;
+}
+
+/* ── HEAD (very large, wider than body) ── */
+.crash-head{
+  position:absolute;
+  width:80px;height:70px;
+  background:radial-gradient(circle at 38% 32%,#fb923c,#ea580c 65%,#c2410c);
+  border-radius:50% 50% 42% 42%;
+  bottom:60px;left:50%;transform:translateX(-50%);
+  z-index:5;
+}
+
+/* spiky hair — 5 spikes */
+.crash-hair{
+  position:absolute;
+  top:-20px;left:50%;transform:translateX(-50%);
+  width:62px;height:24px;
+}
+.crash-spike{
+  position:absolute;
+  width:0;height:0;
+  border-left:7px solid transparent;
+  border-right:7px solid transparent;
+  border-bottom:22px solid #7c2d12;
+  bottom:0;
+}
+.crash-spike:nth-child(1){left:0px;}
+.crash-spike:nth-child(2){left:12px;border-bottom-width:26px;}
+.crash-spike:nth-child(3){left:24px;border-bottom-width:28px;border-left-width:8px;border-right-width:8px;}
+.crash-spike:nth-child(4){left:37px;border-bottom-width:26px;}
+.crash-spike:nth-child(5){left:49px;border-bottom-width:22px;}
+
+/* eyebrows */
+.crash-brow-l,.crash-brow-r{
+  position:absolute;
+  width:22px;height:6px;
+  background:#3d1108;
+  border-radius:3px;
+  top:10px;
+}
+.crash-brow-l{left:8px;transform:rotate(15deg);}
+.crash-brow-r{right:8px;transform:rotate(-15deg);}
+
+/* eyes */
+.crash-eye-l,.crash-eye-r{
+  position:absolute;
+  width:18px;height:19px;
+  border-radius:50%;background:#fff;
+  top:20px;
+  overflow:hidden;
+  animation:blinkEye 4s ease-in-out infinite;
+}
+.crash-eye-l{left:10px;}
+.crash-eye-r{right:10px;}
+.crash-iris-inner{
+  width:12px;height:13px;border-radius:50%;
+  background:#1e40af;
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-45%);
+}
+.crash-iris-inner::after{
+  content:'';position:absolute;
+  width:8px;height:9px;border-radius:50%;
+  background:radial-gradient(ellipse at 40% 30%,#0a0818,#000);
+  top:50%;left:50%;transform:translate(-50%,-50%);
+}
+.crash-eye-hl1{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,0.95);top:2px;left:2px;z-index:2;
+}
+.crash-eye-hl2{
+  position:absolute;width:3px;height:3px;border-radius:50%;
+  background:rgba(255,255,255,0.7);bottom:3px;right:2px;z-index:2;
+}
+
+/* BIG WIDE SNOUT — this is key */
+.crash-snout{
+  position:absolute;
+  width:50px;height:36px;
+  background:radial-gradient(ellipse at 50% 40%,#fef3c7,#fde68a 55%,#fbbf24);
+  border-radius:50% 50% 46% 46%;
+  bottom:4px;left:50%;transform:translateX(-50%);
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+/* nostrils */
+.crash-snout::before{
+  content:'';position:absolute;
+  width:9px;height:6px;border-radius:50%;
+  background:rgba(120,50,10,0.45);
+  top:7px;left:7px;
+}
+.crash-snout::after{
+  content:'';position:absolute;
+  width:9px;height:6px;border-radius:50%;
+  background:rgba(120,50,10,0.45);
+  top:7px;right:7px;
+}
+
+/* big wide grin */
+.crash-mouth{
+  position:absolute;
+  width:36px;height:14px;
+  border-bottom:3px solid #7c2d12;
+  border-radius:0 0 18px 18px;
+  bottom:6px;left:50%;transform:translateX(-50%);
+  overflow:hidden;
+}
+.crash-teeth{
+  position:absolute;
+  width:30px;height:8px;
+  background:#fff;
+  border-radius:0 0 4px 4px;
+  bottom:1px;left:3px;
+}
+.crash-teeth::before{
+  content:'';position:absolute;
+  width:1.5px;height:100%;
+  background:rgba(200,180,160,0.5);
+  left:8px;
+}
+.crash-teeth::after{
+  content:'';position:absolute;
+  width:1.5px;height:100%;
+  background:rgba(200,180,160,0.5);
+  right:8px;
+}
+
+/* cheek blush */
+.crash-blush-l,.crash-blush-r{
+  position:absolute;
+  width:16px;height:9px;
+  background:rgba(251,146,60,0.45);
+  border-radius:50%;
+  bottom:16px;
+}
+.crash-blush-l{left:4px;}
+.crash-blush-r{right:4px;}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Обери свого компаньона</h1>
+  <p>Обери до 3 компаньонів для своєї подорожі</p>
+</div>
+
+<div class="grid">
+
+  <!-- 1. LUMIX -->
+  <div class="card" onclick="toggleSel(this)" data-name="Lumix">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-lumix" style="animation-duration:3.8s;">
+        <div class="lumix-wrap">
+          <div class="lumix-sparkle">✦</div>
+          <div class="lumix-sparkle">✧</div>
+          <div class="lumix-sparkle">✦</div>
+          <div class="lumix-glow"></div>
+          <div class="lumix-ear-l"><div class="lumix-ear-inner-l"></div></div>
+          <div class="lumix-ear-r"><div class="lumix-ear-inner-r"></div></div>
+          <div class="lumix-orb"></div>
+          <div class="lumix-eyes">
+            <div class="lumix-eye"><div class="lumix-pupil"></div></div>
+            <div class="lumix-eye"><div class="lumix-pupil"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Lumix</div>
+    <div class="char-fam">Дух</div>
+  </div>
+
+  <!-- 2. KITSUNE -->
+  <div class="card" onclick="toggleSel(this)" data-name="Kitsune">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-kitsune" style="animation-duration:3.4s;animation-delay:-1.1s;">
+        <div class="kitsune-wrap">
+          <div class="kit-tail"></div>
+          <div class="kit-leg-l"><div class="kit-foot-l"></div></div>
+          <div class="kit-leg-r"><div class="kit-foot-r"></div></div>
+          <div class="kit-body"><div class="kit-belly"></div></div>
+          <div class="kit-paw-l"></div>
+          <div class="kit-paw-r"></div>
+          <div class="kit-head">
+            <div class="kit-ear-l"><div class="kit-ear-inner-l"></div></div>
+            <div class="kit-ear-r"><div class="kit-ear-inner-r"></div></div>
+            <div class="kit-eye-l">
+              <div class="kit-iris">
+                <div class="kit-iris-hl"></div>
+              </div>
+            </div>
+            <div class="kit-eye-r">
+              <div class="kit-iris">
+                <div class="kit-iris-hl"></div>
+              </div>
+            </div>
+            <div class="kit-muzzle"><div class="kit-nose"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Kitsune</div>
+    <div class="char-fam">Лиса</div>
+  </div>
+
+  <!-- 3. MOCHI -->
+  <div class="card" onclick="toggleSel(this)" data-name="Mochi">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-mochi" style="animation-duration:4.1s;animation-delay:-0.7s;">
+        <div class="mochi-wrap">
+          <div class="mochi-leg-l"></div>
+          <div class="mochi-leg-r"></div>
+          <div class="mochi-body"><div class="mochi-belly"></div></div>
+          <div class="mochi-head">
+            <div class="mochi-ear-l"><div class="mochi-ear-inner-l"></div></div>
+            <div class="mochi-ear-r"><div class="mochi-ear-inner-r"></div></div>
+            <div class="mochi-eye-l"><div class="mochi-eye-hl"></div></div>
+            <div class="mochi-eye-r"><div class="mochi-eye-hl"></div></div>
+            <div class="mochi-blush-l"></div>
+            <div class="mochi-blush-r"></div>
+            <div class="mochi-nose"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Mochi</div>
+    <div class="char-fam">Зайчик</div>
+  </div>
+
+  <!-- 4. BYTE -->
+  <div class="card" onclick="toggleSel(this)" data-name="Byte">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-byte" style="animation-duration:3.2s;animation-delay:-2s;">
+        <div class="byte-wrap">
+          <div class="byte-antenna"></div>
+          <div class="byte-head">
+            <div class="byte-screen">
+              <div class="byte-led-eye-l"></div>
+              <div class="byte-led-eye-r"></div>
+              <div class="byte-smile"></div>
+            </div>
+          </div>
+          <div class="byte-arm-l"></div>
+          <div class="byte-arm-r"></div>
+          <div class="byte-body"></div>
+          <div class="byte-leg-l"><div class="byte-foot-l"></div></div>
+          <div class="byte-leg-r"><div class="byte-foot-r"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Byte</div>
+    <div class="char-fam">Робот</div>
+  </div>
+
+  <!-- 5. EMBER -->
+  <div class="card" onclick="toggleSel(this)" data-name="Ember">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-ember" style="animation-duration:3.7s;animation-delay:-0.4s;">
+        <div class="ember-wrap">
+          <div class="ember-tail"></div>
+          <div class="ember-wing-l"></div>
+          <div class="ember-wing-r"></div>
+          <div class="ember-body"><div class="ember-belly"></div></div>
+          <div class="ember-leg-l"></div>
+          <div class="ember-leg-r"></div>
+          <div class="ember-head">
+            <div class="ember-horn-l"></div>
+            <div class="ember-horn-r"></div>
+            <div class="ember-eye-l">
+              <div class="ember-iris"><div class="ember-iris-hl"></div></div>
+            </div>
+            <div class="ember-eye-r">
+              <div class="ember-iris"><div class="ember-iris-hl"></div></div>
+            </div>
+            <div class="ember-nostril"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Ember</div>
+    <div class="char-fam">Дракон</div>
+  </div>
+
+  <!-- 6. BRUNO -->
+  <div class="card" onclick="toggleSel(this)" data-name="Bruno">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-bruno" style="animation-duration:4s;animation-delay:-1.5s;">
+        <div class="bruno-wrap">
+          <div class="bruno-strap-l"></div>
+          <div class="bruno-strap-r"></div>
+          <div class="bruno-backpack"></div>
+          <div class="bruno-leg-l"><div class="bruno-foot-l"></div></div>
+          <div class="bruno-leg-r"><div class="bruno-foot-r"></div></div>
+          <div class="bruno-body"><div class="bruno-belly"></div></div>
+          <div class="bruno-arm-l"></div>
+          <div class="bruno-arm-r"></div>
+          <div class="bruno-head">
+            <div class="bruno-ear-l"><div class="bruno-ear-inner-l"></div></div>
+            <div class="bruno-ear-r"><div class="bruno-ear-inner-r"></div></div>
+            <div class="bruno-eye-l"><div class="bruno-eye-hl"></div></div>
+            <div class="bruno-eye-r"><div class="bruno-eye-hl"></div></div>
+            <div class="bruno-muzzle"><div class="bruno-nose"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Bruno</div>
+    <div class="char-fam">Ведмідь</div>
+  </div>
+
+  <!-- 7. MIST -->
+  <div class="card" onclick="toggleSel(this)" data-name="Mist">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-mist" style="animation-duration:4.4s;animation-delay:-0.9s;">
+        <div class="mist-wrap">
+          <div class="mist-glow"></div>
+          <div class="mist-body">
+            <div class="mist-moon"></div>
+            <div class="mist-eye-l"><div class="mist-eye-hl"></div></div>
+            <div class="mist-eye-r"><div class="mist-eye-hl"></div></div>
+            <div class="mist-blush-l"></div>
+            <div class="mist-blush-r"></div>
+          </div>
+          <div class="mist-bottom"><div class="mist-wave"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Mist</div>
+    <div class="char-fam">Примара</div>
+  </div>
+
+  <!-- 8. MARCO -->
+  <div class="card" onclick="toggleSel(this)" data-name="Marco">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-marco" style="animation-duration:3.5s;animation-delay:-1.8s;">
+        <div class="marco-wrap">
+          <div class="marco-hat"></div>
+          <div class="marco-hat-brim"></div>
+          <div class="marco-hat-band"></div>
+          <div class="marco-globe">
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-h"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-gridline-v"></div>
+            <div class="marco-face">
+              <div class="marco-eye-l"><div class="marco-eye-hl"></div></div>
+              <div class="marco-eye-r"><div class="marco-eye-hl"></div></div>
+              <div class="marco-smile"></div>
+            </div>
+          </div>
+          <div class="marco-stand"></div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Marco</div>
+    <div class="char-fam">Мандрівник</div>
+  </div>
+
+  <!-- 9. CRASH -->
+  <div class="card" onclick="toggleSel(this)" data-name="Crash">
+    <div class="check-ring">✓</div>
+    <div class="char-stage">
+      <div class="char-wrap" id="cw-crash" style="animation-duration:3.3s;animation-delay:-0.5s;">
+        <div class="crash-wrap">
+          <!-- shoes -->
+          <div class="crash-shoe-l"></div>
+          <div class="crash-shoe-r"></div>
+          <!-- jeans -->
+          <div class="crash-jean-l"></div>
+          <div class="crash-jean-r"></div>
+          <!-- arms + gloves -->
+          <div class="crash-arm-l"></div>
+          <div class="crash-arm-r"></div>
+          <div class="crash-glove-l"></div>
+          <div class="crash-glove-r"></div>
+          <!-- body -->
+          <div class="crash-body"></div>
+          <!-- HEAD -->
+          <div class="crash-head">
+            <!-- spiky hair -->
+            <div class="crash-hair">
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+              <div class="crash-spike"></div>
+            </div>
+            <!-- brows -->
+            <div class="crash-brow-l"></div>
+            <div class="crash-brow-r"></div>
+            <!-- eyes -->
+            <div class="crash-eye-l">
+              <div class="crash-iris-inner"></div>
+              <div class="crash-eye-hl1"></div>
+              <div class="crash-eye-hl2"></div>
+            </div>
+            <div class="crash-eye-r">
+              <div class="crash-iris-inner"></div>
+              <div class="crash-eye-hl1"></div>
+              <div class="crash-eye-hl2"></div>
+            </div>
+            <!-- blush -->
+            <div class="crash-blush-l"></div>
+            <div class="crash-blush-r"></div>
+            <!-- BIG SNOUT -->
+            <div class="crash-snout">
+              <div class="crash-mouth">
+                <div class="crash-teeth"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="char-name">Crash</div>
+    <div class="char-fam">Бандикут</div>
+  </div>
+
+</div><!-- /grid -->
+
+<div class="bottom-bar">
+  <div class="sel-count">Обрано: <span id="sel-num">0</span></div>
+  <button class="btn-confirm" onclick="doApprove()">Підтвердити →</button>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ── Selection logic ── */
+  const MAX_SEL = 3;
+  let selCount = 0;
+
+  window.toggleSel = function(card){
+    if(card.classList.contains('selected')){
+      card.classList.remove('selected');
+      selCount = Math.max(0, selCount - 1);
+    } else {
+      if(selCount >= MAX_SEL){
+        card.style.animation='shake 0.3s ease';
+        setTimeout(()=>card.style.animation='',400);
+        return;
+      }
+      card.classList.add('selected');
+      selCount++;
+    }
+    document.getElementById('sel-num').textContent = selCount;
+  };
+
+  window.doApprove = function(){
+    const cards = document.querySelectorAll('.card.selected');
+    if(cards.length === 0){ alert('Обери хоча б одного компаньона!'); return; }
+    const names = Array.from(cards).map(c=>c.dataset.name).join(', ');
+    alert('Обрані компаньони: ' + names);
+  };
+
+  /* ── Idle animation cycle ── */
+  const behaviors = ['idle-look','idle-bounce','idle-wobble','idle-nod','idle-shake'];
+
+  function runCycle(el, beh, offset){
+    let idx = offset % beh.length;
+    function step(){
+      const cls = beh[idx % beh.length];
+      el.classList.add(cls);
+      idx++;
+      const dur = (parseFloat(
+        getComputedStyle(el).animationDuration
+      )*1000) || 1400;
+      setTimeout(()=>{
+        el.classList.remove(cls);
+        const pause = 2000 + Math.random()*1500;
+        setTimeout(step, pause);
+      }, dur);
+    }
+    setTimeout(step, offset * 800 + Math.random()*1000);
+  }
+
+  const charWraps = [
+    {id:'cw-lumix',   off:0},
+    {id:'cw-kitsune', off:1},
+    {id:'cw-mochi',   off:2},
+    {id:'cw-byte',    off:3},
+    {id:'cw-ember',   off:4},
+    {id:'cw-bruno',   off:5},
+    {id:'cw-mist',    off:6},
+    {id:'cw-marco',   off:7},
+    {id:'cw-crash',   off:8},
+  ];
+
+  charWraps.forEach(function(cfg){
+    const el = document.getElementById(cfg.id);
+    if(el) runCycle(el, behaviors, cfg.off);
+  });
+
+  /* card shake keyframe (inline) */
+  const style = document.createElement('style');
+  style.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}';
+  document.head.appendChild(style);
+})();
+</script>
+</body>
+</html>

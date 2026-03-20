@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ThreeWordsDaily — Full Spectrum + Idle System</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #030310; color: #f0f0f8; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; min-height: 100vh; padding-bottom: 100px; overflow-x: hidden; }
+
+.bg-atmo { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.bokeh { position:absolute; border-radius:50%; filter:blur(60px); }
+.bk1 { width:200px;height:200px;background:rgba(120,60,220,0.18);top:-40px;left:-40px; }
+.bk2 { width:160px;height:160px;background:rgba(30,80,200,0.15);bottom:15%;right:-30px; }
+.bk3 { width:100px;height:100px;background:rgba(200,50,50,0.1);bottom:35%;left:5%; }
+.bk4 { width:80px;height:80px;background:rgba(40,160,140,0.12);top:40%;right:15%; }
+.wrap { position:relative; z-index:1; }
+
+.hero { text-align:center; padding:36px 20px 16px; }
+.hero-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#c4b5fd; background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.25); border-radius:20px; padding:4px 14px; margin-bottom:14px; }
+.hero h1 { font-size:23px; font-weight:800; letter-spacing:-0.02em; margin-bottom:8px; }
+.hero p { font-size:13px; color:rgba(240,240,248,0.42); }
+
+/* TIER LABELS */
+.tier-label { padding:18px 16px 10px; display:flex; align-items:center; gap:10px; }
+.tier-pill { font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3px 10px; border-radius:10px; border:1px solid; }
+.pill-s { color:#c4b5fd; background:rgba(139,92,246,0.1); border-color:rgba(139,92,246,0.25); }
+.pill-h { color:#93c5fd; background:rgba(59,130,246,0.1); border-color:rgba(59,130,246,0.25); }
+.pill-c { color:#fca5a5; background:rgba(220,38,38,0.1); border-color:rgba(220,38,38,0.3); }
+.tier-label h2 { font-size:16px; font-weight:700; }
+.tier-label span { font-size:11px; color:rgba(240,240,248,0.38); margin-left:auto; }
+
+/* GRIDS */
+.char-grid  { display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; padding:0 10px; }
+.char-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:0 10px; }
+.char-cell { display:flex; flex-direction:column; align-items:center; padding:14px 4px 10px; cursor:pointer; border-radius:20px; transition:background 0.2s; position:relative; }
+.char-cell:active { transform:scale(0.97); }
+.char-cell.selected { background:rgba(255,255,255,0.04); outline:1.5px solid rgba(139,92,246,0.5); }
+.char-stage { width:110px; height:134px; position:relative; display:flex; align-items:flex-end; justify-content:center; }
+.char-label { font-size:13px; font-weight:700; margin-top:8px; }
+.char-fam   { font-size:10px; color:rgba(240,240,248,0.35); margin-top:2px; }
+.sel-ring { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:50%; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); display:flex; align-items:center; justify-content:center; font-size:11px; color:transparent; transition:all 0.2s; }
+.char-cell.selected .sel-ring { background:#7c3aed; border-color:#7c3aed; color:white; }
+
+.divider { height:1px; background:rgba(255,255,255,0.07); margin:20px 16px; }
+
+/* ============================================================
+   IDLE BEHAVIOR ANIMATIONS
+   Applied to any .char-wrap element via JS class cycling
+============================================================ */
+/* Base float (each character has its own float animation, these override) */
+@keyframes idleLook {
+  0%   { transform:translateY(0) rotate(0deg); }
+  18%  { transform:translateY(-4px) rotate(-10deg); }
+  38%  { transform:translateY(-4px) rotate(10deg); }
+  55%  { transform:translateY(-4px) rotate(-5deg); }
+  72%  { transform:translateY(-3px) rotate(5deg); }
+  88%  { transform:translateY(-2px) rotate(-2deg); }
+  100% { transform:translateY(0) rotate(0deg); }
+}
+@keyframes idleStretch {
+  0%   { transform:translateY(0) scaleY(1) scaleX(1); }
+  25%  { transform:translateY(-10px) scaleY(1.18) scaleX(0.86); }
+  50%  { transform:translateY(-12px) scaleY(1.22) scaleX(0.84); }
+  70%  { transform:translateY(-8px) scaleY(1.1) scaleX(0.93); }
+  84%  { transform:translateY(-2px) scaleY(0.92) scaleX(1.08); }
+  94%  { transform:translateY(0) scaleY(1.03) scaleX(0.98); }
+  100% { transform:translateY(0) scaleY(1) scaleX(1); }
+}
+@keyframes idleBounce {
+  0%,100% { transform:translateY(0) scaleY(1) scaleX(1); }
+  12%  { transform:translateY(-12px) scaleY(1.1) scaleX(0.92); }
+  22%  { transform:translateY(0) scaleY(0.9) scaleX(1.1); }
+  34%  { transform:translateY(-9px) scaleY(1.08) scaleX(0.94); }
+  44%  { transform:translateY(0) scaleY(0.94) scaleX(1.06); }
+  56%  { transform:translateY(-6px) scaleY(1.05) scaleX(0.96); }
+  66%  { transform:translateY(0) scaleY(0.97) scaleX(1.03); }
+  80%  { transform:translateY(-3px) scaleY(1.02) scaleX(0.99); }
+}
+@keyframes idleProud {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  20%  { transform:translateY(-6px) rotate(-4deg) scaleX(1.05); }
+  40%  { transform:translateY(-10px) rotate(0) scaleX(1.08); }
+  60%  { transform:translateY(-8px) rotate(4deg) scaleX(1.05); }
+  78%  { transform:translateY(-4px) rotate(2deg) scaleX(1.02); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleWobble {
+  0%   { transform:rotate(0deg) translateY(0); }
+  10%  { transform:rotate(-18deg) translateY(-4px); }
+  22%  { transform:rotate(14deg) translateY(-2px); }
+  34%  { transform:rotate(-11deg) translateY(-1px); }
+  46%  { transform:rotate(9deg) translateY(0); }
+  58%  { transform:rotate(-6deg); }
+  70%  { transform:rotate(4deg); }
+  82%  { transform:rotate(-2deg); }
+  92%  { transform:rotate(1deg); }
+  100% { transform:rotate(0deg); }
+}
+@keyframes idleGlance {
+  0%   { transform:translateY(0) rotate(0) scaleX(1); }
+  15%  { transform:translateY(-3px) rotate(6deg) scaleX(0.97); }
+  40%  { transform:translateY(-4px) rotate(6deg) scaleX(0.97); }
+  65%  { transform:translateY(-3px) rotate(3deg); }
+  82%  { transform:translateY(-1px) rotate(1deg); }
+  100% { transform:translateY(0) rotate(0) scaleX(1); }
+}
+@keyframes idleShake {
+  0%,100% { transform:translateX(0) translateY(-4px); }
+  15% { transform:translateX(-5px) translateY(-5px) rotate(-3deg); }
+  30% { transform:translateX(5px) translateY(-4px) rotate(3deg); }
+  45% { transform:translateX(-4px) translateY(-5px) rotate(-2deg); }
+  60% { transform:translateX(4px) translateY(-4px) rotate(2deg); }
+  75% { transform:translateX(-2px) translateY(-4px); }
+}
+@keyframes idleSurge {
+  0%   { transform:translateY(0) scale(1); filter:brightness(1); }
+  25%  { transform:translateY(-6px) scale(1.06); filter:brightness(1.3); }
+  50%  { transform:translateY(-8px) scale(1.1); filter:brightness(1.5); }
+  75%  { transform:translateY(-5px) scale(1.05); filter:brightness(1.2); }
+  100% { transform:translateY(0) scale(1); filter:brightness(1); }
+}
+@keyframes idleIntim {
+  0%   { transform:translateY(0) scale(1) rotate(0); }
+  30%  { transform:translateY(-3px) scale(1.04) rotate(-2deg); }
+  60%  { transform:translateY(-5px) scale(1.07) rotate(0); }
+  80%  { transform:translateY(-4px) scale(1.05) rotate(2deg); }
+  100% { transform:translateY(0) scale(1) rotate(0); }
+}
+/* Prop orbit */
+@keyframes propOrbit {
+  0%   { transform:translateX(-50%) rotate(0deg) translateX(32px) rotate(0deg); opacity:1; }
+  100% { transform:translateX(-50%) rotate(360deg) translateX(32px) rotate(-360deg); opacity:1; }
+}
+@keyframes propFloat {
+  0%,100% { transform:translateY(0) scale(1); }
+  50% { transform:translateY(-14px) scale(0.9); }
+}
+
+.idle-look     { animation:idleLook    2.2s ease-in-out 1 forwards !important; }
+.idle-stretch  { animation:idleStretch 2.0s ease-in-out 1 forwards !important; }
+.idle-bounce   { animation:idleBounce  2.0s ease-in-out 1 forwards !important; }
+.idle-proud    { animation:idleProud   2.2s ease-in-out 1 forwards !important; }
+.idle-wobble   { animation:idleWobble  1.8s ease-in-out 1 forwards !important; }
+.idle-glance   { animation:idleGlance  2.4s ease-in-out 1 forwards !important; }
+.idle-shake    { animation:idleShake   1.6s ease-in-out 1 forwards !important; }
+.idle-surge    { animation:idleSurge   2.0s ease-in-out 1 forwards !important; }
+.idle-intim    { animation:idleIntim   2.5s ease-in-out 1 forwards !important; }
+
+/* Prop element that appears during certain idles */
+.char-prop {
+  position:absolute; opacity:0; pointer-events:none; transition:opacity 0.3s;
+  bottom:80%; left:50%; transform:translateX(-50%);
+  font-size:16px; filter:drop-shadow(0 0 6px rgba(200,180,255,0.8));
+}
+.idle-bounce .char-prop,
+.idle-proud .char-prop { opacity:1; animation:propFloat 0.6s ease-in-out infinite; }
+
+/* Shared float animations */
+@keyframes f1 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+@keyframes f2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+@keyframes f3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes breathe { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.018) scaleY(0.99)} }
+@keyframes blinkEye { 0%,88%,100%{transform:scaleY(1)} 91%,96%{transform:scaleY(0.07)} }
+@keyframes glow { 0%,100%{opacity:0.65} 50%{opacity:1} }
+@keyframes antennaB { 0%,100%{transform:translateX(-50%) rotate(-4deg)} 50%{transform:translateX(-50%) rotate(4deg)} }
+@keyframes earTw { 0%,84%,100%{transform:rotate(0)} 87%,93%{transform:rotate(-10deg)} }
+@keyframes wingF { 0%,100%{transform:rotate(-6deg) scaleX(1)} 50%{transform:rotate(-20deg) scaleX(0.8)} }
+@keyframes combatPulse { 0%,100%{box-shadow:0 0 28px rgba(180,0,0,0.55),0 0 60px rgba(100,0,0,0.25),0 8px 24px rgba(0,0,0,0.7)} 50%{box-shadow:0 0 40px rgba(220,0,0,0.9),0 0 80px rgba(150,0,0,0.45),0 8px 24px rgba(0,0,0,0.7)} }
+@keyframes seraphGlow { 0%,100%{box-shadow:0 0 24px rgba(255,200,0,0.5),0 0 50px rgba(255,160,0,0.2),0 8px 22px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 40px rgba(255,220,0,0.9),0 0 80px rgba(255,180,0,0.45),0 8px 22px rgba(0,0,0,0.5)} }
+@keyframes hairDrift { 0%,100%{transform:rotate(0)} 50%{transform:rotate(1.5deg)} }
+@keyframes puff { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.02) scaleY(0.99)} }
+
+/* EYE SYSTEM */
+.eye { position:absolute; border-radius:50%; background:white; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 0 4px rgba(0,0,0,0.1); transform-origin:center; animation:blinkEye 5s ease-in-out infinite; }
+.iris  { position:absolute; border-radius:50%; top:50%; left:50%; transform:translate(-50%,-48%); }
+.pupil { position:absolute; border-radius:50%; background:radial-gradient(ellipse at 40% 30%,#0a0818,#000005); top:50%; left:50%; transform:translate(-50%,-50%); }
+.hl1   { position:absolute; border-radius:50%; background:rgba(255,255,255,0.96); top:14%; left:14%; }
+.hl2   { position:absolute; border-radius:50%; background:rgba(255,255,255,0.65); bottom:22%; right:18%; }
+
+/* =============================================
+   SOFT CHARACTERS (from preview5, condensed)
+============================================= */

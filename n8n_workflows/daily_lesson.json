@@ -1,0 +1,97 @@
+{
+  "name": "ThreeWordsDaily — Щоденний урок (9:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Щодня 9:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer $OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4o"
+            },
+            {
+              "name": "max_tokens",
+              "value": "800"
+            }
+          ]
+        },
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 800,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Ти вчитель англійської для українців. Відповідай тільки валідним JSON.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Створи урок B1. Тема: мікс.\\n\\nПоверни JSON без markdown:\\n{\\n  \\\"words\\\": [{\\\"word\\\": \\\"resilient\\\", \\\"transcription\\\": \\\"/rɪˈzɪliənt/\\\", \\\"translation\\\": \\\"стійкий\\\", \\\"example\\\": \\\"She is resilient.\\\", \\\"example_ua\\\": \\\"Вона стійка.\\\"}],\\n  \\\"idiom\\\": {\\\"text\\\": \\\"go the extra mile\\\", \\\"translation\\\": \\\"докласти зусиль\\\", \\\"example\\\": \\\"He goes the extra mile.\\\"},\\n  \\\"mini_story\\\": \\\"Short story.\\\",\\n  \\\"mini_story_ua\\\": \\\"Переклад.\\\"\\n}\\nРівно 3 слова, рівень B1.\"\n    }\n  ]\n}"
+      },
+      "id": "openai-generate",
+      "name": "OpenAI — Генерація уроку",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices[0].message.content.trim();\nlet cleaned = raw;\nif (cleaned.startsWith('```')) {\n  cleaned = cleaned.split('```')[1];\n  if (cleaned.startsWith('json')) cleaned = cleaned.slice(4);\n}\nconst lesson = JSON.parse(cleaned.trim());\n\nconst words = lesson.words;\nlet wordsText = '';\nfor (let i = 0; i < words.length; i++) {\n  const w = words[i];\n  wordsText += `${i+1}. *${w.word}* \\`${w.transcription}\\`\\n`;\n  wordsText += `   🇺🇦 ${w.translation}\\n`;\n  wordsText += `   💬 _${w.example}_\\n`;\n  wordsText += `   _${w.example_ua}_\\n\\n`;\n}\n\nconst idiom = lesson.idiom;\nconst days = ['Неділя','Понеділок','Вівторок','Середа','Четвер','П\\'ятниця','Субота'];\nconst dayName = days[new Date().getDay()];\n\nconst text = `📚 *Урок дня — ${dayName}*\\n━━━━━━━━━━━━━━━━━\\n\\n${wordsText}💬 *Idiom дня:*\\n_${idiom.text}_ — ${idiom.translation}\\n💡 _${idiom.example}_\\n\\n📖 *Mini-story:*\\n_${lesson.mini_story}_\\n_${lesson.mini_story_ua}_\\n\\n✏️ Вивчи слова → /today\\n🧠 Пройди тест → /quiz\\n🏆 Перевір рейтинг → /top`;\n\nreturn [{ json: { text } }];"
+      },
+      "id": "format-message",
+      "name": "Форматування тексту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot8681431935:AAGGFw6AnGbs23_Wb2wRqZ4GM0WutK93wM0/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"chat_id\": \"-1002680027938\",\n  \"text\": {{ JSON.stringify($json.text) }},\n  \"parse_mode\": \"Markdown\"\n}"
+      },
+      "id": "send-telegram",
+      "name": "Telegram — Відправка в групу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Щодня 9:00": {
+      "main": [[{"node": "OpenAI — Генерація уроку", "type": "main", "index": 0}]]
+    },
+    "OpenAI — Генерація уроку": {
+      "main": [[{"node": "Форматування тексту", "type": "main", "index": 0}]]
+    },
+    "Форматування тексту": {
+      "main": [[{"node": "Telegram — Відправка в групу", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

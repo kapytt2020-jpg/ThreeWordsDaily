@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ThreeWordsDaily — Full Character Spectrum</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a10;
+    --card: #141420;
+    --card2: #1a1a28;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f0f8;
+    --muted: rgba(240,240,248,0.42);
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; min-height: 100vh; padding-bottom: 100px; }
+
+  /* SPECTRUM BAR */
+  .spectrum-hero {
+    padding: 36px 20px 24px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(80,0,120,0.12) 0%, transparent 100%);
+  }
+  .spectrum-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #c4b5fd; background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.25); border-radius: 20px; padding: 4px 14px; margin-bottom: 14px;
+  }
+  .spectrum-hero h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .spectrum-hero p { font-size: 13px; color: var(--muted); max-width: 300px; margin: 0 auto 24px; line-height: 1.6; }
+
+  .spectrum-bar {
+    display: flex; align-items: center; background: var(--card); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 12px 16px; gap: 0; overflow: hidden; margin: 0 16px 28px;
+  }
+  .spec-seg {
+    flex: 1; text-align: center; padding: 8px 4px; border-radius: 10px; cursor: pointer; transition: background 0.2s;
+  }
+  .spec-seg .seg-dot { width: 10px; height: 10px; border-radius: 50%; margin: 0 auto 5px; }
+  .spec-seg .seg-label { font-size: 10px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; }
+  .spec-seg.s1 .seg-dot { background: radial-gradient(#d8b4fe, #8b5cf6); box-shadow: 0 0 8px rgba(139,92,246,0.6); }
+  .spec-seg.s2 .seg-dot { background: radial-gradient(#fde68a, #f59e0b); box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+  .spec-seg.s3 .seg-dot { background: radial-gradient(#a5f3fc, #06b6d4); box-shadow: 0 0 8px rgba(6,182,212,0.5); }
+  .spec-seg.s4 .seg-dot { background: radial-gradient(#86efac, #22c55e); box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+  .spec-seg.s5 .seg-dot { background: radial-gradient(#fdba74, #f97316); box-shadow: 0 0 8px rgba(249,115,22,0.5); }
+  .spec-seg.s6 .seg-dot { background: radial-gradient(#fca5a5, #ef4444); box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+  .spec-seg.s7 .seg-dot { background: radial-gradient(#fbbf24, #991b1b); box-shadow: 0 0 8px rgba(220,0,0,0.6); }
+  .spec-arrow { color: rgba(255,255,255,0.18); font-size: 11px; flex-shrink: 0; }
+
+  /* FAMILY SECTION */
+  .family-block { margin-bottom: 32px; }
+  .family-head {
+    display: flex; align-items: center; gap: 12px; padding: 0 16px; margin-bottom: 12px;
+  }
+  .family-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 10px; border: 1px solid;
+  }
+  .pill-soft    { color: #c4b5fd; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.25); }
+  .pill-stylish { color: #93c5fd; background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); }
+  .pill-combat  { color: #fca5a5; background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.3); }
+  .family-head h2 { font-size: 17px; font-weight: 700; }
+  .family-head span { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  .char-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px; }
+  .char-card {
+    background: var(--card); border: 1.5px solid var(--border); border-radius: 20px;
+    padding: 20px 12px 16px; display: flex; flex-direction: column; align-items: center;
+    text-align: center; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .char-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: 20px; opacity: 0; transition: opacity 0.2s;
+  }
+  .char-card.spirit-c::before  { background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12), transparent 70%); }
+  .char-card.animal-c::before  { background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,0.1), transparent 70%); }
+  .char-card.robot-c::before   { background: radial-gradient(ellipse at 50% 0%, rgba(20,184,166,0.1), transparent 70%); }
+  .char-card.fantasy-c::before { background: radial-gradient(ellipse at 50% 0%, rgba(244,63,94,0.1), transparent 70%); }
+  .char-card.travel-c::before  { background: radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.1), transparent 70%); }
+  .char-card.human-c::before   { background: radial-gradient(ellipse at 50% 0%, rgba(251,191,36,0.08), transparent 70%); }
+  .char-card.combat-c::before  { background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.12), transparent 70%); }
+  .char-card:hover::before, .char-card.selected::before { opacity: 1; }
+  .char-card.selected { border-color: rgba(139,92,246,0.6); }
+  .char-card:active { transform: scale(0.97); }
+
+  .char-stage { width: 110px; height: 130px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px; position: relative; }
+  .char-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 3px; }
+  .char-tagline { font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 10px; }
+  .char-traits { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+  .trait { font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--muted); border: 1px solid rgba(255,255,255,0.07); }
+  .trait.hot { color: #fca5a5; background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.2); }
+
+  .select-badge { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.14); background: var(--card2); display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .char-card.selected .select-badge { background: #7c3aed; border-color: #7c3aed; }
+  .select-badge::after { content: '✓'; color: white; opacity: 0; font-size: 11px; }
+  .char-card.selected .select-badge::after { opacity: 1; }
+
+  /* ============================================================
+     SHARED ANIMATIONS
+  ============================================================ */
+  @keyframes float     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  @keyframes floatSlow { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+  @keyframes floatSide { 0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-6px) rotate(1deg)} }
+  @keyframes breathe   { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.02) scaleY(0.99)} }
+  @keyframes blink     { 0%,90%,100%{transform:scaleY(1)} 93%,97%{transform:scaleY(0.08)} }
+  @keyframes blinkSlow { 0%,85%,100%{transform:scaleY(1)} 88%,92%{transform:scaleY(0.1)} }
+  @keyframes glow      { 0%,100%{opacity:0.7} 50%{opacity:1} }
+  @keyframes antennaW  { 0%,100%{transform:rotate(-3deg) translateX(-50%)} 50%{transform:rotate(3deg) translateX(-50%)} }
+  @keyframes wingFlap  { 0%,100%{transform:rotate(-8deg) scaleX(1)} 50%{transform:rotate(-20deg) scaleX(0.8)} }
+  @keyframes earTwitch { 0%,88%,100%{transform:rotate(0deg)} 90%,95%{transform:rotate(-8deg)} }
+  @keyframes cloudPuff { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(1.03)} }
+  @keyframes screenFl  { 0%,95%,100%{opacity:1} 96%,99%{opacity:0.8} }
+  @keyframes combatPulse { 0%,100%{box-shadow:0 0 20px rgba(180,0,0,0.5), 0 0 40px rgba(100,0,0,0.2), 0 8px 24px rgba(0,0,0,0.7)} 50%{box-shadow:0 0 35px rgba(220,0,0,0.8), 0 0 70px rgba(150,0,0,0.35), 0 8px 24px rgba(0,0,0,0.7)} }
+  @keyframes seraphGlow { 0%,100%{box-shadow:0 0 24px rgba(255,200,0,0.5), 0 0 50px rgba(255,160,0,0.2), 0 8px 22px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 40px rgba(255,220,0,0.8), 0 0 80px rgba(255,180,0,0.35), 0 8px 22px rgba(0,0,0,0.5)} }
+  @keyframes haloSpin  { 0%{transform:translateX(-50%) rotate(0deg)} 100%{transform:translateX(-50%) rotate(360deg)} }
+  @keyframes hairDrift { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(1.5deg)} }
+
+  /* ============================================================
+     EXISTING SOFT COMPANIONS (Spirit, Animal, Robot, Fantasy, Travel)
+  ============================================================ */
+
+  /* LUMIX */
+  .lumix-wrap { position:relative; width:88px; height:106px; animation:float 3.4s ease-in-out infinite; }
+  .lumix-glow { position:absolute; inset:-20px; background:radial-gradient(ellipse, rgba(139,92,246,0.18) 0%, transparent 70%); border-radius:50%; animation:glow 3s ease-in-out infinite; }
+  .lumix-ear { position:absolute; top:2px; width:22px; height:26px; background:radial-gradient(ellipse at 42% 30%, #ddd6fe, #7c3aed); border-radius:50% 50% 28% 28%; box-shadow:0 0 12px rgba(139,92,246,0.6); }
+  .lumix-ear.l { left:10px; } .lumix-ear.r { right:10px; }
+  .lumix-body { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:80px; height:90px; background:radial-gradient(ellipse at 36% 26%, #f5f0ff 0%, #d8b4fe 14%, #9b75f5 42%, #6d28d9 72%, #3b0764 100%); border-radius:50% 50% 46% 46%/54% 54% 46% 46%; box-shadow:0 0 28px rgba(139,92,246,0.75), 0 0 60px rgba(139,92,246,0.35), 0 6px 18px rgba(0,0,0,0.5), inset 0 -10px 22px rgba(59,7,100,0.6); animation:breathe 2.8s ease-in-out infinite; }
+  .lumix-body::before { content:''; position:absolute; top:9%; left:15%; width:32%; height:24%; background:radial-gradient(ellipse, rgba(255,255,255,0.72) 0%, transparent 100%); border-radius:50%; transform:rotate(-18deg); }
+  .lumix-eye { position:absolute; top:42%; width:19px; height:22px; background:radial-gradient(ellipse at 36% 28%, #ede9fe, #1e1b4b 60%); border-radius:50%; box-shadow:0 0 10px rgba(196,181,253,0.5); animation:blink 4.5s ease-in-out infinite; transform-origin:center; }
+  .lumix-eye.l { left:14px; } .lumix-eye.r { right:14px; }
+  .lumix-eye::before { content:''; position:absolute; top:16%; left:18%; width:6px; height:6px; background:white; border-radius:50%; opacity:.9; }
+  .lumix-eye::after  { content:''; position:absolute; bottom:22%; right:18%; width:3px; height:3px; background:rgba(255,255,255,0.5); border-radius:50%; }
+
+  /* MOCHI */
+  .mochi-wrap { position:relative; width:88px; height:110px; animation:floatSide 3.6s ease-in-out infinite; animation-delay:0.2s; }
+  .mochi-ear { position:absolute; top:-6px; width:26px; height:30px; background:radial-gradient(ellipse at 40% 30%, #fde8c8, #e8a75c); border-radius:50% 50% 20% 20%; animation:earTwitch 6s ease-in-out infinite; }
+  .mochi-ear.l { left:10px; transform-origin:bottom center; } .mochi-ear.r { right:10px; transform-origin:bottom center; animation-delay:0.3s; }
+  .mochi-ear::before { content:''; position:absolute; top:30%; left:25%; width:50%; height:55%; background:rgba(255,180,180,0.6); border-radius:50% 50% 20% 20%; }
+  .mochi-body { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:82px; height:88px; background:radial-gradient(ellipse at 36% 28%, #fffbf5 0%, #fef3e6 20%, #fde8c8 55%, #f5c896 82%, #e8a75c 100%); border-radius:50%; box-shadow:0 6px 24px rgba(232,167,92,0.45), 0 2px 10px rgba(0,0,0,0.3), inset 0 -8px 20px rgba(200,130,60,0.3); }
+  .mochi-body::before { content:''; position:absolute; top:10%; left:16%; width:32%; height:24%; background:radial-gradient(ellipse, rgba(255,255,255,0.8) 0%, transparent 100%); border-radius:50%; transform:rotate(-15deg); }
+  .mochi-eye { position:absolute; top:42%; width:20px; height:22px; background:radial-gradient(ellipse at 34% 28%, #4b4458, #1a1024 65%); border-radius:50%; animation:blink 5s ease-in-out infinite; transform-origin:center; }
+  .mochi-eye.l { left:14px; } .mochi-eye.r { right:14px; }
+  .mochi-eye::before { content:''; position:absolute; top:14%; left:17%; width:7px; height:7px; background:white; border-radius:50%; opacity:.95; }
+  .mochi-eye::after  { content:''; position:absolute; bottom:20%; right:15%; width:3px; height:3px; background:rgba(255,255,255,0.55); border-radius:50%; }
+  .mochi-nose { position:absolute; bottom:35%; left:50%; transform:translateX(-50%); width:9px; height:6px; background:rgba(220,100,120,0.7); border-radius:50%; }
+  .mochi-blush { position:absolute; top:52%; width:16px; height:8px; background:rgba(255,150,150,0.22); border-radius:50%; filter:blur(2px); }
+  .mochi-blush.l { left:8px; } .mochi-blush.r { right:8px; }
+
+  /* BYTE */
+  .byte-wrap { position:relative; width:88px; height:112px; animation:floatSlow 3.2s ease-in-out infinite; animation-delay:0.1s; }
+  .byte-antenna { position:absolute; top:-18px; left:50%; transform:translateX(-50%); width:4px; height:18px; background:linear-gradient(to bottom, #99f6e4, #2dd4bf); border-radius:2px; animation:antennaW 2.5s ease-in-out infinite; transform-origin:bottom center; }
+  .byte-antenna::after { content:''; position:absolute; top:-7px; left:50%; transform:translateX(-50%); width:10px; height:10px; background:radial-gradient(ellipse at 35% 30%, #e0fffe, #2dd4bf); border-radius:50%; box-shadow:0 0 8px rgba(45,212,191,0.8); }
+  .byte-body { position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:74px; height:80px; background:radial-gradient(ellipse at 36% 28%, #e0fffe 0%, #99f6e4 16%, #2dd4bf 46%, #0f766e 76%, #134e4a 100%); border-radius:32% 32% 36% 36%/28% 28% 38% 38%; box-shadow:0 0 22px rgba(45,212,191,0.5), 0 6px 20px rgba(0,0,0,0.45), inset 0 -8px 18px rgba(15,118,110,0.5); }
+  .byte-body::before { content:''; position:absolute; top:9%; left:14%; width:30%; height:22%; background:radial-gradient(ellipse, rgba(255,255,255,0.65) 0%, transparent 100%); border-radius:50%; transform:rotate(-15deg); }
+  .byte-screen { position:absolute; top:22%; left:50%; transform:translateX(-50%); width:52px; height:34px; background:#021a18; border-radius:10px; border:2px solid rgba(45,212,191,0.4); box-shadow:inset 0 0 10px rgba(45,212,191,0.2), 0 0 8px rgba(45,212,191,0.3); display:flex; align-items:center; justify-content:space-around; padding:0 8px; animation:screenFl 6s ease-in-out infinite; }
+  .byte-pixel-eye { width:14px; height:14px; border-radius:3px; background:linear-gradient(135deg, #34d399, #10b981); box-shadow:0 0 6px rgba(52,211,153,0.8); position:relative; }
+  .byte-pixel-eye::before { content:''; position:absolute; top:1px; left:1px; width:4px; height:4px; background:rgba(255,255,255,0.6); border-radius:1px; }
+  .byte-mouth { position:absolute; bottom:15%; left:50%; transform:translateX(-50%); width:20px; height:4px; background:rgba(45,212,191,0.6); border-radius:2px; box-shadow:0 0 4px rgba(45,212,191,0.5); }
+
+  /* EMBER */
+  .ember-wrap { position:relative; width:90px; height:112px; animation:floatSide 3.8s ease-in-out infinite; animation-delay:0.3s; }
+  .ember-horn { position:absolute; top:-8px; width:10px; height:18px; background:linear-gradient(to top, #b91c1c, #fca5a5); clip-path:polygon(50% 0%, 0% 100%, 100% 100%); }
+  .ember-horn.l { left:22px; transform:rotate(-8deg); } .ember-horn.r { right:22px; transform:rotate(8deg); }
+  .ember-wing { position:absolute; top:20%; width:20px; height:32px; background:linear-gradient(135deg, rgba(239,68,68,0.7), rgba(127,29,29,0.5)); clip-path:polygon(0% 0%, 100% 30%, 80% 100%, 0% 80%); animation:wingFlap 2.2s ease-in-out infinite; }
+  .ember-wing.l { left:-6px; transform-origin:right center; } .ember-wing.r { right:-6px; transform:scaleX(-1); transform-origin:left center; animation-delay:0.15s; }
+  .ember-body { position:absolute; bottom:2px; left:50%; transform:translateX(-50%); width:76px; height:86px; background:radial-gradient(ellipse at 36% 28%, #fff7ed 0%, #fca5a5 16%, #ef4444 46%, #b91c1c 76%, #7f1d1d 100%); border-radius:46% 46% 42% 42%/50% 50% 46% 46%; box-shadow:0 0 24px rgba(239,68,68,0.5), 0 6px 20px rgba(0,0,0,0.45), inset 0 -8px 20px rgba(127,29,29,0.5); }
+  .ember-body::before { content:''; position:absolute; top:10%; left:15%; width:31%; height:23%; background:radial-gradient(ellipse, rgba(255,255,255,0.7) 0%, transparent 100%); border-radius:50%; transform:rotate(-18deg); }
+  .ember-eye { position:absolute; top:40%; width:21px; height:23px; background:radial-gradient(ellipse at 34% 26%, #fef9c3, #854d0e 65%); border-radius:50%; box-shadow:0 0 8px rgba(253,224,71,0.4); animation:blink 4.2s ease-in-out infinite; transform-origin:center; }
+  .ember-eye.l { left:12px; } .ember-eye.r { right:12px; }
+  .ember-eye::before { content:''; position:absolute; top:15%; left:17%; width:7px; height:7px; background:white; border-radius:50%; opacity:.9; }
+
+  /* JET */
+  .jet-wrap { position:relative; width:96px; height:110px; animation:cloudPuff 3s ease-in-out infinite; animation-delay:0.2s; }
+  .jet-puff { position:absolute; background:radial-gradient(ellipse at 40% 35%, #f8faff, #bfdbfe); border-radius:50%; box-shadow:0 2px 8px rgba(147,197,253,0.4); }
+  .jet-puff.tl { width:36px; height:34px; top:-10px; left:6px; }
+  .jet-puff.tr { width:32px; height:30px; top:-8px; right:8px; }
+  .jet-puff.tm { width:40px; height:36px; top:-14px; left:50%; transform:translateX(-50%); }
+  .jet-body { position:absolute; bottom:6px; left:50%; transform:translateX(-50%); width:84px; height:72px; background:radial-gradient(ellipse at 38% 30%, #f8faff 0%, #dbeafe 20%, #bfdbfe 50%, #93c5fd 80%, #60a5fa 100%); border-radius:50%; box-shadow:0 6px 20px rgba(147,197,253,0.5), 0 2px 10px rgba(0,0,0,0.2), inset 0 -6px 16px rgba(96,165,250,0.35); }
+  .jet-body::before { content:''; position:absolute; top:10%; left:14%; width:32%; height:24%; background:radial-gradient(ellipse, rgba(255,255,255,0.85) 0%, transparent 100%); border-radius:50%; transform:rotate(-15deg); }
+  .jet-shades { position:absolute; top:40%; left:50%; transform:translateX(-50%); width:56px; height:18px; display:flex; align-items:center; justify-content:center; gap:3px; }
+  .jet-lens { width:22px; height:14px; background:linear-gradient(135deg, rgba(251,191,36,0.9), rgba(245,158,11,0.7)); border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+  .jet-bridge { width:6px; height:3px; background:rgba(107,114,128,0.8); border-radius:1px; }
+  .jet-smile { position:absolute; bottom:20%; left:50%; transform:translateX(-50%); width:22px; height:10px; border-bottom:2.5px solid rgba(30,58,95,0.5); border-radius:0 0 50% 50%; }
+  .jet-eye { position:absolute; top:44%; width:18px; height:20px; background:radial-gradient(ellipse at 34% 28%, #eff6ff, #1e3a5f 65%); border-radius:50%; animation:blink 4.8s ease-in-out infinite; transform-origin:center; }
+  .jet-eye.l { left:20px; display:none; } .jet-eye.r { right:20px; display:none; }
+
+  /* ============================================================
+     NEW: HUMAN FAMILY
+  ============================================================ */
+
+  /* KAITO — Cool teen, street style */
+  .kaito-wrap {
+    position: relative; width: 92px; height: 128px;
+    animation: floatSlow 4s ease-in-out infinite;
+  }
+  /* Jacket / shoulder hint */
+  .kaito-jacket {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 38px;
+    background: linear-gradient(to bottom, #1e293b, #0f172a);
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .kaito-jacket::before {
+    content: ''; position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 14px;
+    background: linear-gradient(to bottom, #334155, #1e293b);
+    border-radius: 0 0 4px 4px;
+  }
+  /* Neck */
+  .kaito-neck {
+    position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 18px;
+    background: radial-gradient(ellipse at 40% 30%, #f0c896, #c47840);
+    border-radius: 4px;
+  }
+  /* Head */
+  .kaito-head {
+    position: absolute; bottom: 44px; left: 50%; transform: translateX(-50%);
+    width: 70px; height: 76px;
+    background: radial-gradient(ellipse at 40% 32%, #ffe8c8 0%, #f0c090 22%, #d4884a 62%, #a05e30 100%);
+    border-radius: 46% 46% 42% 42% / 50% 50% 44% 44%;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.4), inset 0 -6px 16px rgba(80,40,10,0.25);
+  }
+  .kaito-head::before {
+    content: ''; position: absolute; top: 10%; left: 16%; width: 29%; height: 21%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.55) 0%, transparent 100%);
+    border-radius: 50%; transform: rotate(-14deg);
+  }
+  /* Hair base */
+  .kaito-hair {
+    position: absolute; top: -5px; left: -2px; right: -2px; height: 38px;
+    background: linear-gradient(160deg, #0f0800 0%, #1a1000 50%, #100900 100%);
+    border-radius: 50% 50% 0 0;
+    z-index: 3;
+  }
+  /* Hair side sweep — right */
+  .kaito-hair-side {
+    position: absolute; top: 8px; right: -6px; width: 24px; height: 28px;
+    background: linear-gradient(135deg, #0f0800, #1a1000);
+    border-radius: 0 40% 60% 0;
+    z-index: 2;
+    animation: hairDrift 4s ease-in-out infinite;
+    transform-origin: top left;
+  }
+  /* Ear */
+  .kaito-ear {
+    position: absolute; top: 46%; width: 12px; height: 16px;
+    background: radial-gradient(ellipse at 40% 30%, #f0c896, #c47840);
+    border-radius: 50%;
+  }
+  .kaito-ear.l { left: -5px; } .kaito-ear.r { right: -5px; }
+  /* Eyebrow — angular, defined */
+  .kaito-brow {
+    position: absolute; top: 32%; height: 2.5px;
+    background: #1a0a02; border-radius: 1px;
+  }
+  .kaito-brow.l { left: 12px; width: 20px; transform: rotate(-5deg); }
+  .kaito-brow.r { right: 12px; width: 20px; transform: rotate(5deg); }
+  /* Eyes — almond, NOT cute-round */
+  .kaito-eye {
+    position: absolute; top: 39%;
+    width: 22px; height: 14px;
+    background: radial-gradient(ellipse at 42% 35%, #3d2010, #0f0600 65%);
+    border-radius: 40% 40% 52% 52%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .kaito-eye.l { left: 10px; } .kaito-eye.r { right: 10px; }
+  /* Single offset highlight — not centered/cute */
+  .kaito-eye::before {
+    content: ''; position: absolute; top: 12%; left: 58%;
+    width: 5px; height: 5px; background: rgba(255,255,255,0.65); border-radius: 50%;
+  }
+  /* Nose — subtle shadow hint */
+  .kaito-nose {
+    position: absolute; bottom: 38%; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 5px;
+    border-bottom: 2px solid rgba(100,50,10,0.35);
+    border-radius: 0 0 50% 50%;
+  }
+  /* Mouth — slight smirk */
+  .kaito-mouth {
+    position: absolute; bottom: 26%; left: 50%; transform: translateX(-50%) translateX(3px);
+    width: 20px; height: 8px;
+    border-bottom: 2px solid rgba(100,50,10,0.5);
+    border-radius: 0 0 80% 30%;
+  }
+
+  /* YUKI — Fashion girl */
+  .yuki-wrap {
+    position: relative; width: 92px; height: 128px;
+    animation: float 3.8s ease-in-out infinite; animation-delay: 0.5s;
+  }
+  .yuki-jacket {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 76px; height: 36px;
+    background: linear-gradient(to bottom, #4a1942, #2d0e28);
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .yuki-jacket::before {
+    content: ''; position: absolute; top: 3px; left: 50%; transform: translateX(-50%);
+    width: 14px; height: 12px;
+    background: rgba(255,255,255,0.08); border-radius: 0 0 4px 4px;
+  }
+  .yuki-neck {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 16px;
+    background: radial-gradient(ellipse at 40% 30%, #fce8d8, #e8b48a);
+    border-radius: 4px;
+  }
+  .yuki-head {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    width: 68px; height: 78px;
+    background: radial-gradient(ellipse at 38% 30%, #fff0e8 0%, #fcd8bc 22%, #e8a878 60%, #c07040 100%);
+    border-radius: 46% 46% 40% 40% / 52% 52% 42% 42%;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.35), inset 0 -6px 16px rgba(60,30,10,0.2);
+  }
+  .yuki-head::before {
+    content: ''; position: absolute; top: 10%; left: 15%; width: 30%; height: 22%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.6) 0%, transparent 100%);
+    border-radius: 50%; transform: rotate(-14deg);
+  }
+  /* Long hair back layer */
+  .yuki-hair-back {
+    position: absolute; top: -8px; left: -8px; right: -16px; bottom: -20px;
+    background: linear-gradient(170deg, #1a0f05, #0d0800);
+    border-radius: 50% 50% 30% 30%;
+    z-index: 0;
+  }
+  /* Hair top/front */
+  .yuki-hair-top {
+    position: absolute; top: -8px; left: -2px; right: -2px; height: 36px;
+    background: linear-gradient(160deg, #100a02, #1a1004);
+    border-radius: 50% 50% 0 0;
+    z-index: 3;
+  }
+  /* Side part + bangs */
+  .yuki-hair-bang {
+    position: absolute; top: 14px; left: -4px; width: 22px; height: 24px;
+    background: linear-gradient(130deg, #100a02, #1a1004);
+    border-radius: 0 30% 60% 0;
+    z-index: 4;
+  }
+  .yuki-ear {
+    position: absolute; top: 48%; width: 11px; height: 15px;
+    background: radial-gradient(ellipse at 40% 30%, #fcd8bc, #c07040);
+    border-radius: 50%;
+    z-index: 2;
+  }
+  .yuki-ear.l { left: -4px; z-index: 0; }
+  .yuki-ear.r { right: -4px; }
+  /* Eyebrow — elegant arch */
+  .yuki-brow {
+    position: absolute; top: 30%; height: 2px; border-radius: 1px;
+    background: #1a0a02;
+  }
+  .yuki-brow.l { left: 12px; width: 20px; transform: rotate(-7deg); border-radius: 1px 0 0 1px; }
+  .yuki-brow.r { right: 12px; width: 20px; transform: rotate(7deg); border-radius: 0 1px 1px 0; }
+  /* Eyes — almond, long */
+  .yuki-eye {
+    position: absolute; top: 38%;
+    width: 22px; height: 15px;
+    background: radial-gradient(ellipse at 40% 33%, #3a1a3a, #0a0208 70%);
+    border-radius: 38% 38% 54% 54%;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.6);
+  }
+  .yuki-eye.l { left: 10px; } .yuki-eye.r { right: 10px; }
+  .yuki-eye::before {
+    content: ''; position: absolute; top: 12%; left: 14%;
+    width: 6px; height: 6px; background: rgba(255,255,255,0.7); border-radius: 50%;
+  }
+  .yuki-eye::after {
+    content: ''; position: absolute; top: 14%; right: 16%;
+    width: 3px; height: 3px; background: rgba(255,255,255,0.45); border-radius: 50%;
+  }
+  /* Lash hint — top edge */
+  .yuki-lash {
+    position: absolute; top: 36%;
+    height: 2px; border-radius: 1px;
+    background: rgba(10,2,8,0.8);
+  }
+  .yuki-lash.l { left: 10px; width: 22px; transform: rotate(-2deg); }
+  .yuki-lash.r { right: 10px; width: 22px; transform: rotate(2deg); }
+  .yuki-nose {
+    position: absolute; bottom: 36%; left: 50%; transform: translateX(-50%);
+    width: 9px; height: 4px; border-bottom: 1.5px solid rgba(80,40,10,0.3); border-radius: 0 0 50% 50%;
+  }
+  /* Lips */
+  .yuki-lips {
+    position: absolute; bottom: 24%; left: 50%; transform: translateX(-50%);
+    width: 18px; height: 7px;
+    background: rgba(180,60,80,0.4); border-radius: 50% 50% 60% 60%;
+  }
+  /* Blush */
+  .yuki-blush {
+    position: absolute; top: 56%; width: 14px; height: 7px;
+    background: rgba(255,130,130,0.18); border-radius: 50%; filter: blur(2px);
+  }
+  .yuki-blush.l { left: 6px; } .yuki-blush.r { right: 6px; }
+  /* Earring */
+  .yuki-earring {
+    position: absolute; bottom: -8px; right: -5px;
+    width: 5px; height: 8px; background: linear-gradient(to bottom, #f59e0b, rgba(245,158,11,0.3));
+    border-radius: 50%; box-shadow: 0 0 6px rgba(245,158,11,0.6);
+  }
+
+  /* ============================================================
+     NEW: COMBAT / WARRIOR FAMILY
+  ============================================================ */
+
+  /* VEX — Dark demon warrior */
+  .vex-wrap {
+    position: relative; width: 92px; height: 116px;
+    animation: floatSlow 4.5s ease-in-out infinite;
+  }
+  .vex-aura {
+    position: absolute; inset: -16px;
+    background: radial-gradient(ellipse, rgba(160,0,0,0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    animation: glow 2.5s ease-in-out infinite;
+  }
+  /* Sharp tall horns */
+  .vex-horn {
+    position: absolute; top: -22px;
+    width: 13px; height: 34px;
+    background: linear-gradient(to top, #3d0000, #750000 60%, #a00000 100%);
+    clip-path: polygon(28% 0%, 0% 100%, 100% 100%);
+    filter: drop-shadow(0 0 6px rgba(180,0,0,0.5));
+  }
+  .vex-horn.l { left: 15px; transform: rotate(-6deg); }
+  .vex-horn.r { right: 15px; transform: rotate(6deg); }
+  /* Main head — angular */
+  .vex-body {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 82px; height: 96px;
+    background: radial-gradient(ellipse at 34% 24%, #400008 0%, #1a0004 30%, #0d0002 65%, #050001 100%);
+    border-radius: 36% 36% 44% 44% / 32% 32% 48% 48%;
+    box-shadow:
+      0 0 30px rgba(180,0,0,0.55),
+      0 0 60px rgba(100,0,0,0.25),
+      0 8px 24px rgba(0,0,0,0.7),
+      inset 0 -12px 26px rgba(0,0,0,0.65);
+    animation: combatPulse 3s ease-in-out infinite;
+  }
+  /* Rim light — hot edge */
+  .vex-body::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit;
+    border: 1.5px solid transparent;
+    border-right-color: rgba(255,40,0,0.3);
+    border-bottom-color: rgba(255,20,0,0.15);
+  }
+  /* Subtle highlight */
+  .vex-body::after {
+    content: ''; position: absolute; top: 7%; left: 13%; width: 25%; height: 17%;
+    background: radial-gradient(ellipse, rgba(255,80,40,0.22) 0%, transparent 100%);
+    border-radius: 50%; transform: rotate(-14deg);
+  }
+  /* Heavy angled brows */
+  .vex-brow {
+    position: absolute; top: 31%;
+    height: 3.5px; background: rgba(0,0,0,0.8); border-radius: 1px;
+  }
+  .vex-brow.l { left: 10px; width: 26px; transform: rotate(-14deg); transform-origin: right center; }
+  .vex-brow.r { right: 10px; width: 26px; transform: rotate(14deg); transform-origin: left center; }
+  /* SLIT EYES — narrow, intense */
+  .vex-eye {
+    position: absolute; top: 41%;
+    width: 26px; height: 7px;
+    background: linear-gradient(to right, #cc0000, #ff5500, #cc0000);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(255,50,0,0.95), 0 0 28px rgba(200,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .vex-eye.l { left: 10px; } .vex-eye.r { right: 10px; }
+  /* Vertical slit pupil */
+  .vex-slit { width: 3px; height: 200%; background: rgba(0,0,0,0.65); border-radius: 1px; }
+  /* Battle scar */
+  .vex-scar {
+    position: absolute; top: 36%; left: 53%;
+    width: 2px; height: 22px;
+    background: linear-gradient(to bottom, rgba(255,60,0,0.55), rgba(200,0,0,0.15));
+    border-radius: 1px; transform: rotate(4deg);
+  }
+  /* Jaw/chin line */
+  .vex-chin {
+    position: absolute; bottom: 18%; left: 50%; transform: translateX(-50%);
+    width: 28px; height: 3px;
+    border-bottom: 2px solid rgba(100,0,0,0.4); border-radius: 0 0 50% 50%;
+  }
+  /* Collar/neck armor hint */
+  .vex-collar {
+    position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+    width: 50px; height: 16px;
+    background: linear-gradient(to bottom, #1a0004, #0d0002);
+    border-radius: 4px 4px 0 0;
+    border-top: 2px solid rgba(180,0,0,0.35);
+  }
+
+  /* SERAPH — Light warrior angel */
+  .seraph-wrap {
+    position: relative; width: 96px; height: 116px;
+    animation: float 4s ease-in-out infinite; animation-delay: 0.4s;
+  }
+  /* Geometric halo — shard ring */
+  .seraph-halo {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    width: 54px; height: 12px;
+    border: 2.5px solid rgba(255,215,0,0.7);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255,200,0,0.6), 0 0 20px rgba(255,160,0,0.3);
+    animation: glow 2s ease-in-out infinite;
+  }
+  /* Angular wings — sharp, powerful */
+  .seraph-wing {
+    position: absolute; top: 16%;
+    width: 22px; height: 52px;
+    background: linear-gradient(to top, rgba(253,230,138,0.15), rgba(255,255,255,0.55));
+    box-shadow: inset 0 0 10px rgba(255,200,0,0.2);
+    clip-path: polygon(15% 0%, 100% 15%, 90% 100%, 0% 75%);
+    filter: drop-shadow(0 0 6px rgba(255,200,0,0.4));
+  }
+  .seraph-wing.l { left: -4px; transform: scaleX(-1); }
+  .seraph-wing.r { right: -4px; }
+  /* Main face */
+  .seraph-body {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 78px; height: 92px;
+    background: radial-gradient(ellipse at 36% 26%, #fffef5 0%, #fef9e0 14%, #fde68a 36%, #d97706 68%, #92400e 100%);
+    border-radius: 42% 42% 46% 46% / 44% 44% 48% 48%;
+    animation: seraphGlow 3s ease-in-out infinite;
+  }
+  .seraph-body::before {
+    content: ''; position: absolute; top: 8%; left: 14%; width: 28%; height: 20%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.75) 0%, transparent 100%);
+    border-radius: 50%; transform: rotate(-16deg);
+  }
+  /* Divine forehead mark */
+  .seraph-mark {
+    position: absolute; top: 14%; left: 50%; transform: translateX(-50%);
+    width: 10px; height: 10px;
+    background: radial-gradient(ellipse at 40% 35%, #fff176, #f59e0b);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    filter: drop-shadow(0 0 4px rgba(255,200,0,0.7));
+  }
+  /* Sharp angled brows — intense but divine */
+  .seraph-brow {
+    position: absolute; top: 33%;
+    height: 3px; border-radius: 1px;
+    background: rgba(80,40,0,0.65);
+  }
+  .seraph-brow.l { left: 11px; width: 22px; transform: rotate(-10deg); transform-origin: right center; }
+  .seraph-brow.r { right: 11px; width: 22px; transform: rotate(10deg); transform-origin: left center; }
+  /* NARROW GOLDEN EYES — intense, not cute */
+  .seraph-eye {
+    position: absolute; top: 41%;
+    width: 24px; height: 9px;
+    background: radial-gradient(ellipse at 42% 32%, #fffde7, #fbbf24 40%, #d97706 80%);
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255,200,0,0.9), 0 0 24px rgba(255,160,0,0.45);
+  }
+  .seraph-eye.l { left: 11px; } .seraph-eye.r { right: 11px; }
+  .seraph-eye::before {
+    content: ''; position: absolute; top: 5%; left: 30%; width: 40%; height: 90%;
+    background: rgba(80,40,0,0.35); border-radius: 50%;
+  }
+  /* Lips — composed, not smiling */
+  .seraph-lips {
+    position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%);
+    width: 20px; height: 6px;
+    border-bottom: 2px solid rgba(80,40,0,0.45); border-radius: 0 0 50% 50%;
+  }
+  /* Armor collar */
+  .seraph-collar {
+    position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+    width: 46px; height: 14px;
+    background: linear-gradient(to bottom, #d97706, #92400e);
+    border-radius: 4px 4px 0 0;
+    border-top: 2px solid rgba(255,215,0,0.5);
+    box-shadow: 0 0 8px rgba(255,200,0,0.3);
+  }
+
+  /* ============================================================
+     EYE LANGUAGE BOARD
+  ============================================================ */
+  .eye-board {
+    padding: 0 16px; margin-bottom: 32px;
+  }
+  .eye-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+  }
+  .eye-card {
+    background: var(--card); border: 1.5px solid var(--border); border-radius: 16px;
+    padding: 16px 10px 12px; text-align: center;
+  }
+  .eye-stage {
+    height: 56px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
+    flex-direction: column; gap: 6px;
+  }
+  .eye-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.02em; }
+  .eye-desc  { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+  /* Cute eye demo */
+  .demo-eye-soft {
+    width: 38px; height: 42px;
+    background: radial-gradient(ellipse at 34% 28%, #4b4458, #1a1024 65%);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    position: relative;
+  }
+  .demo-eye-soft::before {
+    content: ''; position: absolute; top: 14%; left: 18%; width: 11px; height: 11px;
+    background: white; border-radius: 50%; opacity: .95;
+  }
+  .demo-eye-soft::after {
+    content: ''; position: absolute; bottom: 22%; right: 16%; width: 5px; height: 5px;
+    background: rgba(255,255,255,0.55); border-radius: 50%;
+  }
+
+  /* Stylish eye demo */
+  .demo-eye-stylish {
+    width: 44px; height: 28px;
+    background: radial-gradient(ellipse at 42% 35%, #3d2010, #0f0600 65%);
+    border-radius: 40% 40% 52% 52%;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .demo-eye-stylish::before {
+    content: ''; position: absolute; top: 12%; left: 58%; width: 8px; height: 8px;
+    background: rgba(255,255,255,0.65); border-radius: 50%;
+  }
+  .demo-brow-stylish {
+    width: 40px; height: 3px; background: #1a0a02; border-radius: 1px;
+    transform: rotate(-4deg);
+  }
+
+  /* Combat eye demo */
+  .demo-eye-combat {
+    width: 50px; height: 9px;
+    background: linear-gradient(to right, #cc0000, #ff5500, #cc0000);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(255,50,0,0.95), 0 0 28px rgba(200,0,0,0.5);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .demo-eye-combat::before {
+    content: ''; width: 4px; height: 180%; background: rgba(0,0,0,0.65); border-radius: 1px;
+  }
+  .demo-brow-combat {
+    width: 48px; height: 4px; background: rgba(0,0,0,0.75); border-radius: 1px;
+    transform: rotate(-16deg); transform-origin: right center;
+  }
+
+  /* ============================================================
+     DIVIDER & LABELS
+  ============================================================ */
+  .divider { height: 1px; background: var(--border); margin: 0 16px 28px; }
+  .section-label { padding: 0 20px; margin-bottom: 12px; display: flex; align-items: baseline; gap: 10px; }
+  .section-label h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+  .section-label span { font-size: 12px; color: var(--muted); }
+
+  /* ============================================================
+     APPROVE
+  ============================================================ */
+  .approve-section { padding: 0 16px; margin-bottom: 40px; }
+  .approve-card {
+    background: linear-gradient(135deg, rgba(139,92,246,0.08), var(--card));
+    border: 1.5px solid rgba(139,92,246,0.25); border-radius: 24px; padding: 28px 20px 24px; text-align: center;
+  }
+  .approve-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .approve-card > p { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .approve-families { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left; }
+  .approve-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+    background: rgba(255,255,255,0.03); border: 1.5px solid rgba(255,255,255,0.06);
+    border-radius: 14px; cursor: pointer; transition: all 0.2s;
+  }
+  .approve-row.checked { background: rgba(139,92,246,0.09); border-color: rgba(139,92,246,0.3); }
+  .fcheck {
+    width: 22px; height: 22px; border-radius: 6px; border: 2px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s; font-size: 12px;
+  }
+  .approve-row.checked .fcheck { background: #7c3aed; border-color: #7c3aed; }
+  .fcheck::after { content: '✓'; color: white; opacity: 0; }
+  .approve-row.checked .fcheck::after { opacity: 1; }
+  .finfo strong { font-size: 13px; font-weight: 600; display: block; margin-bottom: 1px; }
+  .finfo span { font-size: 11px; color: var(--muted); }
+  .approve-btn {
+    width: 100%; padding: 16px; background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    border: none; border-radius: 16px; color: white; font-size: 16px; font-weight: 700;
+    cursor: pointer; box-shadow: 0 4px 20px rgba(139,92,246,0.45); transition: all 0.15s;
+    margin-top: 12px;
+  }
+  .approve-btn:active { transform: scale(0.98); }
+
+  .sticky-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,16,0.92); backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border); padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between; z-index: 100;
+  }
+  .sticky-bar .info { font-size: 13px; color: var(--muted); }
+  .sticky-bar .info strong { color: #c4b5fd; }
+  .sticky-bar button { padding: 10px 22px; background: linear-gradient(135deg, #7c3aed, #6d28d9); border: none; border-radius: 12px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="spectrum-hero">
+  <div class="spectrum-tag">Character Spectrum — v4</div>
+  <h1>7 Families.<br>One System.</h1>
+  <p>From soft & cozy to combat-ready. Five original soft families plus human characters and warrior companions.</p>
+  <div class="spectrum-bar">
+    <div class="spec-seg s1"><div class="seg-dot"></div><div class="seg-label">Spirit</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s2"><div class="seg-dot"></div><div class="seg-label">Animal</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s3"><div class="seg-dot"></div><div class="seg-label">Robot</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s4"><div class="seg-dot"></div><div class="seg-label">Fantasy</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s5"><div class="seg-dot"></div><div class="seg-label">Travel</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s6"><div class="seg-dot"></div><div class="seg-label">Human</div></div>
+    <div class="spec-arrow">›</div>
+    <div class="spec-seg s7"><div class="seg-dot"></div><div class="seg-label">Warrior</div></div>
+  </div>
+</div>
+
+<!-- ===== SOFT FAMILIES ===== -->
+<div class="family-block">
+  <div class="family-head">
+    <div class="family-pill pill-soft">Soft</div>
+    <h2>Spirit Family</h2>
+    <span>Glowing orb-creatures</span>
+  </div>
+  <div class="char-row">
+    <div class="char-card spirit-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="lumix-wrap">
+          <div class="lumix-glow"></div>
+          <div class="lumix-ear l"></div><div class="lumix-ear r"></div>
+          <div class="lumix-body">
+            <div class="lumix-eye l"></div><div class="lumix-eye r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Lumix</div>
+      <div class="char-tagline">Purple glow spirit. Curious, warm, mystical.</div>
+      <div class="char-traits"><span class="trait">Floats</span><span class="trait">Glows</span><span class="trait">Soft eyes</span></div>
+    </div>
+    <div class="char-card spirit-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="mochi-wrap">
+          <div class="mochi-ear l"></div><div class="mochi-ear r"></div>
+          <div class="mochi-body">
+            <div class="mochi-eye l"></div><div class="mochi-eye r"></div>
+            <div class="mochi-nose"></div>
+            <div class="mochi-blush l"></div><div class="mochi-blush r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Mochi</div>
+      <div class="char-tagline">Cream cat companion. Gentle, sweet, cozy.</div>
+      <div class="char-traits"><span class="trait">Ear twitches</span><span class="trait">Blush</span><span class="trait">Soft eyes</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="family-block">
+  <div class="family-head">
+    <div class="family-pill pill-soft">Soft</div>
+    <h2>Robot + Fantasy</h2>
+    <span>Techy & magical</span>
+  </div>
+  <div class="char-row">
+    <div class="char-card robot-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="byte-wrap">
+          <div class="byte-antenna"></div>
+          <div class="byte-body">
+            <div class="byte-screen">
+              <div class="byte-pixel-eye"></div>
+              <div class="byte-pixel-eye"></div>
+            </div>
+            <div class="byte-mouth"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Byte</div>
+      <div class="char-tagline">Teal mini-bot with pixel eyes. Nerdy, helpful.</div>
+      <div class="char-traits"><span class="trait">Screen face</span><span class="trait">Antenna</span></div>
+    </div>
+    <div class="char-card fantasy-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="ember-wrap">
+          <div class="ember-horn l"></div><div class="ember-horn r"></div>
+          <div class="ember-wing l"></div><div class="ember-wing r"></div>
+          <div class="ember-body">
+            <div class="ember-eye l"></div><div class="ember-eye r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Ember</div>
+      <div class="char-tagline">Tiny red dragon. Bold, fiery, fearless.</div>
+      <div class="char-traits"><span class="trait">Wings</span><span class="trait">Horns</span><span class="trait">Warm eyes</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="family-block">
+  <div class="family-head">
+    <div class="family-pill pill-soft">Soft</div>
+    <h2>Travel Family</h2>
+    <span>Adventure mascots</span>
+  </div>
+  <div class="char-row">
+    <div class="char-card travel-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="jet-wrap">
+          <div class="jet-puff tl"></div><div class="jet-puff tr"></div><div class="jet-puff tm"></div>
+          <div class="jet-body">
+            <div class="jet-shades"><div class="jet-lens"></div><div class="jet-bridge"></div><div class="jet-lens"></div></div>
+            <div class="jet-smile"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Jet</div>
+      <div class="char-tagline">Cloud traveler with golden shades. Breezy, free.</div>
+      <div class="char-traits"><span class="trait">Cloud form</span><span class="trait">Shades</span></div>
+    </div>
+    <div class="char-card travel-c" style="background: var(--card2); border-color: rgba(255,255,255,0.04);" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage" style="align-items:center; justify-content:center; font-size:12px; color:var(--muted); flex-direction:column; gap:6px;">
+        <div style="font-size:28px; opacity:0.4">+</div>
+        <div>More soft companions</div>
+        <div style="font-size:10px; opacity:0.6">Kitsune, Nova, Mist, Marco...</div>
+      </div>
+      <div class="char-name" style="color:var(--muted)">+8 more</div>
+      <div class="char-tagline">Full soft family catalog from Preview 3</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== HUMAN FAMILY (NEW) ===== -->
+<div class="family-block">
+  <div class="family-head">
+    <div class="family-pill pill-stylish">Stylish</div>
+    <h2>Human Family</h2>
+    <span>New — street &amp; fashion</span>
+  </div>
+  <div class="char-row">
+    <div class="char-card human-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="kaito-wrap">
+          <div class="kaito-jacket"></div>
+          <div class="kaito-neck"></div>
+          <div class="kaito-head">
+            <div class="kaito-hair"></div>
+            <div class="kaito-hair-side"></div>
+            <div class="kaito-ear l"></div><div class="kaito-ear r"></div>
+            <div class="kaito-brow l"></div><div class="kaito-brow r"></div>
+            <div class="kaito-eye l"></div><div class="kaito-eye r"></div>
+            <div class="kaito-nose"></div>
+            <div class="kaito-mouth"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Kaito</div>
+      <div class="char-tagline">Cool streetwear teen. Confident, sharp, stylish.</div>
+      <div class="char-traits"><span class="trait">Almond eyes</span><span class="trait">Defined brows</span><span class="trait">Smirk</span></div>
+    </div>
+
+    <div class="char-card human-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="yuki-wrap">
+          <div class="yuki-jacket"></div>
+          <div class="yuki-neck"></div>
+          <div class="yuki-head">
+            <div class="yuki-hair-back"></div>
+            <div class="yuki-hair-top"></div>
+            <div class="yuki-hair-bang"></div>
+            <div class="yuki-ear l"></div>
+            <div style="position:relative; z-index:3;">
+              <div class="yuki-ear r" style="z-index:3">
+                <div class="yuki-earring"></div>
+              </div>
+            </div>
+            <div class="yuki-lash l"></div><div class="yuki-lash r"></div>
+            <div class="yuki-brow l"></div><div class="yuki-brow r"></div>
+            <div class="yuki-eye l"></div><div class="yuki-eye r"></div>
+            <div class="yuki-nose"></div>
+            <div class="yuki-lips"></div>
+            <div class="yuki-blush l"></div><div class="yuki-blush r"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Yuki</div>
+      <div class="char-tagline">Fashion-forward girl. Elegant, stylish, expressive.</div>
+      <div class="char-traits"><span class="trait">Long hair</span><span class="trait">Lashes</span><span class="trait">Earring</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== WARRIOR FAMILY (NEW) ===== -->
+<div class="family-block">
+  <div class="family-head">
+    <div class="family-pill pill-combat">Combat</div>
+    <h2>Warrior Family</h2>
+    <span>New — intense &amp; powerful</span>
+  </div>
+  <div class="char-row">
+    <div class="char-card combat-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="vex-wrap">
+          <div class="vex-aura"></div>
+          <div class="vex-horn l"></div><div class="vex-horn r"></div>
+          <div class="vex-body">
+            <div class="vex-brow l"></div><div class="vex-brow r"></div>
+            <div class="vex-eye l"><div class="vex-slit"></div></div>
+            <div class="vex-eye r"><div class="vex-slit"></div></div>
+            <div class="vex-scar"></div>
+            <div class="vex-chin"></div>
+            <div class="vex-collar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Vex</div>
+      <div class="char-tagline">Dark demon warrior. Fierce, relentless, commanding.</div>
+      <div class="char-traits"><span class="trait hot">Slit eyes</span><span class="trait hot">Sharp horns</span><span class="trait hot">Battle scar</span></div>
+    </div>
+
+    <div class="char-card combat-c" onclick="toggleSelect(this)">
+      <div class="select-badge"></div>
+      <div class="char-stage">
+        <div class="seraph-wrap">
+          <div class="seraph-halo"></div>
+          <div class="seraph-wing l"></div><div class="seraph-wing r"></div>
+          <div class="seraph-body">
+            <div class="seraph-mark"></div>
+            <div class="seraph-brow l"></div><div class="seraph-brow r"></div>
+            <div class="seraph-eye l"></div><div class="seraph-eye r"></div>
+            <div class="seraph-lips"></div>
+            <div class="seraph-collar"></div>
+          </div>
+        </div>
+      </div>
+      <div class="char-name">Seraph</div>
+      <div class="char-tagline">Light warrior angel. Divine power, sharp and radiant.</div>
+      <div class="char-traits"><span class="trait hot">Narrow gold eyes</span><span class="trait">Halo</span><span class="trait">Wings</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== EYE LANGUAGE BOARD ===== -->
+<div class="eye-board">
+  <div class="section-label" style="padding:0; margin-bottom:12px">
+    <h2>Eye Language System</h2>
+    <span>3 distinct visual registers</span>
+  </div>
+  <div class="eye-grid">
+
+    <div class="eye-card">
+      <div class="eye-stage">
+        <div class="demo-eye-soft"></div>
+      </div>
+      <div class="eye-label" style="color:#c4b5fd">Soft & Cute</div>
+      <div class="eye-desc">Big round pupils, double highlights, warm tones. Kids &amp; casual audience.</div>
+    </div>
+
+    <div class="eye-card">
+      <div class="eye-stage">
+        <div class="demo-brow-stylish"></div>
+        <div class="demo-eye-stylish"></div>
+      </div>
+      <div class="eye-label" style="color:#93c5fd">Stylish & Cool</div>
+      <div class="eye-desc">Almond shape, single offset highlight, defined brow. Teen &amp; fashion audience.</div>
+    </div>
+
+    <div class="eye-card">
+      <div class="eye-stage">
+        <div class="demo-brow-combat"></div>
+        <div class="demo-eye-combat"></div>
+      </div>
+      <div class="eye-label" style="color:#fca5a5">Combat & Intense</div>
+      <div class="eye-desc">Narrow glowing slits, vertical pupil, angled brow. Action &amp; power audience.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ===== APPROVE ===== -->
+<div class="approve-section">
+  <div class="approve-card">
+    <h2>Confirm Direction</h2>
+    <p>Select which families to build fully into the app. Selected families get complete CSS art, animations, and expression sets.</p>
+    <div class="approve-families" id="familyList">
+      <div class="approve-row checked" onclick="toggleF(this)">
+        <div class="fcheck"></div>
+        <div class="finfo"><strong>✦ Spirit + Animal (soft)</strong><span>Lumix, Mochi + soft variants. Big warm eyes. Kids/casual.</span></div>
+      </div>
+      <div class="approve-row checked" onclick="toggleF(this)">
+        <div class="fcheck"></div>
+        <div class="finfo"><strong>⚡ Robot + Fantasy (soft-techy)</strong><span>Byte, Nova, Ember, Mist. Soft-3D with personality.</span></div>
+      </div>
+      <div class="approve-row checked" onclick="toggleF(this)">
+        <div class="fcheck"></div>
+        <div class="finfo"><strong>✈️ Travel family (soft)</strong><span>Jet, Marco + variants. Accessories, adventure feel.</span></div>
+      </div>
+      <div class="approve-row" onclick="toggleF(this)">
+        <div class="fcheck"></div>
+        <div class="finfo"><strong>👤 Human family (stylish)</strong><span>Kaito, Yuki. Almond eyes, hair, clothing hints.</span></div>
+      </div>
+      <div class="approve-row" onclick="toggleF(this)">
+        <div class="fcheck"></div>
+        <div class="finfo"><strong>⚔️ Warrior family (combat)</strong><span>Vex, Seraph. Slit eyes, angular, intense. Action audience.</span></div>
+      </div>
+    </div>
+    <button class="approve-btn" onclick="doApprove()">Approve Selection & Build →</button>
+  </div>
+</div>
+
+<div class="sticky-bar">
+  <div class="info"><strong id="cnt">0</strong> companions selected</div>
+  <button onclick="doApprove()">Approve →</button>
+</div>
+
+<script>
+  let cnt = 0;
+  function toggleSelect(card) {
+    card.classList.toggle('selected');
+    cnt = document.querySelectorAll('.char-card.selected').length;
+    document.getElementById('cnt').textContent = cnt;
+  }
+  function toggleF(row) {
+    row.classList.toggle('checked');
+  }
+  function doApprove() {
+    const checked = [...document.querySelectorAll('.approve-row.checked')].map(r => r.querySelector('strong').textContent);
+    if (!checked.length) { alert('Select at least one family.'); return; }
+    alert('✅ Confirmed!\n\nBuilding:\n' + checked.map(c => '• ' + c).join('\n') + '\n\nSend this back and I\'ll implement the selected families fully into the app.');
+  }
+</script>
+</body>
+</html>

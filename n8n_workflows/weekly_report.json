@@ -1,0 +1,100 @@
+{
+  "name": "ThreeWordsDaily — Тижневий звіт (Нед 20:00)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "cron-weekly",
+      "name": "Неділя 20:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const weekdays = ['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];\nconst now = new Date();\nconst weekStart = new Date(now);\nweekStart.setDate(now.getDate() - 6);\n\nconst fmt = (d) => `${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}`;\n\nreturn [{\n  json: {\n    week_label: `${fmt(weekStart)} — ${fmt(now)}`,\n    report_prompt: `Напиши мотиваційний тижневий звіт для Telegram каналу \"ThreeWordsDaily\" (вивчення англійської).\\nТиждень: ${fmt(weekStart)}–${fmt(now)}.\\n\\nВключи:\\n1. Мотиваційне речення для учнів\\n2. Нагадування про нагороду (Telegram Premium для лідера)\\n3. Заклик продовжувати стрік\\n4. 1 порада як краще вчити слова\\n\\nВідповідай українською, живо і коротко (5-7 речень). Не використовуй markdown заголовки.`\n  }\n}];"
+      },
+      "id": "prepare-prompt",
+      "name": "Підготовка промпту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer $OPENAI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\":\"gpt-4o\",\"max_tokens\":400,\"messages\":[{\"role\":\"user\",\"content\":{{ JSON.stringify($json.report_prompt) }}}]}"
+      },
+      "id": "openai-report",
+      "name": "OpenAI — Генерація звіту",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiText = $input.first().json.choices[0].message.content.trim();\nconst weekLabel = $('Підготовка промпту').first().json.week_label;\n\nconst text = `📊 *Підсумок тижня ${weekLabel}*\\n━━━━━━━━━━━━━━━━━\\n\\n${aiText}\\n\\n🏆 Перевір свій рейтинг → /top\\n⭐ Твій прогрес → /progress`;\n\nreturn [{ json: { text } }];"
+      },
+      "id": "format-report",
+      "name": "Форматування звіту",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8681431935:AAGGFw6AnGbs23_Wb2wRqZ4GM0WutK93wM0/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chat_id\":\"-1002680027938\",\"text\":{{ JSON.stringify($json.text) }},\"parse_mode\":\"Markdown\"}"
+      },
+      "id": "send-report",
+      "name": "Telegram — Звіт в групу",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300]
+    }
+  ],
+  "connections": {
+    "Неділя 20:00": {
+      "main": [[{"node": "Підготовка промпту", "type": "main", "index": 0}]]
+    },
+    "Підготовка промпту": {
+      "main": [[{"node": "OpenAI — Генерація звіту", "type": "main", "index": 0}]]
+    },
+    "OpenAI — Генерація звіту": {
+      "main": [[{"node": "Форматування звіту", "type": "main", "index": 0}]]
+    },
+    "Форматування звіту": {
+      "main": [[{"node": "Telegram — Звіт в групу", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

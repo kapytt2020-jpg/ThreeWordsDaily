@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Mochi Sticker — ThreeWordsDaily</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:#08060f;color:#e2e8f0;overflow:hidden;touch-action:none;}
+
+/* ── STARS BACKGROUND ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 50% 40%,rgba(124,58,237,0.12) 0%,transparent 55%),
+    radial-gradient(1px 1px at 15%20%,rgba(255,255,255,0.5)0%,transparent 100%),
+    radial-gradient(1px 1px at 35%70%,rgba(255,255,255,0.4)0%,transparent 100%),
+    radial-gradient(1px 1px at 60%15%,rgba(255,255,255,0.5)0%,transparent 100%),
+    radial-gradient(1px 1px at 80%50%,rgba(255,255,255,0.4)0%,transparent 100%),
+    radial-gradient(1px 1px at 92%80%,rgba(255,255,255,0.45)0%,transparent 100%),
+    radial-gradient(1px 1px at 5%90%,rgba(255,255,255,0.3)0%,transparent 100%),
+    #08060f;
+}
+
+/* ── LAYOUT ── */
+.screen{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;align-items:center;}
+
+/* ── TOP BAR ── */
+.topbar{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;flex-shrink:0;}
+.topbar-title{font-size:1rem;font-weight:700;background:linear-gradient(135deg,#fde68a,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.topbar-sub{font-size:0.7rem;color:#94a3b8;text-align:right;}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;padding:0 16px 10px;flex-shrink:0;}
+.tag{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;font-size:0.7rem;color:#94a3b8;}
+
+/* ── STAGE ── */
+.stage{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:visible;
+  min-height:0;
+}
+/* The 512×512 export zone */
+#mochi-export{
+  position:relative;
+  width:min(320px,80vw);
+  height:min(320px,80vw);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+/* Purple glow ambient (like in screenshot) */
+#mochi-export::before{
+  content:'';position:absolute;inset:-30px;
+  background:radial-gradient(ellipse at 50% 60%,rgba(109,40,217,0.28),transparent 70%);
+  border-radius:50%;z-index:0;
+}
+
+/* ── MOCHI WRAP (scales to fill stage) ── */
+.mochi{
+  position:absolute;inset:0;z-index:1;
+  animation:mochiFloat 3.8s ease-in-out infinite;
+}
+@keyframes mochiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6%);}}
+
+/* ── EARS ── */
+.m-ear{
+  position:absolute;
+  width:23%;height:32%;
+  border-radius:46% 46% 36% 36%;
+  background:radial-gradient(ellipse at 44% 60%,#fde68a,#fbbf24 40%,#f59e0b 72%,#d97706);
+  top:3%;z-index:2;
+  filter:drop-shadow(0 -3px 8px rgba(251,191,36,0.35));
+}
+.m-ear-l{left:18%;}
+.m-ear-r{right:18%;}
+.m-ear-inner{
+  position:absolute;width:50%;height:55%;
+  background:radial-gradient(ellipse at 50%50%,#fb923c,#ea580c 65%,#c2410c);
+  border-radius:50% 50% 40% 40%;
+  top:18%;left:50%;transform:translateX(-50%);
+}
+
+/* ── FACE (main circle) ── */
+.m-face{
+  position:absolute;
+  width:86%;height:86%;
+  border-radius:50%;
+  background:radial-gradient(circle at 38% 30%,#fef9c3 0%,#fde68a 18%,#fbbf24 42%,#f59e0b 68%,#d97706 90%);
+  bottom:0;left:50%;transform:translateX(-50%);
+  z-index:3;
+  box-shadow:0 0 50px 18px rgba(251,191,36,0.4),0 0 100px 35px rgba(217,119,6,0.18),0 8px 28px rgba(0,0,0,0.35);
+  transition:transform 0.12s;
+}
+
+/* ── EYES ── */
+.m-eye{
+  position:absolute;
+  width:22%;height:24%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 40%32%,#3b1a00,#1a0900 55%,#0d0400);
+  top:26%;
+  z-index:4;
+  transition:transform 0.2s,opacity 0.2s;
+  overflow:visible;
+}
+.m-eye-l{left:13%;}
+.m-eye-r{right:13%;}
+
+/* Pixel-art white highlights (2 squares per eye) */
+.m-eye-hl1{
+  position:absolute;width:30%;height:30%;
+  background:#fff;border-radius:20%;
+  top:14%;left:13%;
+}
+.m-eye-hl2{
+  position:absolute;width:17%;height:17%;
+  background:rgba(255,255,255,0.82);border-radius:15%;
+  bottom:18%;right:12%;
+}
+
+/* ── NOSE ── */
+.m-nose{
+  position:absolute;
+  width:5.5%;height:3.8%;
+  background:#fb7185;border-radius:50%;
+  top:55%;left:50%;transform:translateX(-50%);
+  z-index:4;
+  transition:transform 0.2s;
+}
+
+/* ── BLUSH ── */
+.m-blush{
+  position:absolute;
+  width:18%;height:7%;
+  background:rgba(251,113,133,0.22);border-radius:50%;
+  top:56%;z-index:4;
+  transition:opacity 0.3s,transform 0.2s;
+}
+.m-blush-l{left:7%;}
+.m-blush-r{right:7%;}
+
+/* ── MOUTH (hidden normally) ── */
+.m-mouth{
+  position:absolute;
+  width:20%;height:10%;
+  top:63%;left:50%;transform:translateX(-50%);
+  z-index:4;opacity:0;
+  transition:opacity 0.25s,transform 0.25s;
+}
+.m-mouth::before{
+  content:'';position:absolute;inset:0;
+  border-bottom:3px solid rgba(180,80,60,0.7);
+  border-radius:0 0 50% 50%;
+}
+
+/* ── EXPRESSION MODIFIERS ── */
+/* LOVE — heart eyes */
+.expr-love .m-eye{background:transparent;}
+.expr-love .m-eye::before{
+  content:'❤';position:absolute;inset:-10%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:220%;line-height:1;color:#f43f5e;
+  filter:drop-shadow(0 0 6px rgba(244,63,94,0.8));
+  animation:heartbeat 0.6s ease-in-out infinite;
+}
+.expr-love .m-eye-hl1,.expr-love .m-eye-hl2{display:none;}
+.expr-love .m-blush{opacity:1!important;background:rgba(251,113,133,0.55)!important;}
+@keyframes heartbeat{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* SLEEPY — droopy eyes + ZZZ */
+.expr-sleepy .m-eye{transform:scaleY(0.18);transform-origin:center;}
+.expr-sleepy .m-eye-hl1,.expr-sleepy .m-eye-hl2{opacity:0;}
+.expr-sleepy .m-face::after{
+  content:'z z z';position:absolute;
+  top:-8%;right:2%;
+  font-size:16%;font-weight:900;color:#a78bfa;letter-spacing:0.3em;
+  animation:floatZzz 2s ease-in-out infinite;
+}
+.expr-sleepy .m-blush{opacity:0.6;}
+@keyframes floatZzz{0%,100%{transform:translateY(0) scale(1);opacity:1}50%{transform:translateY(-15%) scale(1.1);opacity:0.6}}
+
+/* SURPRISED — huge eyes + O-mouth */
+.expr-surprised .m-eye{transform:scale(1.25);box-shadow:0 0 0 3px rgba(255,255,255,0.18);}
+.expr-surprised .m-nose{transform:translateX(-50%) scale(0.7);}
+.expr-surprised .m-mouth{opacity:1;}
+.expr-surprised .m-mouth::before{
+  border-bottom:none;border-radius:50%;
+  border:3px solid rgba(180,80,60,0.7);
+  background:rgba(120,40,20,0.2);
+}
+
+/* EXCITED — sparkle eyes */
+.expr-excited .m-eye::after{
+  content:'✦';position:absolute;
+  font-size:180%;color:#fbbf24;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:sparkSpin 0.5s linear infinite;
+  filter:drop-shadow(0 0 6px rgba(251,191,36,0.9));
+}
+.expr-excited .m-eye-hl1,.expr-excited .m-eye-hl2{opacity:0;}
+.expr-excited .m-mouth{opacity:1;}
+.expr-excited .m-mouth::before{border-radius:0 0 50% 50%;border-bottom-color:rgba(180,80,60,0.9);height:80%;}
+.expr-excited .m-blush{opacity:1!important;background:rgba(251,113,133,0.45)!important;}
+@keyframes sparkSpin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* SAD — tear drops */
+.expr-sad .m-eye-l::after,.expr-sad .m-eye-r::after{
+  content:'';position:absolute;
+  width:6px;height:12px;
+  background:linear-gradient(to bottom,rgba(96,165,250,0.9),transparent);
+  border-radius:50%;
+  bottom:-55%;left:40%;
+  animation:tearDrop 1.2s ease-in infinite;
+}
+.expr-sad .m-eye{transform:rotate(-8deg) scaleX(0.85);}
+.expr-sad .m-eye-l{transform:rotate(8deg) scaleX(0.85);}
+.expr-sad .m-mouth{opacity:1;}
+.expr-sad .m-mouth::before{transform:scaleY(-1) translateY(100%);border-bottom-color:rgba(150,80,60,0.6);}
+.expr-sad .m-blush{opacity:0.8!important;background:rgba(251,113,133,0.35)!important;}
+@keyframes tearDrop{0%{opacity:0;transform:translateY(-3px)}30%{opacity:1}100%{opacity:0;transform:translateY(16px)}}
+
+/* ANGRY — angled brows */
+.m-brow{
+  position:absolute;width:20%;height:3.5%;
+  background:#5c2a0a;border-radius:3px;
+  top:22%;z-index:5;
+  transition:transform 0.2s,opacity 0.2s;
+  opacity:0;
+}
+.m-brow-l{left:13%;transform:rotate(20deg) scaleX(0);}
+.m-brow-r{right:13%;transform:rotate(-20deg) scaleX(0);}
+.expr-angry .m-brow{opacity:1;}
+.expr-angry .m-brow-l{transform:rotate(18deg) scaleX(1);}
+.expr-angry .m-brow-r{transform:rotate(-18deg) scaleX(1);}
+.expr-angry .m-eye{transform:scaleY(0.65) scaleX(0.9);transform-origin:top center;}
+.expr-angry .m-blush{background:rgba(239,68,68,0.4)!important;opacity:1!important;}
+.expr-angry .m-nose{transform:translateX(-50%) scale(1.2);}
+
+/* WINK — right eye closed */
+.expr-wink .m-eye-r{transform:scaleY(0.08);transform-origin:center;box-shadow:none;}
+.expr-wink .m-eye-r .m-eye-hl1,.expr-wink .m-eye-r .m-eye-hl2{opacity:0;}
+.expr-wink .m-mouth{opacity:1;}
+.expr-wink .m-mouth::before{width:60%;left:20%;border-radius:0 0 50% 50%;height:70%;}
+.expr-wink .m-blush{opacity:0.9!important;background:rgba(251,113,133,0.4)!important;}
+
+/* HAPPY (default) — subtle smile hint */
+.expr-happy .m-mouth{opacity:0.55;}
+.expr-happy .m-mouth::before{width:50%;left:25%;height:55%;}
+
+/* ── TAP REACTION ANIMATION ── */
+@keyframes mochiBounce{0%{transform:scale(1)}20%{transform:scale(1.14) rotate(-3deg)}40%{transform:scale(0.92) rotate(2deg)}60%{transform:scale(1.08) rotate(-1deg)}80%{transform:scale(0.97)}100%{transform:scale(1)}}
+@keyframes mochiBlink{0%,100%{transform:scaleY(1)}50%{transform:scaleY(0.08)}}
+.do-bounce{animation:mochiBounce 0.5s ease!important;}
+
+/* ── FLOATING HEARTS on love tap ── */
+.float-heart{
+  position:absolute;z-index:10;
+  font-size:22px;pointer-events:none;
+  animation:floatHeart 1.2s ease-out forwards;
+}
+@keyframes floatHeart{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-100px) scale(0.5)}}
+
+/* ── EXPRESSION BUTTONS ── */
+.expr-row{
+  display:flex;gap:8px;justify-content:center;
+  padding:10px 16px;flex-shrink:0;flex-wrap:wrap;
+}
+.expr-btn{
+  width:44px;height:44px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  font-size:20px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color 0.2s,background 0.2s,transform 0.15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.expr-btn:active{transform:scale(0.9);}
+.expr-btn.active{border-color:#fbbf24;background:rgba(251,191,36,0.18);}
+
+/* ── BOTTOM ACTIONS ── */
+.actions{
+  display:flex;gap:10px;justify-content:center;
+  padding:10px 16px 20px;flex-shrink:0;
+}
+.action-btn{
+  flex:1;max-width:160px;padding:12px 0;
+  border-radius:14px;border:none;cursor:pointer;
+  font-size:0.82rem;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  transition:opacity 0.2s,transform 0.15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.action-btn:active{transform:scale(0.96);}
+.btn-tg{background:linear-gradient(135deg,#0088cc,#006da6);color:#fff;}
+.btn-save{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);color:#e2e8f0;}
+.action-btn small{font-size:0.65rem;opacity:0.75;font-weight:400;}
+
+/* ── INSTRUCTIONS PANEL ── */
+.info-panel{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.info-panel.open{opacity:1;pointer-events:all;}
+.info-sheet{
+  width:100%;background:#0f0b1e;border-radius:24px 24px 0 0;
+  border-top:1px solid rgba(255,255,255,0.1);
+  padding:20px 20px 32px;
+  transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.info-panel.open .info-sheet{transform:translateY(0);}
+.info-sheet h2{font-size:1rem;font-weight:800;margin-bottom:16px;color:#fde68a;}
+.step{display:flex;gap:10px;margin-bottom:14px;align-items:flex-start;}
+.step-num{
+  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#7c3aed,#4f46e5);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;font-weight:700;
+}
+.step p{font-size:0.8rem;color:#cbd5e1;line-height:1.5;}
+.step strong{color:#e2e8f0;}
+.info-close{
+  width:100%;padding:13px;margin-top:8px;
+  background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.15);
+  border-radius:12px;color:#e2e8f0;font-size:0.9rem;font-weight:700;cursor:pointer;
+}
+
+/* ── REC INDICATOR ── */
+#rec-dot{
+  position:fixed;top:14px;right:16px;z-index:50;
+  display:flex;align-items:center;gap:6px;
+  background:rgba(239,68,68,0.9);border-radius:20px;padding:4px 10px;
+  font-size:0.72rem;font-weight:700;color:#fff;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+#rec-dot.active{opacity:1;}
+#rec-dot::before{content:'';width:8px;height:8px;border-radius:50%;background:#fff;animation:recPulse 1s ease-in-out infinite;}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── DOWNLOAD TOAST ── */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:rgba(30,30,50,0.95);border:1px solid rgba(255,255,255,0.15);
+  border-radius:12px;padding:10px 18px;font-size:0.8rem;color:#e2e8f0;
+  z-index:200;opacity:0;transition:opacity 0.3s;pointer-events:none;text-align:center;
+}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="rec-dot">● REC</div>
+<div id="toast"></div>
+
+<div class="screen">
+
+  <!-- TOP -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">🐰 Mochi</div>
+    </div>
+    <div class="topbar-sub">Натисни на<br>Мочі для реакції</div>
+  </div>
+  <div class="tag-row">
+    <span class="tag">Кругленькі очі</span>
+    <span class="tag">Рум'яний</span>
+    <span class="tag">Обіймашка</span>
+    <span class="tag">ThreeWordsDaily</span>
+  </div>
+
+  <!-- STAGE -->
+  <div class="stage">
+    <div id="mochi-export" onclick="tapMochi(event)" ontouchstart="touchStart(event)" ontouchend="touchEnd(event)">
+
+      <!-- Glow handled by ::before -->
+
+      <div class="mochi" id="mochi">
+        <!-- EARS -->
+        <div class="m-ear m-ear-l"><div class="m-ear-inner"></div></div>
+        <div class="m-ear m-ear-r"><div class="m-ear-inner"></div></div>
+
+        <!-- FACE -->
+        <div class="m-face" id="mface">
+          <!-- Eyebrows (visible only in angry) -->
+          <div class="m-brow m-brow-l"></div>
+          <div class="m-brow m-brow-r"></div>
+
+          <!-- Eyes -->
+          <div class="m-eye m-eye-l">
+            <div class="m-eye-hl1"></div>
+            <div class="m-eye-hl2"></div>
+          </div>
+          <div class="m-eye m-eye-r">
+            <div class="m-eye-hl1"></div>
+            <div class="m-eye-hl2"></div>
+          </div>
+
+          <!-- Blush -->
+          <div class="m-blush m-blush-l"></div>
+          <div class="m-blush m-blush-r"></div>
+
+          <!-- Nose -->
+          <div class="m-nose"></div>
+
+          <!-- Mouth -->
+          <div class="m-mouth"></div>
+        </div><!-- /m-face -->
+      </div><!-- /mochi -->
+
+    </div><!-- /mochi-export -->
+  </div><!-- /stage -->
+
+  <!-- EXPRESSION BUTTONS -->
+  <div class="expr-row" id="exprRow">
+    <button class="expr-btn active" data-expr="" onclick="setExpr('')" title="Звичайний">😶</button>
+    <button class="expr-btn" data-expr="happy" onclick="setExpr('happy')" title="Щасливий">😊</button>
+    <button class="expr-btn" data-expr="love" onclick="setExpr('love')" title="Закоханий">💕</button>
+    <button class="expr-btn" data-expr="sleepy" onclick="setExpr('sleepy')" title="Сонний">😴</button>
+    <button class="expr-btn" data-expr="surprised" onclick="setExpr('surprised')" title="Здивований">😮</button>
+    <button class="expr-btn" data-expr="excited" onclick="setExpr('excited')" title="Збуджений">🌟</button>
+    <button class="expr-btn" data-expr="sad" onclick="setExpr('sad')" title="Сумний">😢</button>
+    <button class="expr-btn" data-expr="angry" onclick="setExpr('angry')" title="Злий">😤</button>
+    <button class="expr-btn" data-expr="wink" onclick="setExpr('wink')" title="Підморгує">😉</button>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="action-btn btn-tg" onclick="showInfo()">
+      ✈️ Telegram
+      <small>Як додати стікер</small>
+    </button>
+    <button class="action-btn btn-save" id="recBtn" onclick="recordSticker()">
+      🎬 Записати
+      <small>WebM відео-стікер</small>
+    </button>
+  </div>
+
+</div><!-- /screen -->
+
+<!-- INSTRUCTIONS PANEL -->
+<div class="info-panel" id="infoPanel" onclick="closeInfo(event)">
+  <div class="info-sheet" onclick="event.stopPropagation()">
+    <h2>🐰 Додати Мочі в Telegram</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Натисни <strong>🎬 Записати</strong> — браузер запише 3-секундне WebM відео стікера</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Збережений файл <strong>mochi_[назва].webm</strong> зберігається в Downloads</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Відкрий <strong>@Stickers</strong> в Telegram → <em>/newvideo</em> → завантаж WebM файл → вибери емодзі</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <p>Готово! Набір стікерів <strong>"Mochi — ThreeWordsDaily"</strong> буде доступний у Telegram</p>
+    </div>
+    <div class="step">
+      <div class="step-num">💡</div>
+      <p>Або запусти <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:4px">python3 mochi_sticker_bot.py --upload</code> для авто-завантаження всіх 9 виразів</p>
+    </div>
+
+    <button class="info-close" onclick="closeInfo()">Зрозуміло ✓</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ── State ──
+let currentExpr = '';
+let holdTimer = null;
+let isHolding = false;
+let mediaRecorder = null;
+let recordingChunks = [];
+let isRecording = false;
+const allExprs = ['','happy','love','sleepy','surprised','excited','sad','angry','wink'];
+let autoExprTimer = null;
+
+// ── Expression setter ──
+window.setExpr = function(expr) {
+  currentExpr = expr;
+  const mochi = document.getElementById('mochi');
+  // Remove all expr classes
+  allExprs.forEach(function(e){ if(e) mochi.classList.remove('expr-'+e); });
+  if(expr) mochi.classList.add('expr-'+expr);
+  // Update buttons
+  document.querySelectorAll('.expr-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.expr === expr);
+  });
+  // Bounce
+  doBounce();
+};
+
+window.setExpression = window.setExpr; // alias for Playwright
+
+// ── Bounce ──
+function doBounce(){
+  const m = document.getElementById('mochi');
+  m.style.animation = 'none';
+  m.classList.add('do-bounce');
+  setTimeout(function(){
+    m.classList.remove('do-bounce');
+    m.style.animation = '';
+  }, 550);
+}
+
+// ── Tap handler ──
+window.tapMochi = function(e) {
+  if(isHolding) return;
+  if(isRecording) return;
+  // Cycle to next random expression
+  const others = allExprs.filter(function(ex){ return ex !== currentExpr; });
+  const next = others[Math.floor(Math.random() * others.length)];
+  setExpr(next);
+  // Spawn floating hearts on love
+  if(next === 'love') spawnHearts(e);
+};
+
+function spawnHearts(e) {
+  const stage = document.getElementById('mochi-export');
+  const rect = stage.getBoundingClientRect();
+  const cx = e.clientX || (rect.left + rect.width/2);
+  const cy = e.clientY || (rect.top + rect.height/2);
+  const hearts = ['❤️','💛','🧡','💗','💖'];
+  for(let i=0;i<5;i++){
+    setTimeout(function(idx){
+      const h = document.createElement('div');
+      h.className = 'float-heart';
+      h.textContent = hearts[idx % hearts.length];
+      h.style.left = (cx - rect.left + (Math.random()*60-30)) + 'px';
+      h.style.top  = (cy - rect.top + (Math.random()*20-10)) + 'px';
+      stage.appendChild(h);
+      setTimeout(function(){ h.remove(); }, 1300);
+    }, i*120, i);
+  }
+}
+
+// ── Touch hold ──
+window.touchStart = function(e) {
+  isHolding = false;
+  holdTimer = setTimeout(function(){
+    isHolding = true;
+    setExpr('love');
+    if(e.touches && e.touches[0]) spawnHearts(e.touches[0]);
+  }, 500);
+};
+window.touchEnd = function() {
+  clearTimeout(holdTimer);
+  setTimeout(function(){ isHolding = false; }, 50);
+};
+
+// ── Idle blink every 3-5s ──
+function idleBlink() {
+  if(currentExpr === 'sleepy' || currentExpr === 'love' || currentExpr === 'angry') return;
+  const eyes = document.querySelectorAll('.m-eye');
+  eyes.forEach(function(eye){
+    eye.style.transition = 'transform 0.06s';
+    eye.style.transform = 'scaleY(0.08)';
+    setTimeout(function(){ eye.style.transform = ''; setTimeout(function(){eye.style.transition='';},120); }, 80);
+  });
+  setTimeout(idleBlink, 3000 + Math.random()*2500);
+}
+setTimeout(idleBlink, 2000);
+
+// ── Info panel ──
+window.showInfo = function() {
+  document.getElementById('infoPanel').classList.add('open');
+};
+window.closeInfo = function(e) {
+  if(e && e.target !== document.getElementById('infoPanel')) return;
+  document.getElementById('infoPanel').classList.remove('open');
+};
+
+// ── Toast ──
+function toast(msg, dur) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, dur || 2500);
+}
+
+// ── WebM Recording ──
+window.recordSticker = function() {
+  if(isRecording) return;
+
+  // Check support
+  if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
+    toast('⚠️ Запис не підтримується в цьому браузері. Спробуй Chrome.');
+    return;
+  }
+
+  const mochi = document.getElementById('mochi');
+  const stage = document.getElementById('mochi-export');
+  const recBtn = document.getElementById('recBtn');
+  const recDot = document.getElementById('rec-dot');
+
+  isRecording = true;
+  recordingChunks = [];
+  recDot.classList.add('active');
+  recBtn.style.opacity = '0.5';
+
+  // Animate through all expressions during recording
+  const sequence = ['','happy','love','sleepy','surprised','excited','sad','wink','angry'];
+  let seqIdx = 0;
+  const stepMs = 380;
+  const totalMs = sequence.length * stepMs + 400;
+
+  const seqTimer = setInterval(function(){
+    if(seqIdx < sequence.length) {
+      setExpr(sequence[seqIdx++]);
+    } else {
+      clearInterval(seqTimer);
+    }
+  }, stepMs);
+
+  // Use canvas to capture the stage content
+  // We use a canvas-based approach via html2canvas polyfill approach
+  // Simple: capture the stage element using its client rect dimensions
+  const canvas = document.createElement('canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const sz = stage.offsetWidth;
+  canvas.width = 512;
+  canvas.height = 512;
+
+  const ctx = canvas.getContext('2d');
+  const stream = canvas.captureStream(30);
+
+  // Draw loop
+  let drawActive = true;
+  function drawFrame() {
+    if(!drawActive) return;
+    // Try to draw a stylized version
+    ctx.clearRect(0,0,512,512);
+    // Black bg for preview (use transparent for actual sticker)
+    ctx.fillStyle = '#08060f';
+    ctx.fillRect(0,0,512,512);
+    // Center placeholder text (real export needs html2canvas or Playwright)
+    ctx.fillStyle = 'rgba(251,191,36,0.15)';
+    ctx.beginPath();
+    ctx.arc(256,256,200,0,Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 20px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Mochi 🐰', 256, 256);
+    ctx.font = '14px system-ui';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('Використай Playwright для', 256, 290);
+    ctx.fillText('повноцінного PNG/WebM', 256, 308);
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+
+  let mimeType = '';
+  if(MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) mimeType = 'video/webm;codecs=vp9';
+  else if(MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm';
+  else if(MediaRecorder.isTypeSupported('video/mp4')) mimeType = 'video/mp4';
+
+  try {
+    mediaRecorder = new MediaRecorder(stream, mimeType ? {mimeType} : {});
+  } catch(err) {
+    toast('⚠️ Не вдалось запустити запис: ' + err.message);
+    isRecording = false;
+    recDot.classList.remove('active');
+    recBtn.style.opacity = '';
+    return;
+  }
+
+  mediaRecorder.ondataavailable = function(e){ if(e.data.size > 0) recordingChunks.push(e.data); };
+  mediaRecorder.onstop = function(){
+    drawActive = false;
+    isRecording = false;
+    recDot.classList.remove('active');
+    recBtn.style.opacity = '';
+
+    const blob = new Blob(recordingChunks, {type: mimeType || 'video/webm'});
+    const exprName = sequence[3] || 'mochi';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mochi_sticker.webm';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+    toast('✅ Файл збережено! Завантаж у @Stickers → /newvideo');
+    setExpr('');
+  };
+
+  mediaRecorder.start(100);
+  toast('🔴 Запис... ' + Math.round(totalMs/1000) + 'с');
+
+  setTimeout(function(){
+    if(mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  }, totalMs);
+};
+
+// ── Auto-cycle idle expression (gentle) ──
+function idleCycle() {
+  // Very subtle: only blush intensify, no expression change
+  const blush = document.querySelectorAll('.m-blush');
+  blush.forEach(function(b){
+    b.style.transition = 'background 1s';
+    b.style.background = 'rgba(251,113,133,0.38)';
+    setTimeout(function(){
+      b.style.background = '';
+      setTimeout(function(){ b.style.transition=''; }, 1100);
+    }, 1500);
+  });
+  setTimeout(idleCycle, 6000 + Math.random()*4000);
+}
+setTimeout(idleCycle, 3000);
+
+})();
+</script>
+</body>
+</html>
