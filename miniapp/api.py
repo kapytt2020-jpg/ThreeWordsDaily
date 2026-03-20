@@ -15,6 +15,13 @@ import random
 from datetime import date, timedelta
 from typing import Optional
 
+# Curriculum integration (optional — works without it)
+try:
+    from content_plan_9months import get_current_week_plan, get_daily_words
+    _CURRICULUM = True
+except ImportError:
+    _CURRICULUM = False
+
 from dotenv import load_dotenv
 
 # Load .env from parent or current dir
@@ -471,6 +478,24 @@ async def get_lesson(tg_id: int = Query(...)):
     }
     topic_ua = topic_names.get(topic, topic)
 
+    # Build curriculum context for today's lesson
+    curriculum_hint = ""
+    if _CURRICULUM:
+        plan = get_current_week_plan()
+        if plan:
+            today_weekday = date.today().weekday() + 1  # 1=Mon..5=Fri
+            day_words = get_daily_words(plan["month"], plan["week"], min(today_weekday, 5))
+            if day_words:
+                words_ctx = ", ".join(
+                    f"{w['en']} ({w['ua']})" for w in day_words
+                )
+                curriculum_hint = (
+                    f"\nThis week's theme: {plan['theme']}. "
+                    f"Grammar focus: {plan['grammar']}. "
+                    f"Preferred words for today: {words_ctx}. "
+                    f"Idiom context: {plan['idiom']} — {plan['idiom_meaning']}."
+                )
+
     try:
         resp = await openai_client.chat.completions.create(
             model="gpt-4o",
@@ -486,7 +511,7 @@ async def get_lesson(tg_id: int = Query(...)):
                     "role": "user",
                     "content": f"""Створи урок англійської.
 Рівень: {level}
-Тема: {topic_ua}
+Тема: {topic_ua}{curriculum_hint}
 
 Поверни ТІЛЬКИ JSON:
 {{
@@ -746,6 +771,75 @@ async def update_settings(body: UpdateSettingsBody):
     if fields:
         await db_update_user(body.tg_id, **fields)
     return {"ok": True}
+
+
+# ===== STATUS & CURRICULUM ENDPOINTS =====
+
+@app.get("/api/status")
+async def get_status():
+    """Live group stats + current curriculum week — used by mini app for auto-update."""
+    stats = {}
+    if DB_AVAILABLE:
+        try:
+            from datetime import timedelta
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(str(database.DB_FILE), timeout=5)
+            today = str(date.today())
+            week_ago = str(date.today() - timedelta(days=7))
+            total = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+            active_today = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE last_lesson_date=?", (today,)
+            ).fetchone()[0]
+            active_week = conn.execute(
+                "SELECT COUNT(*) FROM users WHERE last_lesson_date>=?", (week_ago,)
+            ).fetchone()[0]
+            avg_streak = conn.execute("SELECT AVG(streak) FROM users").fetchone()[0] or 0
+            conn.close()
+            stats = {
+                "total_users": total,
+                "active_today": active_today,
+                "active_week": active_week,
+                "avg_streak": round(avg_streak, 1),
+            }
+        except Exception:
+            pass
+
+    curriculum = {}
+    if _CURRICULUM:
+        plan = get_current_week_plan()
+        if plan:
+            curriculum = {
+                "month": plan["month"],
+                "week": plan["week"],
+                "theme": plan["theme"],
+                "grammar": plan["grammar"],
+                "idiom": plan["idiom"],
+                "idiom_meaning": plan["idiom_meaning"],
+            }
+
+    return {"ok": True, "stats": stats, "curriculum": curriculum}
+
+
+@app.get("/api/curriculum")
+async def get_curriculum():
+    """Return full current week curriculum plan for mini app display."""
+    if not _CURRICULUM:
+        return {"ok": False, "error": "Curriculum not available"}
+    plan = get_current_week_plan()
+    if not plan:
+        return {"ok": False, "error": "No plan for current week"}
+    today_weekday = date.today().weekday() + 1
+    today_words = get_daily_words(plan["month"], plan["week"], min(today_weekday, 5))
+    return {
+        "ok": True,
+        "theme": plan["theme"],
+        "grammar": plan["grammar"],
+        "idiom": plan["idiom"],
+        "idiom_meaning": plan["idiom_meaning"],
+        "mini_story_prompt": plan["mini_story_prompt"],
+        "today_words": today_words,
+        "all_words": plan["words"],
+    }
 
 
 # ===== STATIC FILES =====

@@ -1779,7 +1779,7 @@ def _register_jobs(app: Application) -> None:
     log.info("Scheduled jobs registered: 09:00, 12:00, 20:00 Kyiv time.")
 
 
-def main() -> None:
+async def main() -> None:
     app: Application = (
         ApplicationBuilder()
         .token(LEARNING_BOT_TOKEN)
@@ -1790,12 +1790,15 @@ def main() -> None:
     _register_handlers(app)
     _register_jobs(app)
 
-    log.info("Starting ThreeWordsDaily learning bot (polling)...")
-    app.run_polling(
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(
         drop_pending_updates=True,
         allowed_updates=Update.ALL_TYPES,
     )
+    log.info("ThreeWordsDaily learning bot online.")
+    await asyncio.Event().wait()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

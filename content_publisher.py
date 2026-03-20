@@ -1,7 +1,7 @@
 """
 content_publisher.py — scheduled content publisher for @ThreeWordsDailyChat
 
-Schedule (Asia/Kyiv timezone):
+Schedule (Europe/Kyiv timezone):
   13:00 daily     — Idiom of the day
   17:00 Friday    — Fun fact about English
   18:00 Sunday    — Weekly quiz (5 questions, poll format)
@@ -26,16 +26,26 @@ from openai import AsyncOpenAI
 
 load_dotenv()
 
+try:
+    from content_plan_9months import get_current_week_plan, get_daily_words
+    _CURRICULUM = True
+except ImportError:
+    _CURRICULUM = False
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-BOT_TOKEN: str = os.getenv("LEARNING_BOT_TOKEN", os.getenv("TELEGRAM_BOT_TOKEN", ""))
+BOT_TOKEN: str = (
+    os.getenv("CONTENT_BOT_TOKEN")          # YourBot_test_bot — content publisher role
+    or os.getenv("LEARNING_BOT_TOKEN")
+    or os.getenv("TELEGRAM_BOT_TOKEN", "")
+)
 CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 SHEETS_API_URL: str = os.getenv("SHEETS_API_URL", "").strip()
 
-KYIV_TZ = pytz.timezone("Asia/Kyiv")
+KYIV_TZ = pytz.timezone("Europe/Kyiv")
 TELEGRAM_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 # ---------------------------------------------------------------------------
@@ -163,19 +173,34 @@ async def _chat(system: str, user: str, max_tokens: int, temperature: float) -> 
     return resp.choices[0].message.content.strip()
 
 
+def _get_curriculum_context() -> dict:
+    """Return current week's curriculum data, or empty dict if unavailable."""
+    if not _CURRICULUM:
+        return {}
+    plan = get_current_week_plan()
+    return plan if plan else {}
+
+
 async def generate_idiom() -> str:
-    """Generate the idiom-of-the-day post (HTML formatted)."""
+    """Generate the idiom-of-the-day post — uses curriculum idiom when available."""
+    ctx = _get_curriculum_context()
     system = (
         "You are a friendly English teacher for Ukrainian learners at A2–B1 level. "
         "Write clearly and concisely in the exact format requested."
     )
+    if ctx:
+        idiom_hint = f"Use this specific idiom: '{ctx['idiom']}' which means: {ctx['idiom_meaning']}. Theme: {ctx['theme']}."
+    else:
+        idiom_hint = "Choose one common English idiom."
+
     user = (
-        "Give one common English idiom. Use this exact HTML format for Telegram:\n\n"
-        "<b>Idiom of the day \U0001f4ac</b>\n\n"
+        f"{idiom_hint}\n\n"
+        "Format for Telegram (HTML):\n\n"
+        "<b>Idiom of the day 💬</b>\n\n"
         "Today's idiom: <b>[idiom]</b>\n"
-        "\U0001f1fa\U0001f1e6 [Ukrainian translation]\n\n"
+        "🇺🇦 [Ukrainian translation]\n\n"
         "Meaning: <i>[1–2 sentence explanation in English]</i>\n\n"
-        "Example: \"[example sentence with the idiom]\"\n"
+        "Example: \"[natural example sentence]\"\n"
         "<i>— [Ukrainian translation of the example]</i>\n\n"
         "Output only this format, nothing else."
     )
@@ -199,20 +224,50 @@ async def generate_fun_fact() -> str:
     return await _chat(system, user, max_tokens=200, temperature=0.9)
 
 
+async def generate_grammar_tip() -> str:
+    """Generate a grammar tip of the day using the current week's grammar focus."""
+    ctx = _get_curriculum_context()
+    system = (
+        "You are Лекс, a grammar teacher for Ukrainian English learners at A2-B1 level. "
+        "Explain grammar rules clearly with examples."
+    )
+    grammar_focus = ctx.get("grammar", "a common English grammar rule") if ctx else "a common English grammar rule"
+    user = (
+        f"Explain this grammar topic clearly: {grammar_focus}.\n\n"
+        "Format for Telegram (HTML):\n\n"
+        "<b>Grammar tip of the day 📚</b>\n\n"
+        "<b>[Grammar topic name]</b>\n\n"
+        "<i>[2-3 sentence explanation in simple English]</i>\n\n"
+        "✅ <b>Correct:</b> [example]\n"
+        "❌ <b>Wrong:</b> [common mistake]\n\n"
+        "🇺🇦 [Brief Ukrainian explanation — 1 sentence]\n\n"
+        "Output only this format, nothing else."
+    )
+    return await _chat(system, user, max_tokens=300, temperature=0.6)
+
+
 async def generate_mini_story() -> str:
-    """Generate an evening mini story (HTML formatted, uses a target English word)."""
+    """Generate an evening mini story — uses curriculum story prompt when available."""
+    ctx = _get_curriculum_context()
     system = (
         "You are an English teacher for Ukrainian learners at A2–B1 level. "
         "Write short, engaging stories with a clear teaching purpose."
     )
+    if ctx:
+        story_hint = (
+            f"Write a mini story based on this prompt: {ctx['mini_story_prompt']}\n"
+            f"The story should relate to this week's theme: {ctx['theme']}."
+        )
+    else:
+        story_hint = "Write a mini story (3–4 sentences) that naturally uses one useful English vocabulary word."
+
     user = (
-        "Write a mini story (3–4 sentences) in English that naturally uses one useful "
-        "English vocabulary word. Bold that word using <b>word</b>. "
-        "Then provide a Ukrainian translation of the story. "
-        "Use this exact HTML format for Telegram:\n\n"
-        "<b>Mini story of the evening \U0001f4d6</b>\n\n"
-        "<i>[3–4 sentence story in English, target word in <b>bold</b>]</i>\n\n"
-        "\U0001f1fa\U0001f1e6 <i>[Ukrainian translation]</i>\n\n"
+        f"{story_hint}\n\n"
+        "Bold the key vocabulary word(s) using <b>word</b>. "
+        "Format for Telegram (HTML):\n\n"
+        "<b>Mini story of the evening 📖</b>\n\n"
+        "<i>[3–4 sentence story in English, key words in <b>bold</b>]</i>\n\n"
+        "🇺🇦 <i>[Ukrainian translation]</i>\n\n"
         "Word of the story: <b>[target word]</b> — [Ukrainian meaning]\n\n"
         "Output only this format, nothing else."
     )
@@ -220,14 +275,26 @@ async def generate_mini_story() -> str:
 
 
 async def generate_weekly_quiz() -> list[dict]:
-    """Generate 5 multiple-choice English quiz questions as a list of dicts."""
+    """Generate 5 quiz questions — based on curriculum words when available."""
+    ctx = _get_curriculum_context()
     system = (
         "You are an English teacher creating quiz questions for Ukrainian learners "
         "at A2–B1 level. Return only valid JSON, no extra text."
     )
+    if ctx and ctx.get("words"):
+        words_sample = ctx["words"][:8]
+        words_str = ", ".join(f"'{w['en']}' ({w['ua']})" for w in words_sample)
+        topic_hint = (
+            f"This week's theme is '{ctx['theme']}'. "
+            f"Use some of these vocabulary words in your questions: {words_str}. "
+            f"Also test the grammar: {ctx['grammar']}."
+        )
+    else:
+        topic_hint = "Cover mixed English vocabulary and grammar topics."
+
     user = (
-        "Create 5 multiple-choice English vocabulary or grammar questions for "
-        "Ukrainian learners. Each question must have exactly 4 answer options. "
+        f"{topic_hint}\n\n"
+        "Create 5 multiple-choice questions. Each must have exactly 4 answer options. "
         "Return a JSON array in this exact shape:\n"
         "[\n"
         '  {\n'
@@ -237,11 +304,10 @@ async def generate_weekly_quiz() -> list[dict]:
         '    "explanation": "Resilient means able to recover quickly from difficulties."\n'
         "  }\n"
         "]\n\n"
-        "Vary the question types: definitions, fill-in-the-blank, choose the synonym, etc. "
+        "Vary types: definitions, fill-in-the-blank, synonyms, grammar corrections. "
         "Only JSON, nothing else."
     )
     raw = await _chat(system, user, max_tokens=900, temperature=0.6)
-    # Strip markdown code fences if model wraps output
     cleaned = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
     return json.loads(cleaned)
 
@@ -266,6 +332,22 @@ async def job_idiom() -> None:
         asyncio.ensure_future(log_to_sheets("idiom_of_day", text, message_id))
     else:
         logger.error("[idiom] Post ultimately failed, skipping metrics log")
+
+
+async def job_grammar_tip() -> None:
+    """16:00 daily — Grammar tip using current week's grammar focus."""
+    logger.info("Running job: grammar_tip")
+    try:
+        text = await generate_grammar_tip()
+    except Exception as exc:
+        logger.error("[grammar_tip] OpenAI failed: %s — skipping post", exc)
+        return
+    message_id = await _send_with_retry(send_message, text, post_type="grammar_tip")
+    if message_id:
+        logger.info("[grammar_tip] Posted successfully (msg_id=%s)", message_id)
+        asyncio.ensure_future(log_to_sheets("grammar_tip", text, message_id))
+    else:
+        logger.error("[grammar_tip] Post ultimately failed")
 
 
 async def job_fun_fact() -> None:
@@ -368,6 +450,17 @@ def build_scheduler() -> AsyncIOScheduler:
         minute=0,
         id="idiom_of_day",
         name="Idiom of the day",
+        misfire_grace_time=300,
+    )
+
+    # 16:00 every day — grammar tip (from curriculum)
+    scheduler.add_job(
+        job_grammar_tip,
+        trigger="cron",
+        hour=16,
+        minute=0,
+        id="grammar_tip",
+        name="Grammar tip of the day",
         misfire_grace_time=300,
     )
 
