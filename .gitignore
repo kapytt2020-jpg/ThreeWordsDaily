@@ -25,3 +25,8 @@ __pycache__/
 
 # Claude
 .claude/
+
+# Large binary assets (raw frames - keep only final webm/png)
+mochi_stickers_full/_frames/
+mochi_stickers_anim/
+miniapp/preview*.html

@@ -578,6 +578,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         "/review — повторити 5 останніх збережених слів\n"
         "/mywords — список збережених слів (з пагінацією)\n"
         "/invite — реферальне посилання\n"
+        "❄️ /freeze — Купити заморозку стріку (15 ⭐)\n"
         "/help — цей список\n\n"
         "💬 Напиши будь-яке слово англійською — поясню!"
     )
@@ -998,6 +999,34 @@ async def _deliver_lesson(
     except Exception as exc:
         log.error("XP/streak update error in lesson: %s", exc)
         new_xp = (user_row.get("xp") or 0) + XP_LESSON
+
+    # Notify referrer when their invitee completes first lesson
+    import aiosqlite
+    _db_path = getattr(database, "DB_PATH", None) or os.path.join(os.path.dirname(os.path.abspath(__file__)), "miniapp", "threewords.db")
+    try:
+        async with aiosqlite.connect(_db_path) as _db:
+            _db.row_factory = aiosqlite.Row
+            user_row_ref = await (await _db.execute(
+                "SELECT referrer_id, total_lessons FROM users WHERE tg_id=?", (tg_id,)
+            )).fetchone()
+            if user_row_ref and user_row_ref["referrer_id"] and user_row_ref["total_lessons"] == 1:
+                referrer_id = user_row_ref["referrer_id"]
+                # Give referrer bonus XP
+                await _db.execute(
+                    "UPDATE users SET xp = xp + 100, weekly_xp = COALESCE(weekly_xp, 0) + 100 WHERE tg_id=?",
+                    (referrer_id,)
+                )
+                await _db.commit()
+                # Notify referrer
+                try:
+                    await ctx.bot.send_message(
+                        chat_id=referrer_id,
+                        text=f"🎉 Твій запрошений друг пройшов перший урок!\n\n+100 XP на твій рахунок 🏆"
+                    )
+                except Exception:
+                    pass
+    except Exception as exc:
+        log.warning("Referral first-lesson notification failed: %s", exc)
 
     # Format lesson text
     words_text = ""
@@ -1734,9 +1763,11 @@ def _register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("save",    cmd_save))
     app.add_handler(CommandHandler("review",  cmd_review))
     app.add_handler(CommandHandler("mywords", cmd_mywords))
-    app.add_handler(CommandHandler("invite",    cmd_invite))
-    app.add_handler(CommandHandler("subscribe", cmd_subscribe))
-    app.add_handler(CommandHandler("premium",   cmd_subscribe))
+    app.add_handler(CommandHandler("invite",      cmd_invite))
+    app.add_handler(CommandHandler("subscribe",   cmd_subscribe))
+    app.add_handler(CommandHandler("premium",     cmd_subscribe))
+    app.add_handler(CommandHandler("freeze",      cmd_freeze))
+    app.add_handler(CommandHandler("streakfreeze", cmd_freeze))
     app.add_handler(PreCheckoutQueryHandler(cb_pre_checkout))
     app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, cb_successful_payment))
 
@@ -1765,6 +1796,36 @@ API_BASE = "http://localhost:8000"
 PREMIUM_SECRET = os.getenv("PREMIUM_SECRET", "twd_premium_secret_2026")
 
 
+async def cmd_freeze(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Buy streak freeze with Telegram Stars"""
+    user_id = update.effective_user.id
+
+    # Check current freezes
+    import aiosqlite
+    db_path = getattr(database, "DB_PATH", None) or os.path.join(os.path.dirname(os.path.abspath(__file__)), "miniapp", "threewords.db")
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        row = await (await db.execute(
+            "SELECT streak_freeze, streak FROM users WHERE tg_id=?", (user_id,)
+        )).fetchone()
+
+    if row and (row["streak_freeze"] or 0) >= 3:
+        await update.message.reply_text(
+            "❄️ У тебе вже є 3 заморозки стріку. Використай їх перед покупкою нових!"
+        )
+        return
+
+    # Send Stars invoice for freeze
+    await update.message.reply_invoice(
+        title="❄️ Заморозка стріку",
+        description="Захисти свій стрік від скидання на 1 день. Можна мати до 3 заморозок.",
+        payload="streak_freeze_1",
+        provider_token="",  # Stars payment
+        currency="XTR",
+        prices=[LabeledPrice("Заморозка стріку", 15)],  # 15 Stars
+    )
+
+
 async def cmd_subscribe(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Send Telegram Stars invoice for Premium subscription."""
     await update.message.reply_invoice(
@@ -1790,10 +1851,27 @@ async def cb_pre_checkout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
 
 
 async def cb_successful_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
-    """Activate premium after Stars payment."""
+    """Activate premium or streak freeze after Stars payment."""
     payment = update.message.successful_payment
     tg_id = update.effective_user.id
     stars = payment.total_amount  # in Stars (XTR has no subunits)
+    payload = payment.invoice_payload
+
+    if payload.startswith("streak_freeze"):
+        import aiosqlite
+        db_path = getattr(database, "DB_PATH", None) or os.path.join(os.path.dirname(os.path.abspath(__file__)), "miniapp", "threewords.db")
+        async with aiosqlite.connect(db_path) as db:
+            await db.execute(
+                "UPDATE users SET streak_freeze = MIN(3, COALESCE(streak_freeze, 0) + 1) WHERE tg_id=?",
+                (tg_id,)
+            )
+            await db.commit()
+        await update.message.reply_text(
+            "❄️ Заморозка стріку активована!\n\n"
+            "Якщо завтра не встигнеш пройти урок — твій стрік збережеться.\n"
+            "Команда /stats щоб побачити запаси заморозок."
+        )
+        return
 
     # Notify our local API to activate premium in DB
     try:

@@ -4,6 +4,22 @@
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0d0d11'); tg.setBackgroundColor('#0d0d11'); }
 
+// ===== HAPTIC FEEDBACK HELPER =====
+function haptic(style) {
+  try {
+    var tgH = window.Telegram && window.Telegram.WebApp;
+    if (tgH && tgH.HapticFeedback) {
+      if (style === 'light' || style === 'medium' || style === 'heavy' || style === 'rigid' || style === 'soft') {
+        tgH.HapticFeedback.impactOccurred(style);
+      } else if (style === 'success' || style === 'warning' || style === 'error') {
+        tgH.HapticFeedback.notificationOccurred(style);
+      } else {
+        tgH.HapticFeedback.selectionChanged();
+      }
+    }
+  } catch(e) {}
+}
+
 const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? 'http://localhost:8000'
   : 'https://threewords-app.vercel.app';
@@ -327,6 +343,7 @@ const state = {
   activeSkin: 'base',
   isPremium: false,
   premiumExpires: null,
+  petHp: 100,
 };
 
 // ===== LOCAL STORAGE =====
@@ -581,6 +598,17 @@ function renderHome() {
     '</div>';
 
   setTimeout(startIdleAnimation, 800);
+
+  // ===== PET SICK STATE =====
+  var petEl = document.getElementById('lexiArt');
+  if (petEl) {
+    petEl.classList.remove('pet-sick', 'pet-critical');
+    if (state.petHp < 10) {
+      petEl.classList.add('pet-critical');
+    } else if (state.petHp < 30) {
+      petEl.classList.add('pet-sick');
+    }
+  }
 }
 
 // ===== LEXI INTERACTIONS =====
@@ -736,6 +764,7 @@ function updateLexiSpeech(text) {
 }
 
 async function triggerFeed() {
+  haptic('medium');
   if (!state.lessonDoneToday) { showToast('Спочатку пройди урок!', 'fail'); return; }
   if (state.feedableWords.length === 0) { showToast('Немає слів для годування! Пройди урок.', 'fail'); return; }
   switchTab('lesson');
@@ -743,6 +772,7 @@ async function triggerFeed() {
 }
 
 async function triggerPlay() {
+  haptic('medium');
   if (!state.lesson) {
     showToast('Спочатку завантаж урок!', 'fail');
     switchTab('lesson');
@@ -755,6 +785,7 @@ async function triggerPlay() {
 }
 
 async function triggerTalk() {
+  haptic('medium');
   await apiCall('/api/interact/pet', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -989,9 +1020,9 @@ function answerQuiz(idx) {
   const isCorrect = idx === correct;
   if (isCorrect) {
     qs.score++;
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+    haptic('success');
   } else {
-    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+    haptic('error');
   }
 
   const nextBtn = document.createElement('button');
@@ -1051,6 +1082,7 @@ function renderQuizResult() {
   });
 
   checkEvolution();
+  maybePromptHomeScreen();
 }
 
 async function markAllLearned() {
@@ -1076,6 +1108,7 @@ async function markAllLearned() {
   });
 
   await checkEvolution();
+  maybePromptHomeScreen();
   renderLessonContent();
 }
 
@@ -1297,6 +1330,12 @@ async function renderProfile() {
       '</div>' +
     '</div>' +
 
+    '<div class="rewards-section">' +
+      '<div class="rewards-title">🔗 Запроси друга</div>' +
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:12px">Поділись посиланням і заробляйте разом!</div>' +
+      '<button class="btn-secondary" style="width:100%" onclick="copyReferralLink()">📋 Скопіювати реферальне посилання</button>' +
+    '</div>' +
+
     '<div style="height:32px"></div>';
 }
 
@@ -1330,6 +1369,7 @@ function setLevel(level, btn) {
 
 // ===== EVOLUTION POPUP =====
 async function showEvoPopup(stage) {
+  haptic('success');
   FX.levelUp(stage.stage);
 
   const popup = document.createElement('div');
@@ -3094,6 +3134,92 @@ function switchTab(tab) {
   else if (tab === 'profile') renderProfile();
 }
 
+// ===== DAILY LOGIN BONUS =====
+async function checkDailyBonus() {
+  var tgId = state.user && state.user.tg_id ? state.user.tg_id : null;
+  if (!tgId) return;
+  try {
+    var r = await fetch(API + '/api/daily-bonus?tg_id=' + tgId);
+    var data = await r.json();
+    if (data.available) {
+      showDailyBonusModal(data.day, data.reward);
+    }
+  } catch(e) {}
+}
+
+function showDailyBonusModal(day, reward) {
+  var days = ['День 1','День 2','День 3','День 4','День 5','День 6','День 7'];
+  var emojis = ['🎁','🎁','⚡','⚡','🔥','🔥','🌟'];
+  var html = '<div class="bonus-overlay" id="bonusOverlay" onclick="closeBonusIfOutside(event)">'
+    + '<div class="bonus-modal">'
+    + '<div class="bonus-title">Щоденний бонус</div>'
+    + '<div class="bonus-days">';
+  for (var i = 0; i < 7; i++) {
+    var cls = i < day ? 'bonus-day claimed' : (i === day ? 'bonus-day active' : 'bonus-day');
+    html += '<div class="' + cls + '">'
+      + '<div class="bonus-day-emoji">' + emojis[i] + '</div>'
+      + '<div class="bonus-day-label">' + days[i] + '</div>'
+      + '</div>';
+  }
+  html += '</div>'
+    + '<div class="bonus-reward">+' + reward.xp + ' XP &nbsp; +' + reward.hp + ' HP ❤️</div>'
+    + '<button class="bonus-claim-btn" onclick="claimDailyBonus(' + day + ')">Забрати!</button>'
+    + '</div></div>';
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function claimDailyBonus(day) {
+  haptic('success');
+  var overlay = document.getElementById('bonusOverlay');
+  if (overlay) overlay.remove();
+  try {
+    var tgId = state.user && state.user.tg_id ? state.user.tg_id : 999999;
+    var r = await fetch(API + '/api/daily-bonus/claim', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({tg_id: tgId})
+    });
+    var data = await r.json();
+    if (data.ok) {
+      state.xp = data.new_xp;
+      FX.xpFloat(window.innerWidth / 2, window.innerHeight / 2 - 60, '+' + data.xp_bonus + ' XP 🎁');
+      updateHeader();
+    }
+  } catch(e) {}
+}
+
+function closeBonusIfOutside(e) {
+  if (e.target.id === 'bonusOverlay') {
+    document.getElementById('bonusOverlay').remove();
+  }
+}
+
+// ===== HOME SCREEN SHORTCUT PROMPT =====
+function maybePromptHomeScreen() {
+  var tgApp = window.Telegram && window.Telegram.WebApp;
+  if (!tgApp) return;
+  var lessons = (state.user && state.user.total_lessons) || 0;
+  var shown = localStorage.getItem('homeScreenPrompted');
+  if ((lessons >= 3 || state.streak >= 3) && !shown && tgApp.addToHomeScreen) {
+    localStorage.setItem('homeScreenPrompted', '1');
+    setTimeout(function() {
+      tgApp.addToHomeScreen();
+    }, 2000);
+  }
+}
+
+// ===== REFERRAL / INVITE =====
+function copyReferralLink() {
+  haptic('light');
+  var tgId = state.user && state.user.tg_id ? state.user.tg_id : '';
+  var link = 'https://t.me/ThreeWordsDailyBot?start=ref_' + tgId;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(link).then(function() {
+      showToast('Посилання скопійовано!', 'success');
+    });
+  }
+}
+
 // ===== TOAST =====
 var toastTimer = null;
 function showToast(msg, type) {
@@ -3142,6 +3268,7 @@ async function init() {
       }
     }
     updateHeader();
+    checkDailyBonus();
   });
 
   setTimeout(async function() {

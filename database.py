@@ -42,7 +42,12 @@ async def init_db():
                 pet_stage INTEGER DEFAULT 0,
                 pet_mood INTEGER DEFAULT 0,
                 pet_hp INTEGER DEFAULT 50,
-                pet_xp INTEGER DEFAULT 0
+                pet_xp INTEGER DEFAULT 0,
+                streak_freeze INTEGER DEFAULT 0,
+                last_login_date TEXT DEFAULT NULL,
+                login_streak_day INTEGER DEFAULT 0,
+                weekly_xp INTEGER DEFAULT 0,
+                weekly_reset_date TEXT DEFAULT NULL
             );
 
             CREATE TABLE IF NOT EXISTS lessons_cache (
@@ -73,6 +78,22 @@ async def init_db():
             );
         """)
         await db.commit()
+
+        # Auto-migration: add new columns if missing
+        for _col, _def in [
+            ("pet_character",      "TEXT DEFAULT NULL"),
+            ("pet_name",           "TEXT DEFAULT NULL"),
+            ("streak_freeze",      "INTEGER DEFAULT 0"),
+            ("last_login_date",    "TEXT DEFAULT NULL"),
+            ("login_streak_day",   "INTEGER DEFAULT 0"),
+            ("weekly_xp",          "INTEGER DEFAULT 0"),
+            ("weekly_reset_date",  "TEXT DEFAULT NULL"),
+        ]:
+            try:
+                await db.execute(f"ALTER TABLE users ADD COLUMN {_col} {_def}")
+                await db.commit()
+            except Exception:
+                pass  # column already exists
 
 
 # ===== USER HELPERS =====

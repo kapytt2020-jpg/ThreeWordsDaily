@@ -623,8 +623,12 @@ async def save_progress(body: ProgressBody):
         total_quizzes += 1
         correct_answers += body.data.get("correct_count", 0)
 
+    # Increment weekly XP
+    new_weekly_xp = (user.get("weekly_xp") or 0) + body.xp_earned
+
     update_fields = {
         "xp": new_xp,
+        "weekly_xp": new_weekly_xp,
         "words_learned": json.dumps(new_words),
         "streak": streak,
         "pet_hp": pet_hp,
@@ -918,6 +922,130 @@ async def premium_status(tg_id: int):
                 return {"is_premium": False, "expired": expires}
             return {"is_premium": True, "expires": expires, "stars_spent": stars}
     return {"is_premium": False}
+
+
+# ===== DAILY LOGIN BONUS =====
+
+@app.get("/api/daily-bonus")
+async def get_daily_bonus(tg_id: int):
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    today = datetime.now(ZoneInfo("Europe/Kyiv")).strftime("%Y-%m-%d")
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        user = await (await conn.execute(
+            "SELECT last_login_date, login_streak_day, streak_freeze FROM users WHERE tg_id=?", (tg_id,)
+        )).fetchone()
+        if not user:
+            return {"available": False}
+
+        last = user["last_login_date"]
+        day = user["login_streak_day"] or 0
+
+        if last == today:
+            return {"available": False, "day": day}
+
+        # Escalating rewards: day 1-7 then reset
+        rewards = [
+            {"xp": 10, "hp": 5, "label": "День 1"},
+            {"xp": 15, "hp": 5, "label": "День 2"},
+            {"xp": 20, "hp": 10, "label": "День 3"},
+            {"xp": 25, "hp": 10, "label": "День 4 🔥"},
+            {"xp": 30, "hp": 15, "label": "День 5 🔥"},
+            {"xp": 40, "hp": 15, "label": "День 6 🔥"},
+            {"xp": 75, "hp": 25, "label": "День 7 🌟"},
+        ]
+        next_day = (day % 7)
+        return {"available": True, "day": next_day, "reward": rewards[next_day]}
+
+@app.post("/api/daily-bonus/claim")
+async def claim_daily_bonus(data: dict):
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    tg_id = data.get("tg_id")
+    today = datetime.now(ZoneInfo("Europe/Kyiv")).strftime("%Y-%m-%d")
+
+    rewards = [10, 15, 20, 25, 30, 40, 75]
+    hp_rewards = [5, 5, 10, 10, 15, 15, 25]
+
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        user = await (await conn.execute(
+            "SELECT last_login_date, login_streak_day, xp, pet_hp FROM users WHERE tg_id=?", (tg_id,)
+        )).fetchone()
+        if not user or user["last_login_date"] == today:
+            return {"ok": False, "reason": "already_claimed"}
+
+        day = (user["login_streak_day"] or 0) % 7
+        xp_bonus = rewards[day]
+        hp_bonus = hp_rewards[day]
+        new_day = day + 1
+        new_xp = (user["xp"] or 0) + xp_bonus
+        new_hp = min(100, (user["pet_hp"] or 50) + hp_bonus)
+
+        await conn.execute(
+            "UPDATE users SET last_login_date=?, login_streak_day=?, xp=?, pet_hp=? WHERE tg_id=?",
+            (today, new_day, new_xp, new_hp, tg_id)
+        )
+        await conn.commit()
+        return {"ok": True, "day": day, "xp_bonus": xp_bonus, "hp_bonus": hp_bonus, "new_xp": new_xp}
+
+
+# ===== STREAK FREEZE =====
+
+@app.post("/api/streak-freeze/use")
+async def use_streak_freeze(data: dict):
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    tg_id = data.get("tg_id")
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        user = await (await conn.execute(
+            "SELECT streak_freeze, streak, last_lesson_date FROM users WHERE tg_id=?", (tg_id,)
+        )).fetchone()
+        if not user or (user["streak_freeze"] or 0) <= 0:
+            return {"ok": False, "reason": "no_freeze"}
+
+        today = datetime.now(ZoneInfo("Europe/Kyiv")).strftime("%Y-%m-%d")
+        await conn.execute(
+            "UPDATE users SET streak_freeze=streak_freeze-1, last_lesson_date=? WHERE tg_id=?",
+            (today, tg_id)
+        )
+        await conn.commit()
+        return {"ok": True, "remaining": (user["streak_freeze"] or 1) - 1}
+
+
+# ===== WEEKLY LEADERBOARD =====
+
+@app.get("/api/leaderboard/weekly")
+async def weekly_leaderboard(tg_id: int):
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    today = datetime.now(ZoneInfo("Europe/Kyiv"))
+    # Reset weekly XP on Monday
+    week_start = (today - timedelta(days=today.weekday())).strftime("%Y-%m-%d")
+
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+        # Reset stale weekly XP
+        await conn.execute(
+            "UPDATE users SET weekly_xp=0, weekly_reset_date=? WHERE weekly_reset_date IS NULL OR weekly_reset_date < ?",
+            (week_start, week_start)
+        )
+        await conn.commit()
+
+        rows = await (await conn.execute(
+            "SELECT tg_id, first_name, username, weekly_xp, streak FROM users ORDER BY weekly_xp DESC LIMIT 10"
+        )).fetchall()
+
+        caller = await (await conn.execute(
+            "SELECT weekly_xp FROM users WHERE tg_id=?", (tg_id,)
+        )).fetchone()
+
+        board = [{"rank": i+1, "tg_id": r["tg_id"], "name": r["first_name"] or r["username"] or "?",
+                  "weekly_xp": r["weekly_xp"] or 0, "streak": r["streak"] or 0} for i, r in enumerate(rows)]
+
+        return {"board": board, "my_weekly_xp": caller["weekly_xp"] if caller else 0}
 
 
 # ===== STATIC FILES =====

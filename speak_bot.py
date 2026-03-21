@@ -216,6 +216,76 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
 
 
 # ---------------------------------------------------------------------------
+# Voice message handler
+# ---------------------------------------------------------------------------
+
+async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Process voice messages - transcribe and give pronunciation feedback"""
+    if not update.message or not update.message.voice:
+        return
+
+    await update.message.reply_text("🎧 Слухаю... одну секунду!")
+
+    try:
+        import tempfile, openai
+
+        # Download voice file
+        voice = update.message.voice
+        file = await ctx.bot.get_file(voice.file_id)
+
+        with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
+            await file.download_to_drive(tmp.name)
+            tmp_path = tmp.name
+
+        # Transcribe with Whisper
+        client = openai.AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        with open(tmp_path, "rb") as audio_file:
+            transcript = await client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                language="en"
+            )
+
+        import os as _os
+        _os.unlink(tmp_path)
+
+        text = transcript.text.strip()
+        if not text:
+            await update.message.reply_text("😕 Не вдалося розпізнати мовлення. Спробуй ще раз, чіткіше.")
+            return
+
+        # Get pronunciation feedback via GPT
+        feedback_prompt = f"""The user said: "{text}"
+
+Give pronunciation feedback for a Ukrainian English learner:
+1. What they said (transcription)
+2. Likely pronunciation issues (2-3 specific tips)
+3. IPA for difficult words
+4. One encouragement
+
+Keep it short (4-6 lines). Use emojis. Reply in Ukrainian."""
+
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": feedback_prompt}],
+            max_tokens=200
+        )
+
+        feedback = response.choices[0].message.content
+
+        await update.message.reply_text(
+            f"🗣️ <b>Ти сказав:</b> «{text}»\n\n{feedback}",
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+        await update.message.reply_text(
+            "😕 Не вдалося обробити голосове. Напиши слово текстом і я допоможу з вимовою!"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Scheduled: 21:00 daily speaking challenge
 # ---------------------------------------------------------------------------
 
@@ -252,6 +322,7 @@ async def main() -> None:
     app.add_handler(CommandHandler("pronounce", cmd_pronounce))
     app.add_handler(CommandHandler("say",       cmd_pronounce))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.VOICE, handle_voice))
 
     await app.initialize()
     await app.start()

@@ -186,6 +186,75 @@ async def _ai_reply(user_text: str) -> str:
         )
 
 
+# ======= VIRAL MECHANICS =======
+
+async def job_weekly_viral(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Post weekly leaderboard + invite to group every Monday"""
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not chat_id:
+        return
+
+    import aiosqlite
+    db_path = os.getenv("DB_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "miniapp", "threewords.db"))
+
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        top = await (await db.execute(
+            "SELECT first_name, username, xp, streak, words_learned FROM users ORDER BY xp DESC LIMIT 5"
+        )).fetchall()
+
+    lines = []
+    medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+    for i, u in enumerate(top):
+        name = u["first_name"] or u["username"] or "Хтось"
+        try:
+            words = len(__import__('json').loads(u["words_learned"] or "[]"))
+        except:
+            words = 0
+        lines.append(f"{medals[i]} <b>{name}</b> — {u['xp']} XP · 🔥{u['streak']}д · {words} слів")
+
+    board = "\n".join(lines) if lines else "Ще немає гравців!"
+
+    bot_username = os.getenv("MARKETER_BOT_USERNAME", "ThreeWordsDailyBot")
+
+    text = (
+        "🏆 <b>Тижневий рейтинг ThreeWordsDaily</b>\n\n"
+        f"{board}\n\n"
+        "💬 Хочеш потрапити в топ?\n"
+        "👉 Відкрий міні-апп і вивчи слова сьогодні!\n\n"
+        f"📨 Запроси друга: https://t.me/{bot_username}?start=ref_viral"
+    )
+
+    await context.bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+
+
+async def welcome_new_member(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Welcome new members to the group with a referral invite"""
+    if not update.message or not update.message.new_chat_members:
+        return
+
+    bot_username = os.getenv("MARKETER_BOT_USERNAME", "ThreeWordsDailyBot")
+
+    for member in update.message.new_chat_members:
+        if member.is_bot:
+            continue
+        name = member.first_name or "Нового учасника"
+
+        text = (
+            f"👋 Ласкаво просимо, <b>{name}</b>!\n\n"
+            f"🌟 <b>ThreeWordsDaily</b> — вивчай англійські слова з власним цифровим петом!\n\n"
+            "📚 3 нові слова щодня\n"
+            "🏆 Змагайся в рейтингу\n"
+            "🐾 Доглядай за тамагочі\n\n"
+            f"👉 Почни прямо зараз: t.me/{bot_username}"
+        )
+
+        try:
+            await update.message.reply_html(text)
+        except Exception:
+            pass
+
+
 # ======= HANDLERS =======
 
 async def handle_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
@@ -315,6 +384,20 @@ async def main() -> None:
     app.add_handler(CommandHandler("invite", handle_invite))
     app.add_handler(CommandHandler("ref",    handle_invite))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome_new_member))
+
+    # Weekly Monday 10:00 leaderboard post
+    jq = app.job_queue
+    if jq is not None:
+        from datetime import time as _time
+        jq.run_daily(
+            job_weekly_viral,
+            time=_time(hour=10, minute=0, tzinfo=__import__('zoneinfo').ZoneInfo("Europe/Kyiv")),
+            days=(0,),  # Monday only
+            name="weekly_viral",
+        )
+    else:
+        logger.warning("JobQueue not available; weekly viral post will not run.")
 
     await app.initialize()
     await app.start()
