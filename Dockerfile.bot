@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# DB path points to mounted volume
+ENV DB_PATH=/app/data/threewords.db
+ENV REFERRALS_DB_PATH=/app/data/referrals.db
+
+CMD ["python", "learning_bot.py"]

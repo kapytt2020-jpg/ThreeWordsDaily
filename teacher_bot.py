@@ -2,12 +2,12 @@
 teacher_bot.py — GROUP_TEACHER (Лекс)
 
 Lives in @ThreeWordsDailyChat group. Responds to grammar questions,
-trigger words, mentions, and replies. Private chat also works.
+trigger words, mentions, and replies. Also posts daily educator content.
 
 Environment variables (.env):
   TEACHER_BOT_TOKEN   — bot token for the group teacher bot
   OPENAI_API_KEY      — OpenAI key
-  TELEGRAM_CHAT_ID    — group/channel ID (optional, for filtering)
+  TELEGRAM_CHAT_ID    — group/channel ID where to post (required for scheduled posts)
 
 Run:
   python3 teacher_bot.py
@@ -16,12 +16,15 @@ Run:
 import asyncio
 import logging
 import os
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from telegram import Update
 from telegram.ext import (
     Application,
+    ApplicationBuilder,
     CommandHandler,
     ContextTypes,
     MessageHandler,
@@ -39,6 +42,8 @@ if not TEACHER_BOT_TOKEN:
     raise RuntimeError("TEACHER_BOT_TOKEN is not set in .env")
 
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")   # group to post into
+UKRAINE_TZ = ZoneInfo("Europe/Kyiv")
 
 logging.basicConfig(
     format="%(asctime)s [teacher_bot] %(levelname)s %(message)s",
@@ -95,6 +100,66 @@ async def ask_lex(text: str) -> str:
         return "Хм, давай спробуємо ще раз 😅"
 
 # ---------------------------------------------------------------------------
+# Blogger posts (proactive, scheduled)
+# ---------------------------------------------------------------------------
+
+BLOG_PROMPTS = {
+    "grammar_tip": (
+        "Напиши коротку граматичну пораду для вивчення англійської — у стилі Лекса (блогера-вчителя). "
+        "Формат: одне практичне правило + 2 приклади (правильно ✅ / неправильно ❌). "
+        "Українська мова. Починай з емодзі та заголовку. Максимум 150 слів. "
+        "Тема: випадкова граматична тема (артиклі / часи / прийменники / модальні / умовні / порядок слів / etc)."
+    ),
+    "did_you_know": (
+        "Напиши цікавий факт про англійську мову — у стилі Лекса (ентузіаст і блогер). "
+        "Щось несподіване: етимологія слова, дивне правило, культурний контекст. "
+        "Українська мова. Починай з '🤯 Знав(ла)?' або '💡 Цікаво!'. Максимум 120 слів."
+    ),
+    "common_mistake": (
+        "Напиши пост про типову помилку українців в англійській — у стилі Лекса. "
+        "Формат: помилка → пояснення чому → виправлення. "
+        "Приклади з реального життя. Ukrainian language. Start with '⚠️ Часта помилка:'. Максимум 140 слів."
+    ),
+}
+
+async def _post_to_group(ctx, prompt_key: str) -> None:
+    if not CHAT_ID:
+        log.warning("TELEGRAM_CHAT_ID not set — skipping group post")
+        return
+    try:
+        prompt = BLOG_PROMPTS[prompt_key]
+        r = await ai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=350,
+            temperature=0.85,
+        )
+        text = r.choices[0].message.content.strip()
+        await ctx.bot.send_message(chat_id=CHAT_ID, text=text, parse_mode="HTML")
+        log.info("Posted '%s' to group %s", prompt_key, CHAT_ID)
+    except Exception as exc:
+        log.error("Group post error (%s): %s", prompt_key, exc)
+
+
+async def job_grammar_tip(ctx) -> None:
+    """11:00 Kyiv — Grammar tip of the day."""
+    await _post_to_group(ctx, "grammar_tip")
+
+
+async def job_did_you_know(ctx) -> None:
+    """15:00 Kyiv — Did you know? fun English fact."""
+    await _post_to_group(ctx, "did_you_know")
+
+
+async def job_common_mistake(ctx) -> None:
+    """18:00 Kyiv — Common Ukrainian mistake in English."""
+    await _post_to_group(ctx, "common_mistake")
+
+
+# ---------------------------------------------------------------------------
 # Handlers
 # ---------------------------------------------------------------------------
 
@@ -143,9 +208,32 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
 # ---------------------------------------------------------------------------
 
 async def main() -> None:
-    app = Application.builder().token(TEACHER_BOT_TOKEN).build()
+    app = ApplicationBuilder().token(TEACHER_BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    # Scheduled blogger posts
+    jq = app.job_queue
+    if jq and CHAT_ID:
+        jq.run_daily(
+            job_grammar_tip,
+            time=datetime.now(UKRAINE_TZ).replace(hour=11, minute=0, second=0, microsecond=0).timetz(),
+            name="grammar_tip",
+        )
+        jq.run_daily(
+            job_did_you_know,
+            time=datetime.now(UKRAINE_TZ).replace(hour=15, minute=0, second=0, microsecond=0).timetz(),
+            name="did_you_know",
+        )
+        jq.run_daily(
+            job_common_mistake,
+            time=datetime.now(UKRAINE_TZ).replace(hour=18, minute=0, second=0, microsecond=0).timetz(),
+            name="common_mistake",
+        )
+        log.info("Scheduled 3 daily group posts (11:00 / 15:00 / 18:00 Kyiv)")
+    elif not CHAT_ID:
+        log.warning("TELEGRAM_CHAT_ID not set — scheduled group posts disabled")
+
     await app.initialize()
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)

@@ -59,6 +59,20 @@ _mem_rewards: dict = {}  # tg_id -> set of badge_ids
 async def db_init():
     if DB_AVAILABLE:
         await database.init_db()
+        # Auto-migration: add premium columns if missing
+        import aiosqlite, os as _os
+        _db_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "threewords.db")
+        async with aiosqlite.connect(_db_path) as _conn:
+            for _col, _def in [
+                ("is_premium",       "INTEGER DEFAULT 0"),
+                ("premium_expires",  "TEXT DEFAULT NULL"),
+                ("stars_spent",      "INTEGER DEFAULT 0"),
+            ]:
+                try:
+                    await _conn.execute(f"ALTER TABLE users ADD COLUMN {_col} {_def}")
+                    await _conn.commit()
+                except Exception:
+                    pass  # column already exists
 
 async def db_get_or_create_user(tg_id: int, first_name: str = "", username: str = "") -> dict:
     if DB_AVAILABLE:
@@ -137,6 +151,9 @@ async def db_add_progress_event(tg_id: int, event_type: str, xp_earned: int, dat
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 MINI_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+# DB path — env override for Docker (/app/data/threewords.db), fallback to local
+_LOCAL_DB = os.path.join(MINI_APP_DIR, "threewords.db")
+CLOUD_DB_PATH = os.getenv("DB_PATH", _LOCAL_DB)
 
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
@@ -430,6 +447,8 @@ async def user_init(body: UserInitBody):
         "referrals_count": user.get("referrals_count", 0),
         "pet_character": user.get("pet_character"),
         "pet_name": user.get("pet_name"),
+        "is_premium": bool(user.get("is_premium", 0)),
+        "premium_expires": user.get("premium_expires"),
     }
 
 
@@ -437,8 +456,8 @@ async def user_init(body: UserInitBody):
 async def pet_select(body: PetSelectBody):
     """Save the user's chosen pet character and name to the database."""
     VALID_CHARS = {"lumix","kitsune","mochi","byte","ember","mist","marco","astro","bruno","crash",
-                   "nova","luna","rex",
-                   "sunny","biscuit","ronin","apex","bolt",
+                   "nova","luna","rex","sunny","biscuit","ronin","apex","bolt",
+                   "kaito","yuki","vex","seraph",  # preview6 characters
                    "spirit","beast","buddy"}  # legacy archetypes also accepted
     char = body.pet_character.lower().strip()
     if char not in VALID_CHARS:
@@ -840,6 +859,65 @@ async def get_curriculum():
         "today_words": today_words,
         "all_words": plan["words"],
     }
+
+
+# ===== PREMIUM / MONETIZATION =====
+
+PREMIUM_PRICE_STARS = 75  # 75 Telegram Stars ≈ $1.5/month
+PREMIUM_DAYS = 30
+
+class PremiumActivateBody(BaseModel):
+    tg_id: int
+    stars: int  # number of Stars paid (verified by learning_bot webhook)
+    secret: str  # shared secret so only our bot can call this
+
+PREMIUM_SECRET = os.getenv("PREMIUM_SECRET", "twd_premium_secret_2026")
+
+@app.post("/api/premium/activate")
+async def premium_activate(body: PremiumActivateBody):
+    """Called by learning_bot after successful Telegram Stars payment."""
+    if body.secret != PREMIUM_SECRET:
+        return {"ok": False, "error": "Unauthorized"}
+    if body.stars < PREMIUM_PRICE_STARS:
+        return {"ok": False, "error": f"Need {PREMIUM_PRICE_STARS} stars, got {body.stars}"}
+    from datetime import datetime, timedelta
+    expires = (datetime.utcnow() + timedelta(days=PREMIUM_DAYS)).strftime("%Y-%m-%d")
+    if DB_AVAILABLE:
+        import aiosqlite, os as _os
+        _db_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "threewords.db")
+        async with aiosqlite.connect(_db_path) as conn:
+            await conn.execute(
+                "UPDATE users SET is_premium=1, premium_expires=?, stars_spent=stars_spent+? WHERE tg_id=?",
+                (expires, body.stars, body.tg_id)
+            )
+            await conn.commit()
+    return {"ok": True, "premium_expires": expires, "message": f"✅ Premium активовано до {expires}"}
+
+@app.get("/api/premium/status")
+async def premium_status(tg_id: int):
+    """Check if user has active premium."""
+    from datetime import datetime
+    if DB_AVAILABLE:
+        import aiosqlite, os as _os
+        _db_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "threewords.db")
+        async with aiosqlite.connect(_db_path) as conn:
+            async with conn.execute(
+                "SELECT is_premium, premium_expires, stars_spent FROM users WHERE tg_id=?", (tg_id,)
+            ) as cur:
+                row = await cur.fetchone()
+        if not row:
+            return {"is_premium": False}
+        is_prem, expires, stars = row
+        if is_prem and expires:
+            still_active = datetime.utcnow().strftime("%Y-%m-%d") <= expires
+            if not still_active:
+                # Expire it
+                async with aiosqlite.connect(_db_path) as conn:
+                    await conn.execute("UPDATE users SET is_premium=0 WHERE tg_id=?", (tg_id,))
+                    await conn.commit()
+                return {"is_premium": False, "expired": expires}
+            return {"is_premium": True, "expires": expires, "stars_spent": stars}
+    return {"is_premium": False}
 
 
 # ===== STATIC FILES =====

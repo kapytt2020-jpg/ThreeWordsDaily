@@ -11,7 +11,10 @@ from typing import Optional
 
 import aiosqlite
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "threewords.db")
+DB_PATH = os.getenv(
+    "DB_PATH",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "miniapp", "threewords.db")
+)
 
 
 # ===== INIT =====

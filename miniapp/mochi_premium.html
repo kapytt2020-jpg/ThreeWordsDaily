@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mochi Premium</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  width:100%;height:100%;
+  background:#08060f;
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  font-family:system-ui,sans-serif;
+}
+body.export-mode{background:transparent!important;}
+
+/* ── AMBIENT BG ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse at 50% 45%,rgba(124,58,237,0.14) 0%,transparent 55%),
+    radial-gradient(1px 1px at 15% 20%,rgba(255,255,255,0.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 35% 70%,rgba(255,255,255,0.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 60% 15%,rgba(255,255,255,0.5)  0%,transparent 100%),
+    radial-gradient(1px 1px at 82% 52%,rgba(255,255,255,0.38) 0%,transparent 100%),
+    radial-gradient(1px 1px at 8%  88%,rgba(255,255,255,0.28) 0%,transparent 100%),
+    #08060f;
+  pointer-events:none;
+}
+.export-mode::before{display:none;}
+
+/* ── STAGE ── */
+#stage{
+  position:relative;z-index:1;
+  width:100%;height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+
+/* ── EXPORT CONTAINER ── */
+#mochi-export{
+  position:relative;
+  width:min(340px,85vw);
+  height:min(340px,85vw);
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  display:flex;align-items:flex-end;justify-content:center;
+  overflow:visible;
+}
+
+/* ── GLOW AURA ── */
+#mochi-export::before{
+  content:'';position:absolute;inset:-20%;
+  background:radial-gradient(ellipse at 50% 60%,rgba(109,40,217,0.22),transparent 68%);
+  border-radius:50%;z-index:0;
+  transition:opacity 0.4s;
+}
+#mochi-export:hover::before{
+  background:radial-gradient(ellipse at 50% 60%,rgba(124,58,237,0.32),transparent 68%);
+}
+
+/* ══════════════════════════════════════════
+   CHARACTER PARTS — at 1× (JS scales them)
+   ══════════════════════════════════════════ */
+#m-scene{
+  position:relative;
+  /* JS overrides transform every frame */
+  transform-origin:center bottom;
+  will-change:transform;
+  z-index:2;
+}
+
+/* ARMS */
+.m-arm-l,.m-arm-r{
+  position:absolute;width:13px;height:22px;
+  background:radial-gradient(ellipse at 40% 28%,#fef9c3,#fde68a 55%,#fbbf24 80%,#f59e0b);
+  border-radius:7px 7px 5px 5px;
+  bottom:32px;z-index:2;
+  transform-origin:top center;
+  will-change:transform;
+}
+.m-arm-l{left:-8px;}
+.m-arm-r{right:-8px;}
+
+/* LEGS */
+.m-leg-l,.m-leg-r{
+  position:absolute;width:18px;height:14px;
+  background:radial-gradient(ellipse at 50% 30%,#fef3c7,#fde68a 60%,#fbbf24);
+  border-radius:9px 9px 7px 7px;
+  bottom:0;z-index:2;
+  transform-origin:top center;
+  will-change:transform;
+}
+.m-leg-l{left:9px;}
+.m-leg-r{right:9px;}
+
+/* BODY */
+.m-body{
+  position:absolute;width:50px;height:30px;
+  background:radial-gradient(ellipse at 40% 28%,#fef3c7,#fde68a 55%,#fbbf24 80%,#f59e0b);
+  border-radius:25px 25px 17px 17px;
+  bottom:11px;left:50%;transform:translateX(-50%);z-index:3;
+}
+/* belly tint */
+.m-body::after{
+  content:'';position:absolute;width:30px;height:18px;
+  background:rgba(255,255,255,0.22);border-radius:50%;
+  bottom:3px;left:50%;transform:translateX(-50%);
+}
+
+/* HEAD */
+.m-head{
+  position:absolute;width:80px;height:78px;
+  background:radial-gradient(circle at 38% 30%,
+    #fef9c3 0%,#fde68a 18%,#fbbf24 44%,#f59e0b 70%,#d97706 90%);
+  border-radius:50%;
+  bottom:28px;left:50%;
+  box-shadow:
+    0 0 22px 9px  rgba(251,191,36,0.5),
+    0 0 50px 16px rgba(217,119,6,0.22),
+    inset 0 -4px 10px rgba(180,90,0,0.12);
+  z-index:4;
+  transform-origin:center center;
+  will-change:transform;
+}
+/* specular highlight */
+.m-head::after{
+  content:'';position:absolute;
+  width:28px;height:20px;
+  background:radial-gradient(ellipse at 40% 40%,rgba(255,255,255,0.5),transparent 70%);
+  border-radius:50%;top:8px;left:10px;
+}
+
+/* EARS */
+.m-ear-l,.m-ear-r{
+  position:absolute;width:23px;height:30px;
+  background:radial-gradient(ellipse at 44% 58%,#fde68a,#fbbf24 42%,#f59e0b 75%,#d97706);
+  border-radius:11px 11px 7px 7px;
+  top:18px;z-index:5;
+  transform-origin:bottom center;
+  will-change:transform;
+}
+.m-ear-l{left:7px;}
+.m-ear-r{right:7px;}
+.m-ear-inner{
+  position:absolute;width:12px;height:16px;
+  background:radial-gradient(ellipse at 50% 50%,#fdba74,#fb923c 50%,#ea580c 75%,#c2410c);
+  border-radius:7px 7px 5px 5px;
+  top:6px;left:50%;transform:translateX(-50%);
+}
+
+/* EYES */
+.m-eye-l,.m-eye-r{
+  position:absolute;width:20px;height:21px;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 38% 28%,#3b1a00,#1a0900 52%,#0d0400);
+  top:20px;z-index:6;
+  transform-origin:center center;
+  will-change:transform;
+  overflow:visible;
+}
+.m-eye-l{left:9px;}
+.m-eye-r{right:9px;}
+.m-eye-hl{
+  position:absolute;width:7px;height:7px;
+  background:#fff;border-radius:2px;top:3px;left:3px;
+}
+.m-eye-hl2{
+  position:absolute;width:3px;height:3px;
+  background:rgba(255,255,255,0.78);border-radius:1px;
+  bottom:4px;right:3px;
+}
+
+/* BROWS */
+.m-brow-l,.m-brow-r{
+  position:absolute;width:18px;height:3.5px;
+  background:#5c2a0a;border-radius:3px;
+  top:14px;z-index:7;
+  opacity:0;
+  transition:opacity 0.15s;
+}
+.m-brow-l{left:9px;transform:rotate(20deg);}
+.m-brow-r{right:9px;transform:rotate(-20deg);}
+
+/* NOSE */
+.m-nose{
+  position:absolute;width:9px;height:6px;
+  background:radial-gradient(ellipse at 50%40%,#fda4af,#fb7185);
+  border-radius:50%;bottom:24px;left:50%;transform:translateX(-50%);z-index:6;
+}
+
+/* BLUSH */
+.m-blush-l,.m-blush-r{
+  position:absolute;width:18px;height:9px;
+  background:rgba(251,113,133,0.26);border-radius:50%;
+  bottom:28px;z-index:6;
+  transition:background 0.3s;
+}
+.m-blush-l{left:4px;}
+.m-blush-r{right:4px;}
+
+/* MOUTH */
+.m-mouth{
+  position:absolute;width:22px;height:11px;
+  bottom:16px;left:50%;transform:translateX(-50%);
+  z-index:6;opacity:0;
+}
+.m-mouth::before{
+  content:'';position:absolute;inset:0;
+  border-bottom:3px solid rgba(180,80,60,0.78);
+  border-radius:0 0 50% 50%;
+}
+
+/* TEARS */
+.m-tear-l,.m-tear-r{
+  position:absolute;width:5px;height:12px;
+  background:linear-gradient(to bottom,rgba(96,165,250,0.9),transparent);
+  border-radius:50%;z-index:7;top:38px;
+  opacity:0;
+}
+.m-tear-l{left:14px;}
+.m-tear-r{right:14px;}
+
+/* ══════════════════════════════════════════
+   EXPRESSION CSS-ONLY OVERRIDES
+   (motion handled by JS springs)
+   ══════════════════════════════════════════ */
+
+/* LOVE — heart eyes */
+.expr-love .m-eye-l,.expr-love .m-eye-r{background:transparent!important;}
+.expr-love .m-eye-l::before,.expr-love .m-eye-r::before{
+  content:'❤';position:absolute;inset:-10%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:220%;color:#f43f5e;
+  filter:drop-shadow(0 0 5px rgba(244,63,94,0.75));
+}
+.expr-love .m-eye-hl,.expr-love .m-eye-hl2{display:none;}
+
+/* SLEEPY — half-closed */
+.expr-sleepy .m-eye-l,.expr-sleepy .m-eye-r{
+  transform:scaleY(0.14)!important;
+  transform-origin:center!important;
+}
+
+/* SURPRISED — huge eyes */
+.expr-surprised .m-eye-l,.expr-surprised .m-eye-r{
+  box-shadow:0 0 0 3px rgba(255,255,255,0.18);
+}
+
+/* EXCITED — star eyes */
+.expr-excited .m-eye-l::after,.expr-excited .m-eye-r::after{
+  content:'✦';position:absolute;font-size:180%;color:#fbbf24;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  filter:drop-shadow(0 0 5px rgba(251,191,36,0.9));
+  animation:spinStar .45s linear infinite;
+}
+.expr-excited .m-eye-hl,.expr-excited .m-eye-hl2{opacity:0;}
+@keyframes spinStar{to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* ANGRY — brows on */
+.expr-angry .m-brow-l,.expr-angry .m-brow-r{opacity:1;}
+
+/* COOL — visor eyes */
+.expr-cool .m-eye-l,.expr-cool .m-eye-r{
+  background:linear-gradient(135deg,#1e1b4b,#312e81)!important;
+  border-radius:8px!important;
+  transform:scaleY(0.5) scaleX(1.12)!important;
+}
+.expr-cool .m-eye-hl,.expr-cool .m-eye-hl2{display:none;}
+
+/* ── MOUTH STATES ── */
+.expr-happy .m-mouth,
+.expr-excited .m-mouth,
+.expr-wink .m-mouth,
+.expr-surprised .m-mouth,
+.expr-cool .m-mouth{ opacity:1; }
+.expr-surprised .m-mouth::before{
+  border-bottom:none;border-radius:50%;
+  border:3px solid rgba(180,80,60,0.72);
+  background:rgba(100,30,10,0.18);
+}
+.expr-sad .m-mouth{opacity:1;}
+.expr-sad .m-mouth::before{
+  transform:scaleY(-1) translateY(100%);
+  border-bottom-color:rgba(150,80,60,0.65);
+}
+
+/* ── TEARS ── */
+.expr-sad .m-tear-l,.expr-sad .m-tear-r{opacity:1;animation:dropTear 1.2s ease-in infinite;}
+@keyframes dropTear{0%{opacity:0;transform:translateY(-2px)}25%{opacity:1}100%{opacity:0;transform:translateY(13px)}}
+
+/* ── BLUSH STATES ── */
+.expr-love   .m-blush-l,.expr-love   .m-blush-r{background:rgba(244,63,94,0.45)!important;}
+.expr-happy  .m-blush-l,.expr-happy  .m-blush-r{background:rgba(251,113,133,0.5)!important;}
+.expr-angry  .m-blush-l,.expr-angry  .m-blush-r{background:rgba(239,68,68,0.42)!important;}
+.expr-wink   .m-blush-l,.expr-wink   .m-blush-r{background:rgba(251,113,133,0.44)!important;}
+
+/* ══════════════════════════════════════════
+   PARTICLES
+   ══════════════════════════════════════════ */
+.fx-particle{
+  position:absolute;pointer-events:none;z-index:20;
+  line-height:1;transform-origin:center;
+  will-change:transform,opacity;
+}
+@keyframes fxFloat{
+  0%  {opacity:1;transform:translate(0,0) scale(1.25) rotate(0deg)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0) rotate(var(--tr))}
+}
+@keyframes fxSpin{
+  0%  {opacity:1;transform:translate(0,0) scale(1.3) rotate(0deg)}
+  50% {opacity:1;transform:translate(calc(var(--tx)*.45),calc(var(--ty)*.45)) scale(0.85) rotate(180deg)}
+  100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0) rotate(360deg)}
+}
+
+/* ══════════════════════════════════════════
+   UI
+   ══════════════════════════════════════════ */
+#ui-bar{
+  position:absolute;bottom:16px;left:0;right:0;
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  padding:0 14px;z-index:50;
+}
+.expr-btn{
+  width:40px;height:40px;border-radius:50%;
+  border:2px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color .18s,background .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.expr-btn.active{border-color:#fbbf24;background:rgba(251,191,36,0.18);}
+.expr-btn:active{transform:scale(0.88);}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="mochi-export">
+    <div id="m-scene">
+      <!-- ARMS (behind body) -->
+      <div class="m-arm-l" id="m-arm-l"></div>
+      <div class="m-arm-r" id="m-arm-r"></div>
+      <!-- LEGS -->
+      <div class="m-leg-l" id="m-leg-l"></div>
+      <div class="m-leg-r" id="m-leg-r"></div>
+      <!-- BODY -->
+      <div class="m-body" id="m-body"></div>
+      <!-- HEAD -->
+      <div class="m-head" id="m-head">
+        <div class="m-brow-l"></div>
+        <div class="m-brow-r"></div>
+        <div class="m-eye-l" id="m-eye-l">
+          <div class="m-eye-hl"></div><div class="m-eye-hl2"></div>
+        </div>
+        <div class="m-eye-r" id="m-eye-r">
+          <div class="m-eye-hl"></div><div class="m-eye-hl2"></div>
+        </div>
+        <div class="m-tear-l"></div>
+        <div class="m-tear-r"></div>
+        <div class="m-nose"></div>
+        <div class="m-blush-l"></div>
+        <div class="m-blush-r"></div>
+        <div class="m-mouth"></div>
+      </div>
+      <!-- EARS (above head) -->
+      <div class="m-ear-l" id="m-ear-l"><div class="m-ear-inner"></div></div>
+      <div class="m-ear-r" id="m-ear-r"><div class="m-ear-inner"></div></div>
+    </div>
+  </div>
+
+  <div id="ui-bar">
+    <button class="expr-btn active" data-e="">😶</button>
+    <button class="expr-btn" data-e="happy">😊</button>
+    <button class="expr-btn" data-e="love">💕</button>
+    <button class="expr-btn" data-e="sleepy">😴</button>
+    <button class="expr-btn" data-e="surprised">😮</button>
+    <button class="expr-btn" data-e="excited">🌟</button>
+    <button class="expr-btn" data-e="sad">😢</button>
+    <button class="expr-btn" data-e="angry">😤</button>
+    <button class="expr-btn" data-e="wink">😉</button>
+    <button class="expr-btn" data-e="dance">💃</button>
+    <button class="expr-btn" data-e="cool">😎</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════
+   SPRING PHYSICS
+   ══════════════════════════════════════════ */
+function Spring(target, k, d) {
+  this.value    = target === undefined ? 0 : target;
+  this.velocity = 0;
+  this.target   = this.value;
+  this.k        = k || 180;   // stiffness
+  this.d        = d || 22;    // damping
+}
+Spring.prototype.step = function(dt) {
+  if(dt > 0.05) dt = 0.05;
+  var f = -this.k * (this.value - this.target) - this.d * this.velocity;
+  this.velocity += f * dt;
+  this.value    += this.velocity * dt;
+};
+Spring.prototype.snap = function(v) {
+  this.value = v; this.target = v; this.velocity = 0;
+};
+
+/* ══════════════════════════════════════════
+   SCALE — fits character in container
+   ══════════════════════════════════════════ */
+var CHAR_H   = 102; // natural height px
+var SCENE_SCALE = 1;
+function calcScale() {
+  var box = document.getElementById('mochi-export');
+  var size = Math.min(box.offsetWidth, box.offsetHeight);
+  SCENE_SCALE = (size * 0.78) / CHAR_H;
+}
+
+/* ══════════════════════════════════════════
+   DOM REFS
+   ══════════════════════════════════════════ */
+var D = {
+  export: document.getElementById('mochi-export'),
+  scene:  document.getElementById('m-scene'),
+  head:   document.getElementById('m-head'),
+  earL:   document.getElementById('m-ear-l'),
+  earR:   document.getElementById('m-ear-r'),
+  armL:   document.getElementById('m-arm-l'),
+  armR:   document.getElementById('m-arm-r'),
+  legL:   document.getElementById('m-leg-l'),
+  legR:   document.getElementById('m-leg-r'),
+  eyeL:   document.getElementById('m-eye-l'),
+  eyeR:   document.getElementById('m-eye-r'),
+};
+
+/* ══════════════════════════════════════════
+   SPRINGS  (stiffness, damping)
+   Body = medium bounce
+   Ears/Arms = loose, lags behind
+   Head = slightly stiffer than body
+   Eyes = very snappy
+   ══════════════════════════════════════════ */
+var S = {
+  // Scene-level (whole body)
+  sy:    new Spring(0, 160, 18),   // translateY
+  ssx:   new Spring(1, 160, 18),   // scaleX
+  ssy:   new Spring(1, 160, 18),   // scaleY
+  srot:  new Spring(0, 160, 18),   // rotate
+
+  // Head
+  hsx:   new Spring(1, 220, 24),
+  hsy:   new Spring(1, 220, 24),
+  hrot:  new Spring(0, 220, 24),
+
+  // Ears — loose, secondary motion
+  elrot: new Spring(0,  72,  9),
+  errot: new Spring(0,  72,  9),
+
+  // Arms — swing naturally
+  alrot: new Spring(-20, 95, 11),
+  arrot: new Spring( 20, 95, 11),
+
+  // Legs
+  llrot: new Spring(0,  95, 11),
+  lrrot: new Spring(0,  95, 11),
+
+  // Eyes — fast blink
+  esy:   new Spring(1, 420, 36),
+};
+
+/* ══════════════════════════════════════════
+   STATE MACHINE
+   ══════════════════════════════════════════ */
+var state    = 'idle';
+var exprCls  = '';
+var t        = 0;
+var blinkT   = 0;
+var blinkNext= 3 + Math.random() * 2.5;
+var blinking = 0; // 0=open, 1=closing, 2=open again
+var blinkTm  = 0;
+
+// Click phase
+var clickPhase = -1;
+var clickTm    = 0;
+
+// Hover flag
+var hovered = false;
+
+/* ══════════════════════════════════════════
+   STATE DEFINITIONS
+   target: { sy, ssx, ssy, srot, hsx, hsy, hrot,
+             elrot, errot, alrot, arrot, llrot, lrrot }
+   ══════════════════════════════════════════ */
+var BASE = {
+  sy:0, ssx:1, ssy:1, srot:0,
+  hsx:1, hsy:1, hrot:0,
+  elrot:0, errot:0,
+  alrot:-20, arrot:20,
+  llrot:0, lrrot:0,
+};
+
+/* Apply a flat target object to springs */
+function applyTarget(obj) {
+  var keys = Object.keys(obj);
+  for(var i=0;i<keys.length;i++){
+    var k = keys[i];
+    if(S[k]) S[k].target = obj[k];
+  }
+}
+
+/* ══════════════════════════════════════════
+   RENDER LOOP
+   ══════════════════════════════════════════ */
+var lastTs = null;
+
+function tick(ts) {
+  requestAnimationFrame(tick);
+  var dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0.016;
+  lastTs = ts;
+  t += dt;
+
+  /* ── BREATHING (idle / hover only) ── */
+  if(state === 'idle' || state === 'hover') {
+    var br   = Math.sin(t * 1.15) * 2.8;        // ±2.8px vertical
+    var brsx = 1 + Math.sin(t * 1.15) * 0.009;  // very subtle width pulse
+    S.sy.target = br + (hovered ? -7 : 0);
+    S.ssx.target = brsx;
+    S.ssy.target = 1;
+    S.srot.target = hovered ? 0 : Math.sin(t * 0.55) * 0.6; // tiny body sway
+
+    /* Ear micro-sway */
+    S.elrot.target = Math.sin(t * 0.72 + 0.4) * 2.5 + (hovered ? -8 : 0);
+    S.errot.target = Math.sin(t * 0.72)        * 2.5 + (hovered ?  8 : 0);
+
+    /* Hover — arms lift slightly */
+    S.alrot.target = hovered ? -30 : -20;
+    S.arrot.target = hovered ?  30 :  20;
+
+    /* Head tilt = very subtle sine */
+    S.hrot.target  = Math.sin(t * 0.42) * 1.2;
+  }
+
+  /* ── CLICK PHASE ── */
+  if(clickPhase >= 0) {
+    clickTm += dt;
+    if(clickPhase === 0) {               // squash down
+      applyTarget({sy:5, ssx:1.22, ssy:0.8, hsx:1.1, hsy:0.88});
+      if(clickTm > 0.07) { clickPhase=1; clickTm=0; }
+    } else if(clickPhase === 1) {        // pop up + arms fly
+      applyTarget({sy:-24, ssx:0.86, ssy:1.18, hsx:0.94, hsy:1.08,
+                   elrot:-22, errot:22, alrot:-85, arrot:85});
+      if(clickTm > 0.28) { clickPhase=2; clickTm=0; }
+    } else if(clickPhase === 2) {        // settle
+      applyTarget(BASE);
+      var settled = Math.abs(S.sy.value) < 0.5 && Math.abs(S.sy.velocity) < 0.5;
+      if(clickTm > 0.5 && settled) { clickPhase=-1; state='idle'; }
+    }
+  }
+
+  /* ── LOOPING EXPRESSION STATES ── */
+  if(state === 'happy') {
+    var p = t * Math.PI * 2 / 0.46;
+    S.sy.target    = Math.sin(p) > 0 ? -20 : 0;
+    S.ssx.target   = Math.sin(p) > 0 ? 0.87 : 1.22;
+    S.ssy.target   = Math.sin(p) > 0 ? 1.16 : 0.82;
+    S.elrot.target = Math.sin(p + 0.6) * 22;
+    S.errot.target = Math.sin(p)       * 22;
+    S.alrot.target = -50 - Math.abs(Math.sin(p)) * 32;
+    S.arrot.target =  50 + Math.abs(Math.sin(p)) * 32;
+    S.hrot.target  = Math.sin(p * 0.5) * 4;
+  }
+
+  if(state === 'love') {
+    var lp = t * Math.PI * 2 / 1.1;
+    S.sy.target   = Math.sin(lp) * -10;
+    S.ssx.target  = 1 + Math.sin(lp * 2) * 0.04;
+    S.ssy.target  = 1;
+    S.srot.target = Math.sin(lp) * -3;
+    S.elrot.target = Math.sin(lp) * -5  - 3;
+    S.errot.target = Math.sin(lp) *  5  + 3;
+    S.alrot.target = 30 + Math.sin(lp) * 10;
+    S.arrot.target = -30 + Math.sin(lp) * 10;
+  }
+
+  if(state === 'sleepy') {
+    var zp = t * Math.PI * 2 / 2.4;
+    S.sy.target   = Math.sin(zp) * 4;
+    S.srot.target = Math.sin(zp) * -3.5;
+    S.elrot.target = Math.sin(zp) * -8 - 4;
+    S.errot.target = Math.sin(zp) *  8 + 4;
+    S.alrot.target = -10 + Math.sin(zp) * 5;
+    S.arrot.target =  10 + Math.sin(zp) * 5;
+  }
+
+  if(state === 'surprised') {
+    var sp = t * Math.PI * 2 / 0.24;
+    S.sy.target   = Math.sin(sp) > 0 ? -8  : 2;
+    S.ssx.target  = Math.sin(sp) > 0 ? 0.88 : 1.14;
+    S.ssy.target  = Math.sin(sp) > 0 ? 1.2  : 0.86;
+    S.elrot.target = Math.sin(sp) > 0 ? 0 : 0;
+    S.errot.target = S.elrot.target;
+    S.alrot.target = Math.sin(sp) > 0 ? -95 : -15;
+    S.arrot.target = Math.sin(sp) > 0 ?  95 :  15;
+  }
+
+  if(state === 'excited') {
+    var ep = t * Math.PI * 2 / 0.33;
+    S.sy.target   = Math.sin(ep) > 0 ? -26 : 0;
+    S.ssx.target  = Math.sin(ep) > 0 ? 0.83 : 1.28;
+    S.ssy.target  = Math.sin(ep) > 0 ? 1.2  : 0.78;
+    S.elrot.target = Math.sin(ep + 0.3) * 26;
+    S.errot.target = -Math.sin(ep + 0.3) * 26;
+    S.alrot.target = Math.sin(ep) > 0 ? -105 : -18;
+    S.arrot.target = Math.sin(ep) > 0 ?  105 :  18;
+    S.hrot.target  = Math.sin(ep * 0.5) * 5;
+  }
+
+  if(state === 'sad') {
+    var sdp = t * Math.PI * 2 / 1.8;
+    S.sy.target   = Math.sin(sdp) * 4 + 4;
+    S.srot.target = Math.sin(sdp) * -3;
+    S.elrot.target = 14 + Math.sin(sdp) * 3;
+    S.errot.target = -(14 + Math.sin(sdp) * 3);
+    S.alrot.target = 5  + Math.sin(sdp) * 4;
+    S.arrot.target = -5 + Math.sin(sdp) * 4;
+    S.hrot.target  = Math.sin(sdp) * -2;
+  }
+
+  if(state === 'angry') {
+    var agT = t * Math.PI * 2 / 0.09;
+    S.sy.target    = 0;
+    S.ssx.target   = 1 + Math.sin(agT) * 0.03;
+    S.srot.target  = Math.sin(agT) * 1.5;
+    S.elrot.target = Math.sin(agT) *  6 - 3;
+    S.errot.target = Math.sin(agT) * -6 + 3;
+    S.alrot.target = -25 + Math.sin(agT) * 5;
+    S.arrot.target =  25 + Math.sin(agT) * 5;
+  }
+
+  if(state === 'wink') {
+    var wp = t * Math.PI * 2 / 0.72;
+    S.sy.target   = Math.sin(wp) * -12;
+    S.srot.target = Math.sin(wp) * -9;
+    S.elrot.target = Math.sin(wp) *  8;
+    S.errot.target = Math.sin(wp) * -18;
+    S.alrot.target = -25;
+    S.arrot.target = Math.sin(wp) > 0 ? -55 : 25;
+  }
+
+  if(state === 'dance') {
+    var dp = t * Math.PI * 2 / 0.6;
+    S.sy.target   = Math.abs(Math.sin(dp)) * -10;
+    S.ssx.target  = 1 - Math.abs(Math.sin(dp)) * 0.05;
+    S.srot.target = Math.sin(dp) * -8;
+    S.elrot.target = Math.sin(dp) * -14;
+    S.errot.target = Math.sin(dp) *  14;
+    S.alrot.target = Math.sin(dp) * -80 - 10;
+    S.arrot.target = Math.sin(dp + Math.PI) * 80 + 10;
+    S.llrot.target = Math.sin(dp) * -12;
+    S.lrrot.target = Math.sin(dp + Math.PI) * 12;
+  }
+
+  if(state === 'cool') {
+    var cp = t * Math.PI * 2 / 1.4;
+    S.sy.target   = Math.sin(cp) * -6;
+    S.srot.target = Math.sin(cp) * -2;
+    S.elrot.target = Math.sin(cp) * 4;
+    S.errot.target = Math.sin(cp) * 4;
+    S.arrot.target = Math.sin(cp) > 0 ? -55 : 20;
+  }
+
+  /* ── BLINK ── */
+  blinkT += dt;
+  if(state !== 'sleepy' && state !== 'love' && state !== 'angry' && state !== 'cool' && state !== 'excited') {
+    if(blinking === 0 && blinkT > blinkNext) {
+      blinking = 1; blinkTm = 0;
+    }
+    if(blinking === 1) {
+      blinkTm += dt;
+      S.esy.target = 0.06;
+      if(blinkTm > 0.07) { blinking = 2; blinkTm = 0; }
+    } else if(blinking === 2) {
+      blinkTm += dt;
+      S.esy.target = 1;
+      if(blinkTm > 0.08) {
+        blinking = 0; blinkT = 0;
+        blinkNext = 3 + Math.random() * 3;
+      }
+    }
+  } else {
+    S.esy.snap(1);
+  }
+
+  /* ── STEP ALL SPRINGS ── */
+  S.sy.step(dt);  S.ssx.step(dt); S.ssy.step(dt); S.srot.step(dt);
+  S.hsx.step(dt); S.hsy.step(dt); S.hrot.step(dt);
+  S.elrot.step(dt); S.errot.step(dt);
+  S.alrot.step(dt); S.arrot.step(dt);
+  S.llrot.step(dt); S.lrrot.step(dt);
+  S.esy.step(dt);
+
+  /* ── APPLY TRANSFORMS ── */
+  var sc = SCENE_SCALE;
+  D.scene.style.transform =
+    'scale('+sc+') translateY('+S.sy.value.toFixed(2)+'px)'
+    +' scaleX('+S.ssx.value.toFixed(4)+')'
+    +' scaleY('+S.ssy.value.toFixed(4)+')'
+    +' rotate('+S.srot.value.toFixed(2)+'deg)';
+
+  D.head.style.transform =
+    'translateX(-50%)'
+    +' scaleX('+S.hsx.value.toFixed(4)+')'
+    +' scaleY('+S.hsy.value.toFixed(4)+')'
+    +' rotate('+S.hrot.value.toFixed(2)+'deg)';
+
+  D.earL.style.transform = 'rotate('+S.elrot.value.toFixed(2)+'deg)';
+  D.earR.style.transform = 'rotate('+S.errot.value.toFixed(2)+'deg)';
+  D.armL.style.transform = 'rotate('+S.alrot.value.toFixed(2)+'deg)';
+  D.armR.style.transform = 'rotate('+S.arrot.value.toFixed(2)+'deg)';
+  D.legL.style.transform = 'rotate('+S.llrot.value.toFixed(2)+'deg)';
+  D.legR.style.transform = 'rotate('+S.lrrot.value.toFixed(2)+'deg)';
+
+  var bsy = S.esy.value.toFixed(4);
+  D.eyeL.style.transform = 'scaleY('+bsy+')';
+  D.eyeR.style.transform = 'scaleY('+bsy+')';
+}
+
+/* ══════════════════════════════════════════
+   SET EXPRESSION
+   ══════════════════════════════════════════ */
+var ALL_EXPRS = ['happy','love','sleepy','surprised','excited','sad','angry','wink','dance','cool'];
+var exportEl  = document.getElementById('mochi-export');
+
+function setExpressionInternal(e) {
+  exprCls = e;
+  state   = e || 'idle';
+  // Reset springs toward base
+  applyTarget(BASE);
+  // Remove / add CSS class
+  ALL_EXPRS.forEach(function(x){ exportEl.classList.remove('expr-'+x); });
+  if(e) exportEl.classList.add('expr-'+e);
+  // Buttons
+  document.querySelectorAll('.expr-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.e === e);
+  });
+  // Particles
+  startParticles(e);
+  // Reset leg targets
+  S.llrot.target = 0; S.lrrot.target = 0;
+}
+
+window.setExpression = setExpressionInternal; // for Playwright
+
+/* ══════════════════════════════════════════
+   PARTICLES
+   ══════════════════════════════════════════ */
+var FX = {
+  happy:    {s:[['⭐','🌟','✨'],['💫','★','✦']],   n:8,  life:820,  spread:130, anim:'fxSpin'},
+  love:     {s:[['❤️','💕','💖'],['💗','🩷','❤️']], n:6,  life:1400, spread:100, dy:-95, anim:'fxFloat'},
+  excited:  {s:[['🌟','⚡','💥'],['✨','✦','🌟']],   n:10, life:660,  spread:148, anim:'fxSpin'},
+  surprised:{s:[['💥','⚡','❕'],['‼️','✦','💥']],   n:7,  life:520,  spread:105, anim:'fxSpin'},
+  angry:    {s:[['💢','🔥','💢'],['❗','💥','🔥']],  n:7,  life:720,  spread:92,  anim:'fxFloat'},
+  sad:      {s:[['💧','💧','💧'],['😢','💧','🌧']],  n:5,  life:1600, spread:54,  dy:88, anim:'fxFloat'},
+  sleepy:   {s:[['💤','💤','z'],  ['z','💤','z']],   n:3,  life:2000, spread:44,  dy:-105, anim:'fxFloat'},
+  wink:     {s:[['✨','💫','⭐'],['✦','💫','✨']],   n:6,  life:920,  spread:112, anim:'fxSpin'},
+  dance:    {s:[['🎵','🎶','✨'],['💃','🎵','⭐']],   n:7,  life:920,  spread:125, anim:'fxSpin'},
+  cool:     {s:[['😎','✦','💫'],['⭐','✨','💜']],   n:5,  life:1000, spread:100, anim:'fxSpin'},
+};
+
+var _pInt = null, _pSet = 0;
+function startParticles(e) {
+  clearInterval(_pInt); _pSet = 0;
+  document.querySelectorAll('.fx-particle').forEach(function(p){p.remove();});
+  var cfg = FX[e]; if(!cfg) return;
+  function spawn(){
+    var box = document.getElementById('mochi-export');
+    var cx = box.offsetWidth/2, cy = box.offsetHeight * 0.5;
+    var chars = cfg.s[_pSet % cfg.s.length]; _pSet++;
+    for(var i=0;i<cfg.n;i++){
+      (function(idx){
+        setTimeout(function(){
+          var p = document.createElement('div'); p.className='fx-particle';
+          p.textContent = chars[Math.floor(Math.random()*chars.length)];
+          var ang = (idx/cfg.n)*Math.PI*2 + Math.random()*0.55;
+          var sr = 18+Math.random()*32, em = 0.6+Math.random()*0.75;
+          var sx = cx+Math.cos(ang)*sr, sy = cy+Math.sin(ang)*sr, tx, ty;
+          if(cfg.dy!==undefined){ tx=(Math.random()-.5)*cfg.spread*.65; ty=-(cfg.dy*(.45+Math.random()*.7)); }
+          else{ tx=Math.cos(ang)*cfg.spread*em; ty=Math.sin(ang)*cfg.spread*em-28; }
+          p.style.cssText='left:'+sx+'px;top:'+sy+'px;font-size:'+(15+Math.random()*16)+'px;';
+          p.style.setProperty('--tx',tx+'px'); p.style.setProperty('--ty',ty+'px');
+          p.style.setProperty('--tr',(Math.random()*290-145)+'deg');
+          p.style.animation=(cfg.anim||'fxFloat')+' '+cfg.life+'ms ease-out forwards';
+          box.appendChild(p);
+          setTimeout(function(){if(p.parentNode)p.remove();},cfg.life+160);
+        },idx*52);
+      })(i);
+    }
+  }
+  spawn(); _pInt = setInterval(spawn, cfg.life*.6);
+}
+
+/* ══════════════════════════════════════════
+   EVENTS
+   ══════════════════════════════════════════ */
+exportEl.addEventListener('mouseenter', function(){
+  hovered = true;
+  if(state==='idle') state='hover';
+});
+exportEl.addEventListener('mouseleave', function(){
+  hovered = false;
+  if(state==='hover') state='idle';
+});
+
+exportEl.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  if(clickPhase >= 0) return;
+  clickPhase = 0; clickTm = 0;
+  // Cycle expression on click
+  var next = ALL_EXPRS[Math.floor(Math.random() * ALL_EXPRS.length)];
+  if(next === exprCls) next = ALL_EXPRS[(ALL_EXPRS.indexOf(next)+1) % ALL_EXPRS.length];
+  setExpressionInternal(next);
+  startParticles(next);
+});
+
+document.querySelectorAll('.expr-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    setExpressionInternal(btn.dataset.e);
+    if(clickPhase < 0){ clickPhase=0; clickTm=0; }
+  });
+});
+
+/* ══════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════ */
+calcScale();
+window.addEventListener('resize', calcScale);
+
+// Kick off idle
+applyTarget(BASE);
+
+// Snap springs to initial values
+S.sy.snap(0); S.ssx.snap(1); S.ssy.snap(1); S.srot.snap(0);
+S.hsx.snap(1); S.hsy.snap(1); S.hrot.snap(0);
+S.elrot.snap(0); S.errot.snap(0);
+S.alrot.snap(-20); S.arrot.snap(20);
+S.llrot.snap(0); S.lrrot.snap(0);
+S.esy.snap(1);
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

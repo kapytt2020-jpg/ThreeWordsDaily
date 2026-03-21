@@ -31,6 +31,7 @@ from telegram import (
     BotCommand,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    LabeledPrice,
     Poll,
     Update,
 )
@@ -43,6 +44,7 @@ from telegram.ext import (
     CommandHandler,
     ContextTypes,
     MessageHandler,
+    PreCheckoutQueryHandler,
     filters,
 )
 
@@ -1732,7 +1734,11 @@ def _register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("save",    cmd_save))
     app.add_handler(CommandHandler("review",  cmd_review))
     app.add_handler(CommandHandler("mywords", cmd_mywords))
-    app.add_handler(CommandHandler("invite",  cmd_invite))
+    app.add_handler(CommandHandler("invite",    cmd_invite))
+    app.add_handler(CommandHandler("subscribe", cmd_subscribe))
+    app.add_handler(CommandHandler("premium",   cmd_subscribe))
+    app.add_handler(PreCheckoutQueryHandler(cb_pre_checkout))
+    app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, cb_successful_payment))
 
     # Callback queries — specific patterns before catch-all
     app.add_handler(CallbackQueryHandler(cb_level_select,  pattern=r"^level_"))
@@ -1749,6 +1755,68 @@ def _register_handlers(app: Application) -> None:
 
     # Text messages
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
+
+
+# ===== PREMIUM / TELEGRAM STARS =====
+
+PREMIUM_STARS = 75          # 75 Stars ≈ $1.50/month
+PREMIUM_CHARS = {"vex", "seraph"}   # locked behind premium
+API_BASE = "http://localhost:8000"
+PREMIUM_SECRET = os.getenv("PREMIUM_SECRET", "twd_premium_secret_2026")
+
+
+async def cmd_subscribe(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send Telegram Stars invoice for Premium subscription."""
+    await update.message.reply_invoice(
+        title="⭐ ThreeWords Premium — 30 днів",
+        description=(
+            "🔓 Персонажі Vex і Seraph\n"
+            "⚡ Подвійний XP на всі уроки\n"
+            "🏆 Іконка Premium у Leaderboard\n"
+            "📊 Персональна AI-аналітика прогресу"
+        ),
+        payload="premium_30d",
+        currency="XTR",            # Telegram Stars
+        prices=[LabeledPrice("Premium 30 днів", PREMIUM_STARS)],
+        photo_url="https://threewords-app.vercel.app/icon-192.png",
+        photo_width=192,
+        photo_height=192,
+    )
+
+
+async def cb_pre_checkout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Approve all Stars payments."""
+    await update.pre_checkout_query.answer(ok=True)
+
+
+async def cb_successful_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Activate premium after Stars payment."""
+    payment = update.message.successful_payment
+    tg_id = update.effective_user.id
+    stars = payment.total_amount  # in Stars (XTR has no subunits)
+
+    # Notify our local API to activate premium in DB
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{API_BASE}/api/premium/activate",
+                json={"tg_id": tg_id, "stars": stars, "secret": PREMIUM_SECRET},
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                result = await resp.json()
+                expires = result.get("premium_expires", "?")
+    except Exception:
+        expires = "~30 днів"
+
+    await update.message.reply_text(
+        f"🎉 *Дякуємо! Premium активовано!*\n\n"
+        f"⭐ Сплачено: {stars} Stars\n"
+        f"📅 Діє до: {expires}\n\n"
+        f"🔓 Vex та Seraph тепер доступні у міні-апп!\n"
+        f"⚡ Подвійний XP на всі уроки!\n\n"
+        f"Відкрий гру: /app",
+        parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 def _register_jobs(app: Application) -> None:

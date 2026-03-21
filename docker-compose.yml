@@ -1,0 +1,117 @@
+version: "3.9"
+
+# ThreeWordsDaily — all services in Docker
+# Deploy on any Linux VPS: docker compose up -d
+
+services:
+
+  miniapp:
+    build:
+      context: ./miniapp
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/data
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PREMIUM_SECRET=${PREMIUM_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  learning_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python learning_bot.py
+    volumes:
+      - db_data:/app/data
+    environment:
+      - LEARNING_BOT_TOKEN=${LEARNING_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+      - PREMIUM_SECRET=${PREMIUM_SECRET}
+    depends_on:
+      - miniapp
+
+  teacher_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python teacher_bot.py
+    environment:
+      - TEACHER_BOT_TOKEN=${TEACHER_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+
+  content_publisher:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python content_publisher.py
+    volumes:
+      - db_data:/app/data
+    environment:
+      - CONTENT_BOT_TOKEN=${CONTENT_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+
+  analyst_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python analyst_bot.py
+    volumes:
+      - db_data:/app/data
+    environment:
+      - ANALYST_BOT_TOKEN=${ANALYST_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+
+  marketer_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python marketer_bot.py
+    volumes:
+      - db_data:/app/data
+    environment:
+      - MARKETER_BOT_TOKEN=${MARKETER_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+
+  speak_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: python speak_bot.py
+    environment:
+      - SPEAK_BOT_TOKEN=${SPEAK_BOT_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+
+  watchdog:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    restart: unless-stopped
+    command: >
+      sh -c "while true; do python watchdog.py; sleep 300; done"
+    environment:
+      - ANALYST_BOT_TOKEN=${ANALYST_BOT_TOKEN}
+      - ADMIN_CHAT_ID=${ADMIN_CHAT_ID}
+
+volumes:
+  db_data:
+    driver: local

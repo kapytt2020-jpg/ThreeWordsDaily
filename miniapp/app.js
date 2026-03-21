@@ -325,6 +325,8 @@ const state = {
   leaderXP: 0,            // cached from leaderboard
   companionName: null,
   activeSkin: 'base',
+  isPremium: false,
+  premiumExpires: null,
 };
 
 // ===== LOCAL STORAGE =====
@@ -444,14 +446,34 @@ async function initUser() {
     if (result.words_learned && result.words_learned.length > state.wordsLearned.length) {
       state.wordsLearned = result.words_learned;
     }
-    // Restore pet from server (server is source of truth)
-    if (result.pet_character && !state.petCharacter) {
+    // Server is always source of truth for pet — overwrites localStorage
+    if (result.pet_character) {
       state.petCharacter = result.pet_character;
+      // keep archetype in sync for legacy code
+      const charArchMap = {
+        lumix:'spirit', mist:'spirit', nova:'spirit', marco:'buddy',
+        byte:'buddy', biscuit:'buddy', apex:'buddy', astro:'buddy',
+        kitsune:'beast', mochi:'beast', ember:'beast', bruno:'beast',
+        crash:'beast', luna:'beast', rex:'beast', ronin:'beast', bolt:'beast',
+        sunny:'spirit', kaito:'spirit', yuki:'spirit',
+        vex:'beast', seraph:'spirit',
+      };
+      state.petArchetype = charArchMap[result.pet_character] || state.petArchetype || 'spirit';
       saveLocal();
     }
-    if (result.pet_name && !state.companionName) {
+    if (result.pet_name) {
       state.companionName = result.pet_name;
       saveLocal();
+    }
+    state.isPremium = !!result.is_premium;
+    state.premiumExpires = result.premium_expires || null;
+    // Restore pet stage from server XP (don't let it go backwards)
+    if (result.xp > 0) {
+      const serverStage = computeLexiStage();
+      if (serverStage > state.lexiStage) {
+        state.lexiStage = serverStage;
+        saveLocal();
+      }
     }
   }
 }
@@ -586,36 +608,41 @@ function onCompanionTap() {
 
 // ===== IDLE BEHAVIOR SYSTEM (Crash-style CSS class cycling) =====
 const BEHAVIORS = [
-  { cls:'idle-look',    dur:2200 },
-  { cls:'idle-stretch', dur:2000 },
-  { cls:'idle-bounce',  dur:2000 },
-  { cls:'idle-proud',   dur:2200 },
-  { cls:'idle-wobble',  dur:1800 },
-  { cls:'idle-glance',  dur:2400 },
-  { cls:'idle-shake',   dur:1600 },
+  { cls:'idle-look',    dur:2400 },
+  { cls:'idle-stretch', dur:2200 },
+  { cls:'idle-bounce',  dur:1700 },
+  { cls:'idle-proud',   dur:2400 },
+  { cls:'idle-wobble',  dur:2000 },
+  { cls:'idle-glance',  dur:2800 },
+  { cls:'idle-shake',   dur:1800 },
 ];
 const COMBAT_BEHAVIORS = [
-  { cls:'idle-surge',   dur:2000 },
-  { cls:'idle-intim',   dur:2500 },
-  { cls:'idle-look',    dur:2200 },
-  { cls:'idle-wobble',  dur:1800 },
+  { cls:'idle-surge',   dur:2200 },
+  { cls:'idle-intim',   dur:2800 },
+  { cls:'idle-look',    dur:2400 },
+  { cls:'idle-wobble',  dur:2000 },
 ];
 var _cssIdleGen = 0;
 
 function runCycle(el, seq, offset) {
   var myGen = ++_cssIdleGen;
-  var i = (offset || 0) % seq.length;
   var current = '';
+  var lastIdx = -1;
   function tick() {
-    if (_cssIdleGen !== myGen) return; // cancelled by stopIdleAnimation
+    if (_cssIdleGen !== myGen) return;
     if (current) el.classList.remove(current);
-    var s = seq[i];
+    // Pick random animation, avoid repeating same twice in a row
+    var idx;
+    do { idx = Math.floor(Math.random() * seq.length); } while (idx === lastIdx && seq.length > 1);
+    lastIdx = idx;
+    var s = seq[idx];
     current = s.cls;
     el.classList.add(s.cls);
-    i = (i + 1) % seq.length;
-    setTimeout(tick, s.dur + 400);
+    // Gap: 120–280ms between animations — always alive, never static
+    var gap = 120 + Math.floor(Math.random() * 160);
+    setTimeout(tick, s.dur + gap);
   }
-  setTimeout(tick, (offset || 0) * 700);
+  setTimeout(tick, offset ? (offset * 500) : 0);
 }
 
 // ===== IDLE ANIMATION LOOP =====
@@ -2853,10 +2880,18 @@ function renderArchetypeSelect() {
     astro: buildAstroHTML, kaito: buildKaitoHTML, yuki: buildYukiHTML,
     vex: buildVexHTML, seraph: buildSeraphHTML,
   };
+  const PREMIUM_CHARS = ['vex', 'seraph'];
   const charHTML = CHARACTERS.map(function(c) {
     const artHTML = charArtBuilders[c.id] ? charArtBuilders[c.id](1) : '<span style="font-size:28px">' + c.icon + '</span>';
-    return '<button class="char-pick-btn" onclick="selectCharacter(\'' + c.id + '\')" style="border-color:' + c.color + '22">' +
+    const isPremChar = PREMIUM_CHARS.indexOf(c.id) >= 0;
+    const locked = isPremChar && !state.isPremium;
+    const lockBadge = locked ? '<span class="char-lock-badge">⭐ Premium</span>' : '';
+    const clickFn = locked
+      ? 'showPremiumOffer()'
+      : 'selectCharacter(\'' + c.id + '\')';
+    return '<button class="char-pick-btn' + (locked ? ' char-locked' : '') + '" onclick="' + clickFn + '" style="border-color:' + c.color + '22">' +
       '<div class="char-pick-art">' + artHTML + '</div>' +
+      lockBadge +
       '<span class="char-pick-name">' + c.name + '</span>' +
       '<span class="char-pick-desc">' + c.desc + '</span>' +
     '</button>';
@@ -2864,16 +2899,47 @@ function renderArchetypeSelect() {
 
   document.getElementById('main').innerHTML =
     '<div class="onboarding-screen fade-in">' +
-      '<div style="font-size:48px;margin-bottom:8px">🥚</div>' +
-      '<div class="onb-title">Обери компаньйона!</div>' +
-      '<div class="onb-sub">Він буде рости разом з тобою</div>' +
+      '<div style="font-size:14px;color:rgba(255,255,255,0.45);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">ThreeWords Daily</div>' +
+      '<div class="onb-title" style="margin-bottom:4px">Обери компаньйона</div>' +
+      '<div class="onb-sub" style="margin-bottom:20px">Він буде рости разом з тобою 🌱</div>' +
       '<div class="char-pick-grid">' + charHTML + '</div>' +
+      '<div style="margin-top:16px;font-size:11px;color:rgba(255,255,255,0.25);text-align:center">⭐ = Premium персонаж</div>' +
     '</div>';
+}
+
+function showPremiumOffer() {
+  const overlay = document.createElement('div');
+  overlay.className = 'premium-overlay';
+  overlay.innerHTML =
+    '<div class="premium-modal">' +
+      '<div class="premium-modal-icon">⭐</div>' +
+      '<div class="premium-modal-title">ThreeWords Premium</div>' +
+      '<div class="premium-modal-list">' +
+        '<div class="pm-row">🔓 Персонажі Vex та Seraph</div>' +
+        '<div class="pm-row">⚡ Подвійний XP на уроки</div>' +
+        '<div class="pm-row">🏆 Premium-іконка в Leaderboard</div>' +
+        '<div class="pm-row">📊 AI-аналітика прогресу</div>' +
+      '</div>' +
+      '<div class="premium-modal-price">75 ⭐ / місяць (~$1.50)</div>' +
+      '<button class="premium-modal-btn" onclick="openTelegramSubscribe()">Отримати Premium в Telegram</button>' +
+      '<button class="premium-modal-close" onclick="this.closest(\'.premium-overlay\').remove()">Закрити</button>' +
+    '</div>';
+  document.body.appendChild(overlay);
+}
+
+function openTelegramSubscribe() {
+  if (tg) {
+    tg.openTelegramLink('https://t.me/' + (tg.initDataUnsafe?.bot_username || 'YourBot_prod_bot') + '?start=subscribe');
+  }
 }
 
 function selectCharacter(charId) {
   const char = CHARACTERS.find(function(c) { return c.id === charId; });
   if (!char) return;
+  // Guard premium chars
+  if (['vex','seraph'].indexOf(charId) >= 0 && !state.isPremium) {
+    showPremiumOffer(); return;
+  }
   state.petCharacter = charId;
   state.petArchetype = char.archetype;  // keep legacy compat
   saveLocal();
@@ -3045,10 +3111,10 @@ async function init() {
   loadLocal();
   updateHeader();
 
-  // Show egg hatch + character onboarding for first-time users
+  // First-time users: show character picker immediately
   if (!state.petCharacter && !state.petArchetype) {
-    initUser();  // init in background
-    renderEggHatch();
+    initUser();  // init in background (no await — don't block UI)
+    renderArchetypeSelect();
     return;
   }
   // Ensure petArchetype is set for legacy compatibility
