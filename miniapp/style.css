@@ -4443,3 +4443,29 @@ main#main {
   color: #7bc8ff;
   font-weight: 600;
 }
+
+/* AdsGram rewarded ad button */
+.ad-reward-block {
+  margin: 0 0 12px 0;
+}
+.btn-ad-reward {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #ff6b35, #f7931e);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 16px rgba(255,107,53,0.35);
+  transition: opacity .2s;
+}
+.btn-ad-reward:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

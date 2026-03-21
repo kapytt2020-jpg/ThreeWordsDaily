@@ -24,6 +24,58 @@ const API = (location.hostname === 'localhost' || location.hostname === '127.0.0
   ? 'http://localhost:8000'
   : 'https://threewords-app.vercel.app';
 
+// ===== ADSGRAM REWARDED VIDEO =====
+// blockId: register at https://adsgram.ai to get your block ID
+const ADSGRAM_BLOCK_ID = 'YOUR_ADSGRAM_BLOCK_ID';
+let adsgramController = null;
+
+async function initAdsgram() {
+  try {
+    if (window.Adsgram && ADSGRAM_BLOCK_ID !== 'YOUR_ADSGRAM_BLOCK_ID') {
+      adsgramController = window.Adsgram.init({ blockId: ADSGRAM_BLOCK_ID });
+    }
+  } catch (e) { /* AdsGram not loaded yet */ }
+}
+
+async function watchRewardedAd() {
+  const btn = document.getElementById('adRewardBtn');
+  // Check daily limit via localStorage
+  const today = new Date().toISOString().slice(0, 10);
+  const lastAdDay = localStorage.getItem('lastAdDay');
+  if (lastAdDay === today) {
+    showToast('Реклама вже переглянута сьогодні ✅', 'success');
+    return;
+  }
+  if (!adsgramController) {
+    await initAdsgram();
+    if (!adsgramController) {
+      showToast('Реклама недоступна зараз', 'error');
+      return;
+    }
+  }
+  if (btn) btn.disabled = true;
+  try {
+    await adsgramController.show();
+    // Ad watched successfully — reward +15 XP
+    localStorage.setItem('lastAdDay', today);
+    const tgId = state.user?.tg_id;
+    if (tgId) {
+      await apiCall('/api/progress', {
+        method: 'POST',
+        body: JSON.stringify({ tg_id: tgId, xp_earned: 15, hp_change: 0, lesson_done: false }),
+      }, null);
+      state.xp = (state.xp || 0) + 15;
+    }
+    haptic('success');
+    showToast('+15 XP за перегляд реклами! 📺', 'success');
+    if (btn) { btn.textContent = '✅ Переглянуто сьогодні'; btn.disabled = true; }
+  } catch (e) {
+    // User skipped or error
+    if (btn) btn.disabled = false;
+    if (e && e.done === false) showToast('Реклама пропущена', 'error');
+  }
+}
+
 // ===== PET ARCHETYPES =====
 const PET_ARCHETYPES = {
   spirit: {
@@ -2166,8 +2218,16 @@ function renderGames() {
       '</div>'
     : '';
 
+  const adBtn = '<div class="ad-reward-block">' +
+    '<button class="btn-ad-reward" onclick="watchRewardedAd()" id="adRewardBtn">' +
+      '📺 Дивись рекламу → +15 XP' +
+    '</button>' +
+    '<div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">1 раз на день безкоштовно</div>' +
+  '</div>';
+
   document.getElementById('main').innerHTML =
     '<div class="section-title">🎮 Ігри</div>' +
+    adBtn +
     '<div class="games-grid">' + cardsHTML + '</div>' +
     unlockHTML;
 }
@@ -3293,6 +3353,7 @@ async function init() {
     }
     updateHeader();
     checkDailyBonus();
+    initAdsgram();
   });
 
   setTimeout(async function() {
