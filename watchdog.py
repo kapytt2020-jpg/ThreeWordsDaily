@@ -37,6 +37,7 @@ SERVICES = {
     "marketer_bot":      ("com.threewordsdaily.marketer",    "marketer_bot.py"),
     "speak_bot":         ("com.threewordsdaily.speak",       "speak_bot.py"),
     "miniapp":           ("com.threewordsdaily.miniapp.v2",  "uvicorn"),
+    "scout":             ("com.threewordsdaily.scout",       "scout_bot.py"),
 }
 
 

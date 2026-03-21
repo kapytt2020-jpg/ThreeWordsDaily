@@ -564,23 +564,41 @@ async def _handle_referral(
 # ---------------------------------------------------------------------------
 
 async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    miniapp_url = os.getenv("MINIAPP_URL", "https://threewords-app.vercel.app")
     await update.message.reply_html(
-        "📚 <b>Команди бота</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        "/start — онбординг, вибір рівня\n"
-        "/word — слово дня для твого рівня (+15 XP)\n"
-        "/quiz — тест з останніх слів (+10 XP за правильну)\n"
-        "/lessons — повний урок: 3 слова + idiom + story (+20 XP)\n"
-        "/stats — XP, серія, рівень, слів вивчено, ранг\n"
-        "/profile — повний профіль з XP-баром і значками\n"
-        "/top — топ-10 гравців за XP\n"
-        "/save [слово] — зберегти слово у словник (+5 XP)\n"
-        "/review — повторити 5 останніх збережених слів\n"
-        "/mywords — список збережених слів (з пагінацією)\n"
-        "/invite — реферальне посилання\n"
-        "❄️ /freeze — Купити заморозку стріку (15 ⭐)\n"
-        "/help — цей список\n\n"
-        "💬 Напиши будь-яке слово англійською — поясню!"
+        "📚 <b>ThreeWordsDaily — всі команди</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "🎮 <b>Навчання</b>\n"
+        "/lessons — урок дня: 3 слова + idiom + story <i>(+20 XP)</i>\n"
+        "/word — слово дня <i>(+15 XP)</i>\n"
+        "/quiz — тест з вивчених слів <i>(+10 XP)</i>\n"
+        "/review — повторити збережені слова <i>(+10 XP)</i>\n"
+        "/save <i>[слово]</i> — зберегти у словник <i>(+5 XP)</i>\n"
+        "/mywords — мій словник\n\n"
+        "📊 <b>Прогрес</b>\n"
+        "/stats — XP, серія, рівень\n"
+        "/profile — профіль + бейджі\n"
+        "/top — топ-10 гравців\n\n"
+        "👥 <b>Соціальне</b>\n"
+        "/invite — запросити друга <i>(ти + друг = +100 XP)</i>\n\n"
+        "⭐ <b>Premium</b>\n"
+        "/subscribe — Premium 30 днів <i>(75 Stars)</i>\n"
+        "/freeze — заморозка стріку <i>(15 Stars)</i>\n\n"
+        "💬 <i>Напиши будь-яке слово англійською — поясню!</i>",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🐾 Відкрити міні-апп", web_app={"url": miniapp_url})
+        ]])
+    )
+
+
+async def cmd_app(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Open mini app directly."""
+    miniapp_url = os.getenv("MINIAPP_URL", "https://threewords-app.vercel.app")
+    await update.message.reply_text(
+        "🐾 Відкрий свого пета!",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🎮 Відкрити ThreeWordsDaily", web_app={"url": miniapp_url})
+        ]])
     )
 
 
@@ -1733,18 +1751,19 @@ async def post_init(application: Application) -> None:
     log.info("Setting bot commands...")
     try:
         await application.bot.set_my_commands([
-            BotCommand("start",   "Початок / вибір рівня"),
-            BotCommand("word",    "Слово дня (+15 XP)"),
-            BotCommand("lessons", "Урок дня: 3 слова + idiom (+20 XP)"),
-            BotCommand("quiz",    "Тест (+10 XP за правильну)"),
-            BotCommand("stats",   "Моя статистика"),
-            BotCommand("profile", "Повний профіль"),
-            BotCommand("top",     "Топ-10 гравців"),
-            BotCommand("save",    "Зберегти слово (+5 XP)"),
-            BotCommand("review",  "Повторити 5 слів (+10 XP)"),
-            BotCommand("mywords", "Мій словник"),
-            BotCommand("invite",  "Реферальне посилання"),
-            BotCommand("help",    "Список команд"),
+            BotCommand("start",   "🚀 Почати / вибрати персонажа"),
+            BotCommand("lessons", "📚 Урок дня: 3 слова + idiom (+20 XP)"),
+            BotCommand("word",    "✏️ Слово дня (+15 XP)"),
+            BotCommand("quiz",    "🧠 Тест (+10 XP за правильну)"),
+            BotCommand("top",     "🏆 Топ-10 гравців"),
+            BotCommand("stats",   "📊 Моя статистика"),
+            BotCommand("profile", "👤 Профіль + бейджі"),
+            BotCommand("mywords", "📖 Мій словник"),
+            BotCommand("review",  "🔁 Повторити слова (+10 XP)"),
+            BotCommand("invite",  "📨 Запросити друга (+100 XP бонус)"),
+            BotCommand("subscribe", "⭐ Premium підписка (75 Stars)"),
+            BotCommand("freeze",  "❄️ Заморозка стріку (15 Stars)"),
+            BotCommand("help",    "❓ Всі команди"),
         ])
     except Exception as exc:
         log.error("set_my_commands failed: %s", exc)
@@ -1764,6 +1783,8 @@ def _register_handlers(app: Application) -> None:
     app.add_handler(CommandHandler("review",  cmd_review))
     app.add_handler(CommandHandler("mywords", cmd_mywords))
     app.add_handler(CommandHandler("invite",      cmd_invite))
+    app.add_handler(CommandHandler("app",         cmd_app))
+    app.add_handler(CommandHandler("play",        cmd_app))
     app.add_handler(CommandHandler("subscribe",   cmd_subscribe))
     app.add_handler(CommandHandler("premium",     cmd_subscribe))
     app.add_handler(CommandHandler("freeze",      cmd_freeze))

@@ -57,8 +57,9 @@ if not ADMIN_CHAT_ID:
     raise RuntimeError("ADMIN_CHAT_ID is not set in .env")
 
 # Path to the same DB used by learning_bot + miniapp
-DB_FILE: str = str(
-    Path(__file__).parent / "miniapp" / "threewords.db"
+DB_FILE: str = os.getenv(
+    "DB_PATH",
+    str(Path(__file__).parent / "miniapp" / "threewords.db")
 )
 
 logging.basicConfig(
@@ -350,6 +351,77 @@ async def cmd_retention(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         f"MAU (30д): <b>{stats['active_month']}</b> ({r30}%)\n"
         f"Нових за тиждень: <b>{stats['new_users_week']}</b>\n\n"
         f"🔥 <b>Розподіл стріків:</b>\n{dist_str}"
+    )
+
+
+async def cmd_dashboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Master dashboard: all key metrics in one place."""
+    if not _is_admin(update):
+        return
+
+    stats = get_stats()
+    if not stats:
+        await update.message.reply_text("⚠️ Дані недоступні.")
+        return
+
+    # Revenue from Stars
+    import sqlite3 as _sq
+    try:
+        conn = _sq.connect(DB_FILE, timeout=10)
+        stars_total = conn.execute("SELECT SUM(stars_spent) FROM users").fetchone()[0] or 0
+        premium_count = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE is_premium=1"
+        ).fetchone()[0]
+        premium_expiring = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE is_premium=1 AND premium_expires <= date('now', '+3 days')"
+        ).fetchone()[0]
+        # Funnel: registered → did lesson → 7-day active
+        total = stats['total_users'] or 1
+        did_lesson = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE total_lessons > 0"
+        ).fetchone()[0]
+        week_ago = str(date.today() - timedelta(days=7))
+        retained_7d = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE last_lesson_date >= ? AND total_lessons > 0",
+            (week_ago,)
+        ).fetchone()[0]
+        # New this week
+        new_week = stats.get('new_users_week', 0)
+        conn.close()
+    except Exception as e:
+        stars_total = premium_count = premium_expiring = did_lesson = retained_7d = 0
+
+    total = stats['total_users'] or 1
+    conv_rate = round(did_lesson / total * 100, 1)
+    ret_7d = round(retained_7d / max(did_lesson, 1) * 100, 1)
+
+    dau = stats['active_today']
+    wau = stats['active_week']
+    mau = stats['active_month']
+
+    # Stickiness = DAU/MAU
+    stickiness = round(dau / max(mau, 1) * 100, 1)
+
+    trend = "📈" if dau >= stats.get('active_yesterday', 0) else "📉"
+
+    await update.message.reply_html(
+        f"🎛 <b>Dashboard — {date.today()}</b>\n"
+        f"━━━━━━━━━━━━━━━━━━\n\n"
+        f"👥 <b>Юзери</b>\n"
+        f"  Всього: <b>{total}</b>  |  Нових за тиждень: <b>+{new_week}</b>\n"
+        f"  DAU: <b>{dau}</b>  WAU: <b>{wau}</b>  MAU: <b>{mau}</b> {trend}\n"
+        f"  Stickiness (DAU/MAU): <b>{stickiness}%</b>\n\n"
+        f"📊 <b>Воронка</b>\n"
+        f"  Registered: {total}\n"
+        f"  → Пройшли урок: {did_lesson} ({conv_rate}%)\n"
+        f"  → Активні 7д: {retained_7d} ({ret_7d}%)\n\n"
+        f"⭐ <b>Монетизація</b>\n"
+        f"  Stars витрачено: <b>{stars_total} ⭐</b>\n"
+        f"  Premium зараз: <b>{premium_count}</b>\n"
+        f"  Спливає за 3д: {premium_expiring}\n\n"
+        f"🔥 <b>Стріки</b>\n"
+        f"  Середній: {stats['avg_streak']}д  |  Середній XP: {stats['avg_xp']}\n\n"
+        f"<i>Детальніше: /retention /top /report</i>"
     )
 
 
@@ -868,23 +940,24 @@ async def cmd_kill_port(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def main() -> None:
     app = Application.builder().token(ANALYST_BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start",      cmd_start))
-    app.add_handler(CommandHandler("stats",      cmd_stats))
-    app.add_handler(CommandHandler("retention",  cmd_retention))
-    app.add_handler(CommandHandler("top",        cmd_top))
-    app.add_handler(CommandHandler("ideas",      cmd_ideas))
-    app.add_handler(CommandHandler("curriculum", cmd_curriculum))
-    app.add_handler(CommandHandler("weekly",     cmd_weekly))
-    app.add_handler(CommandHandler("growth",     cmd_growth))
-    app.add_handler(CommandHandler("report",     cmd_report))
-    app.add_handler(CommandHandler("raffle",     cmd_raffle))
-    app.add_handler(CommandHandler("draw",       cmd_raffle))
-    app.add_handler(CommandHandler("users",      cmd_users))
+    app.add_handler(CommandHandler("start",      cmd_start,      filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("stats",      cmd_stats,      filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("retention",  cmd_retention,  filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("top",        cmd_top,        filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("dashboard",  cmd_dashboard,  filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("ideas",      cmd_ideas,      filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("curriculum", cmd_curriculum, filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("weekly",     cmd_weekly,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("growth",     cmd_growth,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("report",     cmd_report,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("raffle",     cmd_raffle,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("draw",       cmd_raffle,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("users",      cmd_users,      filters=filters.User(user_id=ADMIN_CHAT_ID)))
     # Remote management
-    app.add_handler(CommandHandler("status",     cmd_status))
-    app.add_handler(CommandHandler("restart",    cmd_restart))
-    app.add_handler(CommandHandler("logs",       cmd_logs))
-    app.add_handler(CommandHandler("killport",   cmd_kill_port))
+    app.add_handler(CommandHandler("status",     cmd_status,     filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("restart",    cmd_restart,    filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("logs",       cmd_logs,       filters=filters.User(user_id=ADMIN_CHAT_ID)))
+    app.add_handler(CommandHandler("killport",   cmd_kill_port,  filters=filters.User(user_id=ADMIN_CHAT_ID)))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     await app.initialize()

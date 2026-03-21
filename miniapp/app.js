@@ -1151,13 +1151,31 @@ async function renderReview() {
 }
 
 // ===== LEADERBOARD TAB =====
-async function renderLeaderboard() {
+let lbMode = 'all'; // 'all' | 'weekly'
+
+async function renderLeaderboard(mode) {
+  if (mode) lbMode = mode;
   document.getElementById('main').innerHTML = '<div class="loading-screen"><div class="spinner"></div></div>';
   const tgId = state.user?.tg_id || 999999;
-  const data = await apiCall('/api/leaderboard?tg_id=' + tgId, {}, []);
 
   const medals = {1:'🥇',2:'🥈',3:'🥉'};
-  const list = (data && data.length) ? data : [{rank:1,first_name:'Будь першим!',xp:0,streak:0,is_me:false}];
+
+  let list, myXpLabel, subtitle;
+  if (lbMode === 'weekly') {
+    const resp = await apiCall('/api/leaderboard/weekly?tg_id=' + tgId, {}, {board:[], my_weekly_xp:0});
+    const board = (resp && resp.board) || [];
+    const myWeekly = (resp && resp.my_weekly_xp) || 0;
+    list = board.length ? board.map(function(u, i) {
+      return {rank: i+1, first_name: u.first_name, xp: u.weekly_xp, streak: u.streak, is_me: u.tg_id === tgId};
+    }) : [{rank:1, first_name:'Будь першим!', xp:0, streak:0, is_me:false}];
+    myXpLabel = 'Твій XP цього тижня: ' + myWeekly;
+    subtitle = 'Скидається щопонеділка';
+  } else {
+    const data = await apiCall('/api/leaderboard?tg_id=' + tgId, {}, []);
+    list = (data && data.length) ? data : [{rank:1, first_name:'Будь першим!', xp:0, streak:0, is_me:false}];
+    myXpLabel = 'Твій XP: ' + state.xp;
+    subtitle = 'Загальний рейтинг';
+  }
 
   const itemsHTML = list.map(function(u) {
     const rankClass = u.rank===1?'gold':u.rank===2?'silver':u.rank===3?'bronze':'';
@@ -1171,12 +1189,18 @@ async function renderLeaderboard() {
 
   document.getElementById('main').innerHTML =
     '<div class="section-title">🏆 Топ гравців</div>' +
+    '<div class="leaderboard-tabs">' +
+      '<button class="lb-tab ' + (lbMode==='all'?'active':'') + '" onclick="renderLeaderboard(\'all\')">🏅 Всі часи</button>' +
+      '<button class="lb-tab ' + (lbMode==='weekly'?'active':'') + '" onclick="renderLeaderboard(\'weekly\')">📅 Тиждень</button>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:8px">' + subtitle + '</div>' +
     '<div class="lb-list">' + itemsHTML + '</div>' +
+    '<div style="font-size:12px;text-align:center;color:var(--accent2);margin-top:8px">' + myXpLabel + '</div>' +
     '<div class="premium-banner" style="margin-top:16px">' +
       '<div class="p-star">🏆</div>' +
       '<div class="p-content">' +
         '<div class="p-title">Перше місце = Telegram Premium</div>' +
-        '<div class="p-sub">Нараховується щомісяця. Ти на ' + state.xp + ' XP.</div>' +
+        '<div class="p-sub">Нараховується щомісяця.</div>' +
       '</div>' +
     '</div>';
 }
