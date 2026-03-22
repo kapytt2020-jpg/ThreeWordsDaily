@@ -39,6 +39,7 @@ from telegram.ext import (
 from database import db
 from agents import run_agent, spawn_subagent_async, ANALYST_SYSTEM, OPS_SYSTEM
 from agents.tools import SERVICES
+from agents.group_poster import ops_report, alert, deploy_report
 
 load_dotenv()
 
@@ -254,6 +255,7 @@ async def cb_restart(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
     await query.edit_message_text(msg)
     await db.log_ops("ops_bot", "restart", target, msg)
+    await deploy_report(f"🔄 <b>Restart: {target}</b>\n{msg}")
 
 
 async def cmd_logs(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:

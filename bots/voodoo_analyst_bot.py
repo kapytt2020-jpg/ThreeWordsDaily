@@ -29,6 +29,7 @@ from telegram.ext import (
 
 from database import db
 from agents import spawn_subagent_async, ANALYST_SYSTEM
+from agents.group_poster import analyst_report, agent_discussion
 
 load_dotenv()
 
@@ -228,6 +229,10 @@ async def _auto_report_loop(app: Application) -> None:
                     chat_id=ADMIN_ID,
                     text=f"🤖 <b>Авто-аналіз {now.strftime('%H:%M')}</b>\n\n{result.output}",
                     parse_mode="HTML",
+                )
+                # Also post to internal group topic
+                await analyst_report(
+                    f"🤖 <b>Авто-аналіз {now.strftime('%H:%M')}</b>\n\n{result.output}"
                 )
                 sent_hours.add(hour)
             except Exception as e:
