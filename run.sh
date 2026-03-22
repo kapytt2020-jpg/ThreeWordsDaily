@@ -44,6 +44,7 @@ BOTS=(
     voodoo_growth_bot
     voodoo_ops_bot
     voodoo_test_bot
+    voodoo_promo_bot
 )
 
 start_service() {

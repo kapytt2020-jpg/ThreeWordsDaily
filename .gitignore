@@ -11,3 +11,13 @@ logs/
 *.local.json
 node_modules/
 .DS_Store
+auth_state.json
+auth_step*.py
+full_auth.py
+add_bot_playwright.py
+add_bot_v2.py
+add_bot_v3.py
+content_state.json
+group_state.json
+data/promo_state.json
+com.voodoo.*.plist
