@@ -23,3 +23,6 @@ data/promo_state.json
 data/google_credentials.json
 data/user_drive_token.json
 com.voodoo.*.plist
+credentials.txt
+deploy/vultr_state.json
+deploy/hetzner_state.json
