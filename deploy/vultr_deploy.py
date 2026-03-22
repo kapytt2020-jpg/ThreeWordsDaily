@@ -188,9 +188,11 @@ def wait_for_ssh(ip: str, timeout: int = 180):
 
 
 def run_remote(ip: str, cmd: str, check: bool = True) -> str:
+    ssh_key = Path.home() / ".ssh/voodoo_deploy"
+    key_args = ["-i", str(ssh_key)] if ssh_key.exists() else []
     r = subprocess.run(
-        ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=20",
-         f"root@{ip}", cmd],
+        ["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=20"]
+        + key_args + [f"root@{ip}", cmd],
         capture_output=True, text=True
     )
     if check and r.returncode != 0:
@@ -206,10 +208,14 @@ def copy_env(ip: str):
     tmp = Path("/tmp/voodoo_server.env")
     tmp.write_text(env_content)
 
+    ssh_key = Path.home() / ".ssh/voodoo_deploy"
+    key_args = ["-i", str(ssh_key)] if ssh_key.exists() else []
+
     for attempt in range(10):
         r = subprocess.run(
-            ["scp", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10",
-             str(tmp), f"root@{ip}:{DEPLOY_DIR}/.env"],
+            ["scp", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10"]
+            + key_args
+            + [str(tmp), f"root@{ip}:{DEPLOY_DIR}/.env"],
             capture_output=True, text=True
         )
         if r.returncode == 0:
