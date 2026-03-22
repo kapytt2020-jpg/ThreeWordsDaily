@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Voodoo</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo-text">Voodoo<b> 🪄</b></span>
+      </div>
+      <div class="header-right">
+        <div class="streak-badge" id="streakBadge">
+          🔥 <span id="streakCount">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- TOAST -->
+    <div id="toast" class="result-toast hidden"></div>
+
+    <!-- MAIN CONTENT -->
+    <main id="main">
+      <div class="loading-screen" id="loadingScreen">
+        <div class="spinner"></div>
+        <p>Завантаження...</p>
+      </div>
+    </main>
+
+    <!-- BOTTOM TABS -->
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-tab="home" onclick="switchTab('home')">🏠<span>Дім</span></button>
+      <button class="tab" data-tab="lesson" onclick="switchTab('lesson')">📚<span>Урок</span></button>
+      <button class="tab" data-tab="games" onclick="switchTab('games')">🎮<span>Ігри</span></button>
+      <button class="tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">🏆<span>Рейтинг</span></button>
+      <button class="tab" data-tab="profile" onclick="switchTab('profile')">👤<span>Профіль</span></button>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
