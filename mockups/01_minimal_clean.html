@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 01 — Minimal Clean Learning</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.header { padding: 16px 20px 12px; display:flex; justify-content:space-between; align-items:center; }
+.streak-pill { display:flex; align-items:center; gap:6px; background:#1a1a2e; border:1px solid #2a2a4e; border-radius:100px; padding:6px 14px; font-size:14px; font-weight:700; }
+.xp-section { padding:0 20px 16px; }
+.xp-label { display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:6px; }
+.word-card { margin:0 20px; background:linear-gradient(135deg,#111827,#1a2234); border:1px solid #1e2d45; border-radius:24px; padding:32px 24px; text-align:center; position:relative; overflow:hidden; }
+.word-card::before { content:''; position:absolute; top:-40px; right:-40px; width:120px; height:120px; background:radial-gradient(circle,rgba(124,58,237,0.2),transparent); border-radius:50%; }
+.word-en { font-size:40px; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg,#fff,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.ipa { font-size:16px; color:#7c3aed; margin-bottom:8px; font-style:italic; }
+.word-ua { font-size:20px; color:#94a3b8; margin-bottom:20px; }
+.example { background:rgba(255,255,255,0.04); border-left:3px solid #7c3aed; border-radius:0 10px 10px 0; padding:12px; text-align:left; font-size:14px; color:#cbd5e1; line-height:1.5; margin-bottom:20px; }
+.example strong { color:#a78bfa; }
+.audio-row { display:flex; justify-content:center; gap:12px; margin-bottom:24px; }
+.audio-pill { display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); color:#10b981; border-radius:100px; padding:8px 18px; font-size:13px; font-weight:600; cursor:pointer; }
+.audio-pill.phrase { background:rgba(37,99,235,0.12); border-color:rgba(37,99,235,0.25); color:#60a5fa; }
+.answers { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.ans-btn { padding:14px; border-radius:14px; font-size:15px; font-weight:600; cursor:pointer; text-align:center; }
+.ans-btn.wrong { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.25); color:#f87171; }
+.ans-btn.right { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); color:#34d399; }
+.ans-btn.neutral { background:#111827; border:1px solid #1e2d45; color:#cbd5e1; }
+.progress-dots { display:flex; justify-content:center; gap:6px; padding:16px; }
+.dot { width:8px; height:8px; border-radius:50%; background:#1e2d45; }
+.dot.done { background:#7c3aed; }
+.dot.active { background:#a78bfa; transform:scale(1.3); }
+.bottom-actions { padding:0 20px 8px; }
+.next-btn { width:100%; padding:16px; border-radius:18px; font-size:17px; font-weight:700; background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; cursor:pointer; border:none; }
+.pet-mini { position:absolute; bottom:12px; right:16px; font-size:36px; opacity:0.6; }
+.info-box { margin:12px 20px; background:#111827; border:1px solid #1e2d45; border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:10px; font-size:13px; color:#94a3b8; }
+.info-box strong { color:#e2e8f0; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+
+  <div class="screen" style="overflow-y:auto; overflow-x:hidden;">
+    <!-- Header -->
+    <div class="header">
+      <div>
+        <div style="font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px">Сьогодні</div>
+        <div style="font-size:18px;font-weight:800">Слово дня 📖</div>
+      </div>
+      <div class="streak-pill">🔥 <span>7</span></div>
+    </div>
+
+    <!-- XP Bar -->
+    <div class="xp-section">
+      <div class="xp-label"><span>Рівень 4 · Apprentice</span><span>340 / 500 XP</span></div>
+      <div class="xp-bar-wrap" style="height:8px">
+        <div class="xp-bar" style="height:8px;width:68%"></div>
+      </div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress-dots">
+      <div class="dot done"></div><div class="dot done"></div><div class="dot active"></div>
+      <div class="dot"></div><div class="dot"></div>
+    </div>
+
+    <!-- Word Card -->
+    <div class="word-card">
+      <div class="pet-mini float">🐺</div>
+      <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Нове слово</div>
+      <div class="word-en">Resilient</div>
+      <div class="ipa">/rɪˈzɪliənt/</div>
+      <div class="word-ua">стійкий, витривалий</div>
+
+      <div class="audio-row">
+        <button class="audio-pill" onclick="this.textContent='⏸️ Слово'">🔊 Слово</button>
+        <button class="audio-pill phrase" onclick="this.textContent='⏸️ Фраза'">🔊 Фраза</button>
+      </div>
+
+      <div class="example">
+        <strong>"She is incredibly <u>resilient</u>"</strong><br>
+        Вона неймовірно стійка.
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="info-box">
+      <span>💡</span>
+      <span>Від Latin <strong>resilire</strong> — відскакувати назад. Як м'яч!</span>
+    </div>
+
+    <!-- Quiz -->
+    <div style="padding:0 20px 12px">
+      <div class="section-title">Обери правильний переклад</div>
+      <div class="answers">
+        <div class="ans-btn wrong">сумний</div>
+        <div class="ans-btn right" onclick="this.style.background='rgba(16,185,129,0.25)';this.style.border='2px solid #10b981'">стійкий ✓</div>
+        <div class="ans-btn neutral">красивий</div>
+        <div class="ans-btn neutral">веселий</div>
+      </div>
+    </div>
+
+    <!-- Next -->
+    <div class="bottom-actions">
+      <button class="next-btn">Продовжити →</button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Дім</div></div>
+    <div class="tab active"><div class="icon">📖</div><div class="label">Вчити</div></div>
+    <div class="tab"><div class="icon">🐺</div><div class="label">Пет</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Рейтинг</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Профіль</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#1e2a3a;border:1px solid #2a3a4a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#94a3b8;line-height:1.6">
+  <strong style="color:#a78bfa">📖 Mockup 01 — Minimal Clean</strong><br><br>
+  <strong style="color:#e2e8f0">Для кого:</strong> Всі, особливо новачки<br>
+  <strong style="color:#e2e8f0">Сильні сторони:</strong> Ясна ієрархія, одна дія, аудіо доступне одразу<br>
+  <strong style="color:#e2e8f0">Retention loop:</strong> Стрік + XP прогрес<br>
+  <strong style="color:#e2e8f0">Ризик:</strong> Може бути занадто простим для повернення юзерів<br><br>
+  <a href="index.html" style="color:#60a5fa">← Всі мокапи</a>
+</div>
+</body>
+</html>

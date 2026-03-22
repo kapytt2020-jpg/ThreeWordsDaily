@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · PvP Word Arena</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0a0508;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#0d070f;border-radius:44px;overflow:hidden;border:1.5px solid #2d1022;box-shadow:0 0 60px rgba(220,38,38,0.2),0 40px 120px rgba(0,0,0,0.7);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#444}
+
+/* VS HEADER */
+.vs-header{padding:8px 16px 0;display:flex;align-items:center;justify-content:space-between}
+.player-card{display:flex;flex-direction:column;align-items:center;gap:4px;width:110px}
+.pc-avatar{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;border:2px solid}
+.pc-name{font-size:12px;font-weight:700;color:#e2e8f0}
+.pc-elo{font-size:10px;color:#888}
+.pc-hp-wrap{width:100%;height:6px;border-radius:100px;background:rgba(255,255,255,0.08)}
+.pc-hp{height:6px;border-radius:100px;transition:width 0.4s}
+.vs-mid{text-align:center}
+.vs-text{font-size:28px;font-weight:900;background:linear-gradient(135deg,#ef4444,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.round-info{font-size:10px;color:#555;margin-top:2px}
+.timer-ring{width:42px;height:42px;border-radius:50%;border:3px solid #ef4444;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#ef4444;margin:6px auto 0;animation:timerPulse 1s ease-in-out infinite}
+@keyframes timerPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+
+/* ARENA */
+.arena{position:relative;margin:10px 14px;background:linear-gradient(160deg,#1a0510,#120310,#1a0808);border:1px solid rgba(239,68,68,0.2);border-radius:20px;padding:14px;overflow:hidden}
+.arena-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 100%,rgba(239,68,68,0.08),transparent 60%)}
+.battle-word{text-align:center;margin-bottom:8px}
+.bw-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px}
+.bw-word{font-size:34px;font-weight:900;background:linear-gradient(135deg,#fff,#fca5a5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.bw-ipa{font-size:12px;color:#ef4444;font-style:italic;margin-top:2px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.choice{padding:13px 10px;border-radius:14px;border:1.5px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#e2e8f0;font-size:14px;font-weight:700;cursor:pointer;text-align:center;transition:all 0.15s;position:relative}
+.choice:hover{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.1)}
+.choice.correct{border-color:#22c55e;background:rgba(34,197,94,0.15);color:#4ade80}
+.choice.wrong{border-color:#ef4444;background:rgba(239,68,68,0.15);color:#f87171}
+.choice.enemy-ans{border-color:#f97316;background:rgba(249,115,22,0.1)}
+.answer-speed{position:absolute;top:-8px;right:8px;background:#ef4444;border-radius:100px;padding:1px 7px;font-size:9px;color:#fff;font-weight:700}
+
+/* COMBO / DAMAGE */
+.damage-pop{position:absolute;pointer-events:none;font-size:20px;font-weight:900;color:#ef4444;text-shadow:0 0 10px rgba(239,68,68,0.8);animation:dmgPop 0.8s ease-out forwards;z-index:10}
+@keyframes dmgPop{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-60px) scale(1.5);opacity:0}}
+.combo-banner{background:linear-gradient(135deg,#ef4444,#f97316);border-radius:100px;padding:4px 14px;font-size:12px;font-weight:800;color:#fff;text-align:center;margin-bottom:6px;animation:comboPop 0.3s cubic-bezier(.175,.885,.32,1.275)}
+@keyframes comboPop{from{transform:scale(0.5)}to{transform:scale(1)}}
+
+/* SCORE */
+.score-row{display:flex;align-items:center;justify-content:space-between;padding:6px 14px}
+.score-block{text-align:center}
+.sb-val{font-size:22px;font-weight:900}
+.sb-lbl{font-size:10px;color:#555;text-transform:uppercase}
+.score-vs{font-size:14px;font-weight:700;color:#333}
+
+/* CHAT TAUNTS */
+.taunt-row{padding:4px 14px 6px;display:flex;gap:6px;overflow-x:auto}
+.taunt{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.07);border-radius:100px;padding:5px 12px;font-size:11px;cursor:pointer;white-space:nowrap;color:#888;transition:all 0.15s}
+.taunt:hover{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.3);color:#fca5a5}
+
+/* ENEMY MSG */
+.enemy-msg{margin:0 14px 6px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.2);border-radius:12px;padding:6px 12px;font-size:12px;color:#fb923c}
+
+/* FIND MATCH */
+.find-match{margin:0 14px 10px;background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(249,115,22,0.1));border:1px solid rgba(239,68,68,0.3);border-radius:16px;padding:14px 16px}
+.fm-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:4px}
+.fm-sub{font-size:11px;color:#888;margin-bottom:10px}
+.fm-stats{display:flex;gap:12px;margin-bottom:10px}
+.fms{font-size:11px;color:#888}<br>.fms b{color:#fca5a5}
+.fm-btn{width:100%;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#dc2626,#ea580c);color:#fff;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 20px rgba(220,38,38,0.4)}
+
+/* TAB */
+.tabbar{display:flex;background:rgba(13,7,15,0.97);border-top:1px solid rgba(255,255,255,0.04);padding:8px 0 22px;flex-shrink:0;margin-top:auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#333;font-weight:500}
+.tab.on .tl{color:#ef4444}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- VS HEADER -->
+  <div class="vs-header">
+    <!-- You -->
+    <div class="player-card">
+      <div class="pc-avatar" style="border-color:#22c55e;background:rgba(34,197,94,0.1)">🦊</div>
+      <div class="pc-name">Ти</div>
+      <div class="pc-elo">⚔️ ELO 1,240</div>
+      <div class="pc-hp-wrap"><div class="pc-hp" id="my-hp" style="width:70%;background:linear-gradient(90deg,#22c55e,#4ade80)"></div></div>
+    </div>
+    <!-- VS -->
+    <div class="vs-mid">
+      <div class="vs-text">VS</div>
+      <div class="round-info">Раунд <span id="round">3</span> / 7</div>
+      <div class="timer-ring" id="timer">8</div>
+    </div>
+    <!-- Enemy -->
+    <div class="player-card">
+      <div class="pc-avatar" style="border-color:#ef4444;background:rgba(239,68,68,0.1)">🐺</div>
+      <div class="pc-name">Денис_UK</div>
+      <div class="pc-elo">⚔️ ELO 1,190</div>
+      <div class="pc-hp-wrap"><div class="pc-hp" id="en-hp" style="width:45%;background:linear-gradient(90deg,#ef4444,#f97316)"></div></div>
+    </div>
+  </div>
+
+  <!-- SCORE -->
+  <div class="score-row">
+    <div class="score-block"><div class="sb-val" style="color:#22c55e" id="my-score">2</div><div class="sb-lbl">Ти</div></div>
+    <div class="score-vs">:</div>
+    <div class="score-block"><div class="sb-val" style="color:#ef4444" id="en-score">1</div><div class="sb-lbl">Ворог</div></div>
+  </div>
+
+  <!-- ENEMY MESSAGE -->
+  <div class="enemy-msg">💬 Денис_UK: "Легко!" — 0.8 сек тому</div>
+
+  <!-- ARENA -->
+  <div class="arena" id="arena">
+    <div class="arena-glow"></div>
+    <div id="combo-area"></div>
+    <div class="battle-word">
+      <div class="bw-label">⚔️ Переклади слово</div>
+      <div class="bw-word" id="battle-word">Ambitious</div>
+      <div class="bw-ipa">/æmˈbɪʃəs/</div>
+    </div>
+    <div class="choices" id="choices">
+      <div class="choice" onclick="answer(this,false)">Сумний</div>
+      <div class="choice" onclick="answer(this,true)">Амбітний</div>
+      <div class="choice" onclick="answer(this,false)">Розумний</div>
+      <div class="choice" onclick="answer(this,false)">Веселий</div>
+    </div>
+  </div>
+
+  <!-- TAUNTS -->
+  <div class="taunt-row">
+    <div class="taunt" onclick="taunt('😤 GG!')">😤 GG!</div>
+    <div class="taunt" onclick="taunt('💪 Легко!')">💪 Легко!</div>
+    <div class="taunt" onclick="taunt('🤝 Добра гра')">🤝 Добра гра</div>
+    <div class="taunt" onclick="taunt('🔥 Вогонь!')">🔥 Вогонь!</div>
+  </div>
+
+  <!-- FIND MATCH -->
+  <div class="find-match">
+    <div class="fm-title">⚔️ Знайти бій</div>
+    <div class="fm-sub">Грай проти реальних людей · Заробляй рейтинг</div>
+    <div class="fm-stats">
+      <div style="font-size:11px;color:#888">Онлайн: <b style="color:#fca5a5">1,247</b></div>
+      <div style="font-size:11px;color:#888">Пошук: <b style="color:#fca5a5">~12 сек</b></div>
+      <div style="font-size:11px;color:#888">Твій рівень: <b style="color:#fca5a5">B1</b></div>
+    </div>
+    <button class="fm-btn" onclick="findMatch()">⚔️ В БІЙ</button>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab"><div class="ti">🏠</div><div class="tl">Головна</div></div>
+    <div class="tab on"><div class="ti">⚔️</div><div class="tl">Арена</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Рейтинг</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Вчити</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#120308;border:1px solid #2d0f15;border-radius:14px;padding:14px 18px;max-width:260px;font-size:12px;color:#666;line-height:1.7;box-shadow:0 4px 20px rgba(220,38,38,0.15)">
+  <strong style="color:#fca5a5">05 · PvP Word Arena — Бої 1v1</strong><br><br>
+  <strong style="color:#e2e8f0">Механіка:</strong> Перекладай слова швидше ворога<br>
+  <strong style="color:#e2e8f0">Вірусність:</strong> "Виклик другу" — прямо в Telegram<br>
+  <strong style="color:#e2e8f0">Мотивація:</strong> ELO рейтинг = соціальний статус<br>
+  <strong style="color:#e2e8f0">Навчання:</strong> Знаєш слово = перемагаєш<br>
+  <strong style="color:#e2e8f0">Монетизація:</strong> Буст за Stars, турнірні квитки<br><br>
+  <a href="new_index.html" style="color:#ef4444">← Всі мокапи</a>
+</div>
+
+<script>
+const words=[{w:'Ambitious',ua:'Амбітний',ipa:'/æmˈbɪʃəs/'},{w:'Grateful',ua:'Вдячний',ipa:'/ˈɡreɪtfəl/'},{w:'Resilient',ua:'Стійкий',ipa:'/rɪˈzɪliənt/'},{w:'Brilliant',ua:'Блискучий',ipa:'/ˈbrɪliənt/'},{w:'Curious',ua:'Цікавий',ipa:'/ˈkjʊəriəs/'}];
+const decoys=['Сумний','Красивий','Втомлений','Смішний','Великий','Швидкий','Добрий','Злий'];
+let myScore=2,enScore=1,myHp=70,enHp=45,round=3,combo=0,timerVal=8;
+let wordIdx=0, timerInterval;
+
+function shuffle(a){return [...a].sort(()=>Math.random()-0.5)}
+
+function loadWord(){
+  const w=words[wordIdx%words.length]; wordIdx++;
+  document.getElementById('battle-word').textContent=w.w;
+  document.querySelector('.bw-ipa').textContent=w.ipa;
+  const wrong=shuffle(decoys).slice(0,3);
+  const opts=shuffle([w.ua,...wrong]);
+  const ch=document.getElementById('choices');
+  ch.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('div');
+    b.className='choice'; b.textContent=o;
+    b.onclick=()=>answer(b,o===w.ua);
+    ch.appendChild(b);
+  });
+  clearInterval(timerInterval);
+  timerVal=8;
+  document.getElementById('timer').textContent=timerVal;
+  timerInterval=setInterval(()=>{
+    timerVal--;
+    document.getElementById('timer').textContent=timerVal;
+    if(timerVal<=3) document.getElementById('timer').style.color='#f97316';
+    if(timerVal<=0){clearInterval(timerInterval);answer(null,false);}
+  },1000);
+}
+
+function answer(el,correct){
+  clearInterval(timerInterval);
+  document.querySelectorAll('.choice').forEach(c=>c.onclick=null);
+  if(correct){
+    if(el) el.classList.add('correct');
+    combo++;
+    myScore++;
+    enHp=Math.max(0,enHp-15);
+    document.getElementById('my-score').textContent=myScore;
+    document.getElementById('en-hp').style.width=enHp+'%';
+    if(combo>=2){
+      const cb=document.createElement('div');
+      cb.className='combo-banner';
+      cb.textContent=`🔥 ${combo}x КОМБО! -${15*combo} HP`;
+      document.getElementById('combo-area').appendChild(cb);
+      setTimeout(()=>cb.remove(),1200);
+    }
+    // damage pop
+    const arena=document.getElementById('arena');
+    const dmg=document.createElement('div');
+    dmg.className='damage-pop';
+    dmg.textContent=`-${15+combo*5}💥`;
+    dmg.style.left=(30+Math.random()*40)+'%';
+    dmg.style.top='30%';
+    arena.appendChild(dmg);
+    setTimeout(()=>dmg.remove(),800);
+  } else {
+    if(el) el.classList.add('wrong');
+    combo=0;
+    enScore++;
+    myHp=Math.max(0,myHp-15);
+    document.getElementById('en-score').textContent=enScore;
+    document.getElementById('my-hp').style.width=myHp+'%';
+  }
+  round++;
+  document.getElementById('round').textContent=Math.min(round,7);
+  document.getElementById('timer').style.color='#ef4444';
+  if(round>7||myHp<=0||enHp<=0){
+    setTimeout(()=>alert(myScore>enScore?`🏆 ПЕРЕМОГА!\n+80 ELO · +120 XP`:`💀 Поразка!\n-20 ELO. Вчи ще!`),500);
+    return;
+  }
+  setTimeout(loadWord,1000);
+}
+
+function taunt(t){
+  const em=document.querySelector('.enemy-msg');
+  em.textContent=`💬 Ти: "${t}" — щойно`;
+}
+
+function findMatch(){
+  alert('⚔️ Пошук суперника...\n\nОнлайн: 1,247 гравців\nЗнаходимо того хто підходить за рівнем...');
+}
+
+loadWord();
+</script>
+</body>
+</html>

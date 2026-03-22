@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 09 — Ultra Simple Beginner</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #060f06; }
+.phone { background: #0d1f0d; border-color: #1a3a1a; }
+
+/* Soft green glow from center */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+
+.beginner-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 1; }
+
+/* Status-style top */
+.beginner-top {
+  padding: 8px 20px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.word-counter-simple {
+  font-size: 16px;
+  color: #4ade80;
+  font-weight: 700;
+}
+.skip-text {
+  font-size: 13px;
+  color: #2d5a2d;
+  cursor: pointer;
+}
+
+/* Greeting */
+.greeting-block {
+  padding: 8px 24px 12px;
+  text-align: center;
+}
+.greeting-emoji { font-size: 36px; margin-bottom: 6px; animation: greetingBounce 2s ease-in-out infinite; }
+@keyframes greetingBounce {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+.greeting-text {
+  font-size: 17px;
+  color: #a7f3d0;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.greeting-sub {
+  font-size: 13px;
+  color: #2d5a2d;
+  margin-top: 4px;
+}
+
+/* Main Word Card — BIG and simple */
+.main-word-card {
+  margin: 0 16px;
+  background: linear-gradient(145deg, #122912, #0d1f0d);
+  border: 2px solid rgba(74,222,128,0.25);
+  border-radius: 28px;
+  padding: 28px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.5),
+    0 0 0 1px rgba(74,222,128,0.05),
+    inset 0 1px 0 rgba(74,222,128,0.1);
+}
+.main-word-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 60%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.07), transparent 70%);
+  border-radius: 28px 28px 0 0;
+  pointer-events: none;
+}
+
+.word-en-big {
+  font-size: 52px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff, #a7f3d0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+  margin-bottom: 8px;
+  letter-spacing: -1px;
+}
+.word-equals {
+  font-size: 28px;
+  color: #2d5a2d;
+  margin: 6px 0;
+  font-weight: 300;
+}
+.word-ua-big {
+  font-size: 36px;
+  font-weight: 800;
+  color: #4ade80;
+  margin-bottom: 4px;
+  text-shadow: 0 0 20px rgba(74,222,128,0.3);
+}
+.word-ipa-small { font-size: 14px; color: #2d5a2d; font-style: italic; margin-top: 6px; }
+
+/* Giant Listen Button */
+.listen-giant {
+  margin: 16px 16px 12px;
+  padding: 20px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #064e3b, #059669, #10b981);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  letter-spacing: 0.5px;
+  box-shadow:
+    0 8px 30px rgba(16,185,129,0.4),
+    0 0 0 4px rgba(16,185,129,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  animation: listenPulse 3s ease-in-out infinite;
+}
+@keyframes listenPulse {
+  0%,100% {
+    box-shadow: 0 8px 30px rgba(16,185,129,0.4), 0 0 0 4px rgba(16,185,129,0.1), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  50% {
+    box-shadow: 0 8px 40px rgba(16,185,129,0.6), 0 0 0 8px rgba(16,185,129,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+}
+.listen-giant:active {
+  transform: scale(0.97);
+  box-shadow: 0 4px 20px rgba(16,185,129,0.5), 0 0 0 10px rgba(16,185,129,0.2);
+}
+.listen-giant::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  animation: shimmerBtn 2.5s ease-in-out infinite;
+}
+@keyframes shimmerBtn { 0% { left: -100%; } 100% { left: 200%; } }
+
+.listen-giant-icon { font-size: 28px; }
+
+/* Answer buttons — huge tap targets */
+.answer-row {
+  display: flex;
+  gap: 12px;
+  padding: 0 16px;
+}
+.answer-big {
+  flex: 1;
+  border: none;
+  border-radius: 20px;
+  padding: 20px 12px;
+  font-size: 32px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.answer-big::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent);
+  border-radius: 20px 20px 0 0;
+}
+.answer-big:active { transform: scale(0.95); }
+.answer-big.no {
+  background: linear-gradient(135deg, #2d0a0a, #4c1010);
+  border: 2px solid rgba(239,68,68,0.25);
+  box-shadow: 0 8px 25px rgba(220,38,38,0.2);
+}
+.answer-big.yes {
+  background: linear-gradient(135deg, #052e16, #064e3b);
+  border: 2px solid rgba(16,185,129,0.25);
+  box-shadow: 0 8px 25px rgba(16,185,129,0.2);
+}
+.answer-big-emoji { font-size: 44px; line-height: 1; }
+.answer-big-text { font-size: 14px; font-weight: 800; letter-spacing: 0.5px; }
+.answer-big.no .answer-big-text { color: #f87171; }
+.answer-big.yes .answer-big-text { color: #34d399; }
+
+/* Kikra hint */
+.kikra-hint {
+  margin: 12px 16px 0;
+  background: rgba(20,40,20,0.6);
+  border: 1px solid rgba(74,222,128,0.15);
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.kikra-avatar { font-size: 28px; flex-shrink: 0; }
+.kikra-speech { }
+.kikra-name { font-size: 10px; color: #2d5a2d; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+.kikra-text { font-size: 13px; color: #a7f3d0; line-height: 1.4; }
+.kikra-text strong { color: #4ade80; }
+
+/* Simple progress text */
+.simple-progress {
+  text-align: center;
+  padding: 10px 20px 0;
+  font-size: 18px;
+  color: #2d5a2d;
+  font-weight: 700;
+}
+.simple-progress strong { color: #4ade80; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#081208; color:#2d5a2d;">
+    <span>9:41</span>
+    <span style="color:#4ade80">😊 Easy Mode</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="beginner-screen">
+    <!-- Top -->
+    <div class="beginner-top">
+      <div class="word-counter-simple">Слово 1 з 5</div>
+      <div class="skip-text">Пропустити</div>
+    </div>
+
+    <!-- Greeting -->
+    <div class="greeting-block">
+      <div class="greeting-emoji">😊</div>
+      <div class="greeting-text">Привіт! Ти готовий<br>вчити англійську?</div>
+      <div class="greeting-sub">Почнемо з простого!</div>
+    </div>
+
+    <!-- Giant Word Card -->
+    <div class="main-word-card">
+      <div class="word-en-big">Hello</div>
+      <div class="word-equals">=</div>
+      <div class="word-ua-big">Привіт</div>
+      <div class="word-ipa-small">/həˈloʊ/</div>
+    </div>
+
+    <!-- Giant Listen Button -->
+    <button class="listen-giant" onclick="this.innerHTML='<span class=\'listen-giant-icon\'>⏸️</span> Грає...'">
+      <span class="listen-giant-icon">🔊</span>
+      ПОСЛУХАТИ
+    </button>
+
+    <!-- Huge Answer Buttons -->
+    <div class="answer-row">
+      <button class="answer-big no" onclick="this.style.border='2px solid rgba(239,68,68,0.6)'; this.style.boxShadow='0 8px 30px rgba(220,38,38,0.4)'">
+        <div class="answer-big-emoji">😕</div>
+        <div class="answer-big-text">Не знаю</div>
+      </button>
+      <button class="answer-big yes" onclick="this.style.border='2px solid rgba(16,185,129,0.6)'; this.style.boxShadow='0 8px 30px rgba(16,185,129,0.4)'">
+        <div class="answer-big-emoji">😊</div>
+        <div class="answer-big-text">Знаю!</div>
+      </button>
+    </div>
+
+    <!-- Kikra Hint -->
+    <div class="kikra-hint">
+      <div class="kikra-avatar">🦊</div>
+      <div class="kikra-speech">
+        <div class="kikra-name">Кікра каже:</div>
+        <div class="kikra-text">Це слово ти <strong>вже знаєш!</strong> Ти чув його мільйон разів 😄</div>
+      </div>
+    </div>
+
+    <!-- Simple Progress -->
+    <div class="simple-progress">
+      Слово <strong>1</strong> з <strong>5</strong>
+    </div>
+  </div>
+
+  <!-- Tab Bar — simplified labels -->
+  <div class="tab-bar" style="background:rgba(6,14,6,0.97); border-color:#1a3a1a;">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Дім</div></div>
+    <div class="tab active"><div class="icon">📖</div><div class="label" style="color:#4ade80">Вчити</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label">Пет</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Рейтинг</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#0d1f0d;border:1px solid #1a3a1a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#2d5a2d;line-height:1.6;">
+  <strong style="color:#4ade80">🌱 Mockup 09 — Ultra Simple Beginner</strong><br><br>
+  <strong style="color:#a7f3d0">For:</strong> Users who say "English is not for me"<br>
+  <strong style="color:#a7f3d0">Retention:</strong> Zero fear, instant success feeling<br>
+  <strong style="color:#a7f3d0">Audio:</strong> Giant listen button is impossible to miss<br>
+  <strong style="color:#a7f3d0">Risk:</strong> Too simple for returning / advanced users<br><br>
+  <a href="index.html" style="color:#4ade80">← All Mockups</a>
+</div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 """
-Mini App API — FastAPI backend for ThreeWordsDaily
+Mini App API — FastAPI backend for Voodoo English Platform
 Run: uvicorn api:app --reload --port 8000
 """
 
@@ -58,7 +58,10 @@ _mem_rewards: dict = {}  # tg_id -> set of badge_ids
 
 async def db_init():
     if DB_AVAILABLE:
-        await database.init_db()
+        import inspect
+        result = database.init_db()
+        if inspect.isawaitable(result):
+            await result
         # Auto-migration: add premium columns if missing
         import aiosqlite, os as _os
         _db_path = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "voodoo.db")
@@ -157,7 +160,7 @@ CLOUD_DB_PATH = os.getenv("DB_PATH", _LOCAL_DB)
 
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-app = FastAPI(title="ThreeWordsDaily API")
+app = FastAPI(title="Voodoo English Platform API")
 
 app.add_middleware(
     CORSMiddleware,

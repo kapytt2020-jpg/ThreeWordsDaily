@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Word Escape</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0d0a00;
+  color: #fff;
+  height: 100vh;
+}
+
+.phase { display:none; flex-direction:column; height:100vh; }
+.phase.active { display:flex; }
+
+/* ══════ INTRO ══════ */
+#intro {
+  align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at 50% 40%, #1f1400 0%, #0d0a00 65%);
+  gap:16px;
+  text-align:center;
+}
+.intro-icon { font-size:72px; animation:doorPulse 3s ease-in-out infinite; }
+@keyframes doorPulse {
+  0%,100%{ filter:drop-shadow(0 0 20px rgba(255,170,0,0.3)); transform:scale(1); }
+  50%{ filter:drop-shadow(0 0 50px rgba(255,170,0,0.7)); transform:scale(1.05); }
+}
+.intro-title {
+  font-size:38px; font-weight:900;
+  letter-spacing:4px; text-transform:uppercase;
+  background: linear-gradient(135deg, #ffcc44, #ff8800);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.intro-sub {
+  font-size:14px; color:rgba(255,255,255,0.4);
+  line-height:1.6; max-width:280px;
+}
+.intro-timer-preview {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,170,0,0.08);
+  border:1px solid rgba(255,170,0,0.2);
+  border-radius:12px; padding:10px 20px;
+}
+.itp-icon { font-size:20px; }
+.itp-text { font-size:13px; color:rgba(255,200,0,0.8); }
+.start-btn {
+  background:linear-gradient(135deg,#ff8800,#ffcc00);
+  color:#000; border:none;
+  padding:15px 44px; border-radius:16px;
+  font-size:16px; font-weight:800;
+  letter-spacing:1px; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 8px 30px rgba(255,150,0,0.4);
+  transition:all .2s;
+}
+.start-btn:active { transform:scale(.96); }
+
+/* ══════ GAME ══════ */
+#game {
+  background: #0d0a00;
+  position:relative;
+}
+
+/* DOOR ROOM */
+.room {
+  position:absolute; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:0;
+  opacity:0;
+  transition:opacity .4s;
+}
+.room.visible { opacity:1; }
+
+/* Dungeon vibe bg */
+.room-bg {
+  position:absolute; inset:0;
+  background: radial-gradient(ellipse at 50% 60%, #1a1200 0%, #0d0a00 70%);
+}
+.torch-left, .torch-right {
+  position:absolute; top:25%; font-size:28px;
+  animation:torchFlicker 0.5s ease-in-out infinite alternate;
+}
+.torch-left { left:20px; }
+.torch-right { right:20px; }
+@keyframes torchFlicker {
+  from { filter:drop-shadow(0 0 8px rgba(255,150,0,0.8)); }
+  to   { filter:drop-shadow(0 0 20px rgba(255,200,0,1)); }
+}
+
+/* TOP BAR */
+.top-bar {
+  position:absolute; top:0; left:0; right:0;
+  padding:14px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  z-index:10;
+  background:linear-gradient(to bottom, rgba(13,10,0,0.9), transparent);
+}
+.room-label {
+  font-size:11px; font-weight:700;
+  letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,200,0,0.5);
+}
+.timer-display {
+  display:flex; align-items:center; gap:6px;
+}
+.timer-icon { font-size:16px; }
+.timer-count {
+  font-size:20px; font-weight:900;
+  color:#ffcc00;
+  font-variant-numeric:tabular-nums;
+  transition:color .3s;
+}
+.timer-count.urgent { color:#ff3020; animation:timerUrgent .5s ease infinite alternate; }
+@keyframes timerUrgent { from{transform:scale(1)} to{transform:scale(1.1)} }
+.score-display {
+  font-size:13px; font-weight:700; color:rgba(255,200,0,0.6);
+}
+
+/* THE DOOR */
+.door-area {
+  position:relative; z-index:5;
+  margin-top:60px;
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+.door-frame {
+  position:relative;
+  width:140px; height:220px;
+}
+.door-body {
+  width:100%; height:100%;
+  background:linear-gradient(180deg, #3d2a0a 0%, #261800 100%);
+  border:3px solid #5a3d10;
+  border-radius:4px 4px 0 0;
+  position:relative;
+  box-shadow:inset -4px 0 12px rgba(0,0,0,0.5), 0 0 40px rgba(0,0,0,0.5);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.door-body.unlocked {
+  animation:doorOpen .6s ease forwards;
+  transform-origin: left center;
+}
+@keyframes doorOpen {
+  to { transform:perspective(400px) rotateY(-70deg); }
+}
+.door-lock {
+  font-size:36px;
+  transition:all .3s;
+}
+.door-lock.open {
+  animation:lockPop .4s ease;
+  filter:hue-rotate(80deg) brightness(1.5);
+}
+@keyframes lockPop {
+  0%{ transform:scale(1); }
+  50%{ transform:scale(1.4); }
+  100%{ transform:scale(1); }
+}
+.door-keyhole {
+  position:absolute; bottom:30px;
+  width:8px; height:12px;
+  background:#1a0f00;
+  border-radius:50% 50% 0 0;
+  border:2px solid #5a3d10;
+}
+.door-keyhole::after {
+  content:'';
+  position:absolute; bottom:-6px; left:50%;
+  transform:translateX(-50%);
+  width:6px; height:8px;
+  background:#1a0f00;
+  border-radius:0 0 3px 3px;
+  border:2px solid #5a3d10;
+}
+.key-slots {
+  display:flex; gap:6px; margin-top:8px;
+}
+.key-slot {
+  width:24px; height:24px; border-radius:50%;
+  border:2px solid rgba(255,200,0,0.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px;
+  transition:all .3s;
+}
+.key-slot.filled {
+  border-color:rgba(255,200,0,0.8);
+  background:rgba(255,200,0,0.15);
+  box-shadow:0 0 12px rgba(255,200,0,0.3);
+}
+
+/* CLUE SECTION */
+.clue-section {
+  position:relative; z-index:5;
+  width:100%; padding:0 16px;
+  margin-top:16px;
+}
+.clue-box {
+  background:rgba(255,200,0,0.06);
+  border:1px solid rgba(255,200,0,0.15);
+  border-radius:14px;
+  padding:12px 16px;
+}
+.clue-label {
+  font-size:9px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  color:rgba(255,200,0,0.4);
+  margin-bottom:6px;
+}
+.clue-text {
+  font-size:13px; line-height:1.6;
+  color:rgba(255,255,255,0.75);
+}
+.clue-word {
+  color:#ffcc00;
+  font-weight:800;
+  text-decoration:underline;
+  text-decoration-style:dotted;
+  text-underline-offset:3px;
+}
+.clue-empty {
+  font-size:13px; color:rgba(255,200,0,0.3); font-style:italic;
+}
+
+/* ANSWER CARDS */
+.answer-section {
+  position:relative; z-index:5;
+  width:100%; padding:12px 16px 0;
+}
+.answer-label {
+  font-size:9px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  color:rgba(255,255,255,0.2);
+  margin-bottom:8px;
+}
+.answer-grid {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.ans-card {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;
+  padding:12px;
+  text-align:center;
+  cursor:pointer;
+  font-size:14px; font-weight:600;
+  color:rgba(255,255,255,0.8);
+  transition:all .15s;
+  position:relative;
+  overflow:hidden;
+}
+.ans-card:active { transform:scale(.97); }
+.ans-card:hover {
+  background:rgba(255,200,0,0.1);
+  border-color:rgba(255,200,0,0.3);
+}
+.ans-card.correct {
+  background:rgba(52,211,153,0.15);
+  border-color:rgba(52,211,153,0.6);
+  color:#34d399;
+  animation:cardWin .4s ease;
+}
+.ans-card.wrong {
+  background:rgba(239,68,68,0.15);
+  border-color:rgba(239,68,68,0.5);
+  color:#f87171;
+  animation:cardFail .3s ease;
+}
+@keyframes cardWin {
+  0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)}
+}
+@keyframes cardFail {
+  0%{transform:translateX(0)} 25%{transform:translateX(-6px)}
+  75%{transform:translateX(6px)} 100%{transform:translateX(0)}
+}
+
+/* FEEDBACK TOAST */
+.toast {
+  position:fixed; top:80px; left:50%; transform:translateX(-50%);
+  padding:10px 20px; border-radius:12px;
+  font-size:14px; font-weight:700;
+  z-index:100; opacity:0;
+  transition:opacity .2s;
+  pointer-events:none;
+}
+.toast.show { opacity:1; }
+.toast.t-win { background:rgba(52,211,153,0.9); color:#000; }
+.toast.t-fail { background:rgba(239,68,68,0.9); color:#fff; }
+
+/* TRANSITION OVERLAY */
+.room-transition {
+  position:fixed; inset:0;
+  background:#0d0a00;
+  z-index:50;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px;
+  opacity:0; pointer-events:none;
+  transition:opacity .3s;
+}
+.room-transition.show { opacity:1; pointer-events:all; }
+.rt-icon { font-size:60px; }
+.rt-title { font-size:22px; font-weight:900; text-transform:uppercase; letter-spacing:3px; }
+.rt-sub { font-size:13px; color:rgba(255,255,255,0.4); }
+
+/* ══════ WIN SCREEN ══════ */
+#win {
+  align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%, #001f00 0%, #0d0a00 70%);
+  gap:20px; text-align:center;
+}
+.win-icon { font-size:80px; animation:winPop 1s ease; }
+@keyframes winPop {
+  0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1}
+}
+.win-title {
+  font-size:34px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+  color:#34d399; text-shadow:0 0 30px rgba(52,211,153,0.5);
+}
+.win-sub { font-size:14px; color:rgba(255,255,255,0.4); }
+.win-words {
+  background:rgba(52,211,153,0.08);
+  border:1px solid rgba(52,211,153,0.2);
+  border-radius:14px;
+  padding:16px 24px;
+  text-align:left;
+  width:calc(100% - 40px);
+  max-width:320px;
+}
+.ww-label {
+  font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(52,211,153,0.5); margin-bottom:10px;
+}
+.ww-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:13px;
+}
+.ww-row:last-child { border:none; }
+.ww-en { font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+.ww-ua { color:rgba(255,255,255,0.4); }
+.win-score {
+  font-size:28px; font-weight:900; color:#ffcc00;
+}
+.win-score span { font-size:14px; color:rgba(255,200,0,0.5); font-weight:400; margin-left:4px; }
+.play-again-btn {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.6);
+  padding:12px 28px; border-radius:12px;
+  font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.play-again-btn:hover { background:rgba(255,255,255,0.12); color:#fff; }
+
+/* ══════ LOSE SCREEN ══════ */
+#lose {
+  align-items:center; justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%, #1a0000 0%, #0d0a00 70%);
+  gap:20px; text-align:center;
+}
+.lose-icon { font-size:72px; }
+.lose-title {
+  font-size:30px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+  color:#ff3030; text-shadow:0 0 30px rgba(255,0,0,0.5);
+}
+.lose-sub { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.6; max-width:260px; }
+.lose-progress {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  padding:14px 20px;
+  font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="phase active" id="intro">
+  <div class="intro-icon">🚪</div>
+  <div class="intro-title">Word Escape</div>
+  <div class="intro-sub">Ти в кімнаті з замком. Щоб вийти — потрібно знати слова. Кожна правильна відповідь = один ключ. 3 ключі → двері відчиняться.</div>
+  <div class="intro-timer-preview">
+    <div class="itp-icon">⏳</div>
+    <div class="itp-text">90 секунд щоб вибратись</div>
+  </div>
+  <button class="start-btn" onclick="startGame()">ПОЧАТИ →</button>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="game">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="room-label" id="roomLabel">Кімната 1 / 3</div>
+    <div class="timer-display">
+      <div class="timer-icon">⏳</div>
+      <div class="timer-count" id="timerCount">90</div>
+    </div>
+    <div class="score-display" id="scoreDisplay">0 очок</div>
+  </div>
+
+  <!-- ROOMS (all stacked, show one at a time) -->
+  <div class="room visible" id="room0">
+    <div class="room-bg"></div>
+    <div class="torch-left">🔥</div>
+    <div class="torch-right">🔥</div>
+    <div class="door-area">
+      <div class="door-frame">
+        <div class="door-body" id="doorBody0">
+          <div class="door-lock" id="doorLock0">🔒</div>
+          <div class="door-keyhole"></div>
+        </div>
+      </div>
+      <div class="key-slots" id="keySlots0">
+        <div class="key-slot" id="k0_0">🔑</div>
+        <div class="key-slot" id="k0_1">🔑</div>
+        <div class="key-slot" id="k0_2">🔑</div>
+      </div>
+    </div>
+    <div class="clue-section">
+      <div class="clue-box">
+        <div class="clue-label">Підказка на стіні</div>
+        <div class="clue-text" id="clue0"></div>
+      </div>
+    </div>
+    <div class="answer-section">
+      <div class="answer-label">Оберіть правильний переклад</div>
+      <div class="answer-grid" id="ansGrid0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WIN -->
+<div class="phase" id="win">
+  <div class="win-icon">🏆</div>
+  <div class="win-title">Вирвався!</div>
+  <div class="win-sub" id="winSub">Ти вибрався за 45 секунд</div>
+  <div class="win-words">
+    <div class="ww-label">Слова які ти вивчив</div>
+    <div class="ww-row"><span class="ww-en">SHADOW</span><span class="ww-ua">= тінь</span></div>
+    <div class="ww-row"><span class="ww-en">FIERCE</span><span class="ww-ua">= лютий</span></div>
+    <div class="ww-row"><span class="ww-en">ANCIENT</span><span class="ww-ua">= давній</span></div>
+  </div>
+  <div class="win-score" id="winScore">0 <span>очок</span></div>
+  <button class="play-again-btn" onclick="location.reload()">Грати знову</button>
+</div>
+
+<!-- LOSE -->
+<div class="phase" id="lose">
+  <div class="lose-icon">💀</div>
+  <div class="lose-title">Час вийшов</div>
+  <div class="lose-sub">Двері так і не відчинились. Але ти запам'ятав нові слова — наступного разу вибережешся!</div>
+  <div class="lose-progress" id="loseProgress">Ти зібрав 1 / 3 ключів</div>
+  <button class="play-again-btn" onclick="location.reload()">Спробувати ще</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<!-- TRANSITION -->
+<div class="room-transition" id="transition">
+  <div class="rt-icon" id="rtIcon">🚪</div>
+  <div class="rt-title" id="rtTitle">Двері відчинились!</div>
+  <div class="rt-sub" id="rtSub">Переходиш до наступної кімнати...</div>
+</div>
+
+<script>
+const rooms = [
+  {
+    id: 0, label: 'Кімната 1 / 3',
+    word: 'SHADOW', correct: 'тінь',
+    clue: 'На стіні написано: "The <span class="clue-word">SHADOW</span> of the tree covered the ground at dusk."',
+    options: ['тінь','сонце','вогонь','вода']
+  },
+  {
+    id: 1, label: 'Кімната 2 / 3',
+    word: 'FIERCE', correct: 'лютий',
+    clue: 'Тут стара книга: "The <span class="clue-word">FIERCE</span> wolf guarded the castle entrance."',
+    options: ['добрий','лютий','тихий','малий']
+  },
+  {
+    id: 2, label: 'Кімната 3 / 3',
+    word: 'ANCIENT', correct: 'давній',
+    clue: 'Напис золотом: "This is an <span class="clue-word">ANCIENT</span> ritual, older than memory."',
+    options: ['новий','швидкий','давній','яскравий']
+  }
+];
+
+let currentRoom = 0;
+let keysCollected = 0;
+let wrongInRoom = 0;
+let totalTime = 90;
+let timeLeft = 90;
+let timerInterval = null;
+let score = 0;
+let gameStarted = false;
+
+function startGame() {
+  goPhase('game');
+  setupRoom(0);
+  timerInterval = setInterval(tick, 1000);
+}
+
+function tick() {
+  timeLeft--;
+  const el = document.getElementById('timerCount');
+  el.textContent = timeLeft;
+  if (timeLeft <= 20) el.classList.add('urgent');
+  if (timeLeft <= 0) {
+    clearInterval(timerInterval);
+    showLose();
+  }
+}
+
+function setupRoom(idx) {
+  const r = rooms[idx];
+  wrongInRoom = 0;
+
+  // Update room if it's not room 0 (room 0 is already in DOM)
+  if (idx > 0) {
+    // Recreate room dynamically
+    const oldRoom = document.getElementById('room0');
+    oldRoom.id = `room${idx}`;
+    oldRoom.className = 'room visible';
+  }
+
+  document.getElementById('roomLabel').textContent = r.label;
+  document.getElementById(`clue${idx}`) && (document.getElementById(`clue${idx}`).innerHTML = r.clue);
+
+  // Render clue in room 0's element (we reuse same DOM)
+  const clueEl = document.querySelector('.clue-text');
+  if (clueEl) clueEl.innerHTML = r.clue;
+
+  // Key slots
+  const keySlots = document.querySelector('.key-slots');
+  if (keySlots) {
+    keySlots.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const ks = document.createElement('div');
+      ks.className = 'key-slot';
+      ks.id = `k${idx}_${i}`;
+      ks.textContent = '🔑';
+      keySlots.appendChild(ks);
+    }
+  }
+
+  // Reset door
+  const doorBody = document.querySelector('.door-body');
+  if (doorBody) {
+    doorBody.classList.remove('unlocked');
+    doorBody.querySelector('.door-lock').textContent = '🔒';
+    doorBody.querySelector('.door-lock').classList.remove('open');
+  }
+
+  renderQuestion(idx);
+}
+
+function renderQuestion(roomIdx) {
+  const r = rooms[roomIdx];
+  const grid = document.querySelector('.answer-grid');
+  grid.innerHTML = '';
+
+  // Shuffle options
+  const shuffled = [...r.options].sort(() => Math.random() - .5);
+
+  shuffled.forEach(opt => {
+    const card = document.createElement('div');
+    card.className = 'ans-card';
+    card.textContent = opt;
+    card.onclick = () => answer(card, opt, r.correct, roomIdx);
+    grid.appendChild(card);
+  });
+}
+
+function answer(card, chosen, correct, roomIdx) {
+  // Disable all cards
+  document.querySelectorAll('.ans-card').forEach(c => c.onclick = null);
+
+  if (chosen === correct) {
+    card.classList.add('correct');
+    keysCollected++;
+    score += (wrongInRoom === 0) ? 30 : 15;
+    document.getElementById('scoreDisplay').textContent = score + ' очок';
+
+    // Fill key slot
+    const kEl = document.querySelector(`.key-slot:not(.filled)`);
+    if (kEl) kEl.classList.add('filled');
+
+    showToast('✓ Правильно! +' + ((wrongInRoom === 0) ? '30' : '15'), 'win');
+
+    if (keysCollected === 3) {
+      // All keys! Open door
+      setTimeout(() => {
+        const lock = document.querySelector('.door-lock');
+        lock.classList.add('open');
+        lock.textContent = '🔓';
+        const doorBody = document.querySelector('.door-body');
+        doorBody.classList.add('unlocked');
+
+        if (currentRoom < 2) {
+          // Transition to next room
+          setTimeout(() => showRoomTransition(currentRoom + 1), 700);
+        } else {
+          // WIN!
+          setTimeout(() => showWin(), 1000);
+        }
+      }, 600);
+    } else {
+      // Next question (new word from same room options in real game, here next room)
+      setTimeout(() => {
+        renderQuestion(roomIdx);
+        // Re-enable
+      }, 800);
+    }
+
+  } else {
+    card.classList.add('wrong');
+    wrongInRoom++;
+    score = Math.max(0, score - 10);
+    document.getElementById('scoreDisplay').textContent = score + ' очок';
+    showToast('✗ Не те слово', 'fail');
+
+    setTimeout(() => {
+      card.classList.remove('wrong');
+      card.onclick = () => answer(card, chosen, correct, roomIdx);
+      // Re-enable all
+      document.querySelectorAll('.ans-card').forEach(c => {
+        if (!c.classList.contains('correct')) {
+          const opt = c.textContent;
+          c.onclick = () => answer(c, opt, correct, roomIdx);
+        }
+      });
+    }, 700);
+  }
+}
+
+function showRoomTransition(nextRoomIdx) {
+  const t = document.getElementById('transition');
+  const icons = ['🚪', '⛓️', '💀'];
+  const titles = ['Перша кімната — відкрита!', 'Тікай далі...', 'Остання кімната!'];
+  document.getElementById('rtIcon').textContent = icons[nextRoomIdx - 1];
+  document.getElementById('rtTitle').textContent = titles[nextRoomIdx - 1];
+  document.getElementById('rtSub').textContent = 'Наступна кімната ' + (nextRoomIdx + 1) + ' / 3';
+  t.classList.add('show');
+
+  setTimeout(() => {
+    t.classList.remove('show');
+    currentRoom = nextRoomIdx;
+    keysCollected = 0;
+    setupRoom(nextRoomIdx);
+  }, 1800);
+}
+
+function showWin() {
+  clearInterval(timerInterval);
+  const used = totalTime - timeLeft;
+  document.getElementById('winSub').textContent = `Ти вибрався за ${used} секунд! ${timeLeft > 60 ? '🔥 Неймовірно!' : ''}`;
+  document.getElementById('winScore').innerHTML = score + ' <span>очок</span>';
+  goPhase('win');
+}
+
+function showLose() {
+  document.getElementById('loseProgress').textContent = `Ти зібрав ${keysCollected} / 3 ключів у кімнаті ${currentRoom + 1}`;
+  goPhase('lose');
+}
+
+function showToast(text, type) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = `toast t-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function goPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const el = document.getElementById(id);
+  el.style.display = 'flex';
+  el.classList.add('active');
+}
+
+// Hide non-active phases initially
+document.querySelectorAll('.phase:not(.active)').forEach(p => p.style.display='none');
+</script>
+</body>
+</html>

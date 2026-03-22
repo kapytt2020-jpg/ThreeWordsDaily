@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CONNECTIONS — Voodoo English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #0a0a0f;
+  --bg2:         #12121a;
+  --bg3:         #1a1a26;
+  --purple:      #7c3aed;
+  --purple-light:#a855f7;
+  --purple-glow: rgba(124,58,237,0.4);
+  --gold:        #f59e0b;
+  --gold-light:  #fbbf24;
+  --gold-glow:   rgba(245,158,11,0.35);
+  --text:        #f1f0f8;
+  --text-dim:    #8b8aa8;
+  --border:      rgba(255,255,255,0.1);
+  --glass:       rgba(255,255,255,0.05);
+  --glass2:      rgba(255,255,255,0.08);
+
+  --yellow-cat:  #eab308;
+  --green-cat:   #16a34a;
+  --blue-cat:    #2563eb;
+  --purple-cat:  #7c3aed;
+
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: opacity 0.35s ease;
+  padding-bottom: 24px;
+}
+.screen.hidden { opacity: 0; pointer-events: none; }
+
+/* ── BACKGROUND GRID ── */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.bg-glow {
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(124,58,237,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+.header {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-text {
+  font-size: clamp(22px, 5vw, 28px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #fff 30%, var(--purple-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.logo-icon { font-size: 24px; }
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--glass2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold-light);
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+/* ── GAME AREA ── */
+.game-area {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  padding: 16px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── SOLVED GROUPS ── */
+.solved-group {
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: slideDown 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.solved-group.yellow { background: var(--yellow-cat); }
+.solved-group.green  { background: var(--green-cat); }
+.solved-group.blue   { background: var(--blue-cat); }
+.solved-group.purple { background: var(--purple-cat); }
+.solved-cat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.solved-words {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── WORD GRID ── */
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.word-card {
+  aspect-ratio: 1 / 0.72;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  font-size: clamp(11px, 2.8vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s, transform 0.12s;
+  touch-action: manipulation;
+  min-height: 52px;
+  text-align: center;
+  padding: 6px 4px;
+  position: relative;
+  overflow: hidden;
+}
+.word-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.word-card:hover:not(.selected):not(.disabled) {
+  background: var(--glass2);
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+.word-card:active:not(.disabled) {
+  transform: scale(0.95);
+}
+.word-card.selected {
+  background: var(--purple-glow);
+  border-color: var(--purple-light);
+  color: #fff;
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 4px 20px var(--purple-glow);
+}
+.word-card.disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.word-card.shake {
+  animation: shake 0.5s cubic-bezier(0.36,0.07,0.19,0.97);
+}
+.word-card.pop {
+  animation: pop 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  15%      { transform: translateX(-8px) rotate(-1deg); }
+  30%      { transform: translateX(8px) rotate(1deg); }
+  45%      { transform: translateX(-6px); }
+  60%      { transform: translateX(6px); }
+  75%      { transform: translateX(-3px); }
+  90%      { transform: translateX(3px); }
+}
+@keyframes pop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* ── BOTTOM CONTROLS ── */
+.bottom-controls {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  padding: 14px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.hearts {
+  display: flex;
+  gap: 4px;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.heart { transition: transform 0.2s; }
+.heart.lost {
+  filter: grayscale(1) opacity(0.35);
+  transform: scale(0.85);
+}
+.btn-shuffle {
+  background: var(--glass);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, color 0.15s;
+  touch-action: manipulation;
+}
+.btn-shuffle:hover { background: var(--glass2); color: var(--text); }
+
+.btn-check {
+  flex: 1;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  padding: 14px;
+  transition: opacity 0.2s, transform 0.12s, box-shadow 0.2s;
+  touch-action: manipulation;
+  box-shadow: 0 4px 20px var(--purple-glow);
+}
+.btn-check:disabled {
+  background: var(--glass);
+  color: var(--text-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.btn-check:not(:disabled):hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px var(--purple-glow);
+}
+.btn-check:not(:disabled):active { transform: scale(0.97); }
+
+.hint-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.btn-give-up {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  touch-action: manipulation;
+  padding: 4px 8px;
+}
+.btn-give-up:hover { color: var(--text); }
+.selected-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* ── WIN SCREEN ── */
+.win-screen-inner {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 520px;
+  padding: 32px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.win-emoji {
+  font-size: 64px;
+  animation: bounceIn 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+.win-title {
+  font-size: clamp(26px, 7vw, 36px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #fff 30%, var(--gold-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+.win-subtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  text-align: center;
+  font-weight: 500;
+}
+.results-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.result-row {
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  animation: slideDown 0.4s ease both;
+}
+.result-row.yellow { background: var(--yellow-cat); }
+.result-row.green  { background: var(--green-cat); }
+.result-row.blue   { background: var(--blue-cat); }
+.result-row.purple { background: var(--purple-cat); }
+.result-label { font-size: 13px; font-weight: 700; opacity: 0.9; }
+.result-words { font-size: 11px; font-weight: 600; opacity: 0.8; letter-spacing: 0.04em; }
+
+.xp-card {
+  background: var(--glass);
+  border: 1.5px solid rgba(245,158,11,0.4);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  box-shadow: 0 0 24px rgba(245,158,11,0.12);
+}
+.xp-icon { font-size: 32px; }
+.xp-info { display: flex; flex-direction: column; gap: 2px; }
+.xp-label { font-size: 11px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+.xp-value { font-size: 26px; font-weight: 900; color: var(--gold-light); }
+
+.share-section {
+  width: 100%;
+  background: var(--glass);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.share-label { font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+.emoji-grid-display {
+  font-size: 22px;
+  line-height: 1.5;
+  letter-spacing: 2px;
+}
+.btn-share {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+  border: none;
+  border-radius: 10px;
+  color: #1a1000;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 12px;
+  touch-action: manipulation;
+  transition: opacity 0.15s, transform 0.12s;
+}
+.btn-share:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-share:active { transform: scale(0.97); }
+
+.countdown-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
+.countdown-time {
+  color: var(--purple-light);
+  font-weight: 700;
+}
+
+.btn-again {
+  width: 100%;
+  background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 16px;
+  touch-action: manipulation;
+  box-shadow: 0 4px 24px var(--purple-glow);
+  transition: opacity 0.15s, transform 0.12s;
+}
+.btn-again:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-again:active { transform: scale(0.97); }
+
+/* ── STATUS MESSAGE ── */
+.status-msg {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  background: rgba(20,18,30,0.96);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  z-index: 999;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.status-msg.show { transform: translate(-50%, -50%) scale(1); }
+
+/* ── CONFETTI ── */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── PARTICLE BURST ── */
+.particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 997;
+  border-radius: 50%;
+  animation: particleBurst 0.7s ease-out forwards;
+}
+@keyframes particleBurst {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(20,18,30,0.96);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  z-index: 999;
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- SCREEN 1: GAME -->
+<div class="screen" id="screen-game">
+  <div class="header">
+    <div class="logo-row">
+      <span class="logo-icon">🔗</span>
+      <span class="logo-text">CONNECTIONS</span>
+    </div>
+    <div class="header-meta">
+      <span id="date-display"></span>
+      <div class="streak-badge">🔥 <span id="streak-val">7</span></div>
+    </div>
+    <div class="subtitle">Знайди 4 групи по 4 слова</div>
+  </div>
+
+  <div class="game-area" id="game-area">
+    <!-- Solved groups appear here -->
+    <div id="solved-container"></div>
+    <!-- Word grid -->
+    <div class="word-grid" id="word-grid"></div>
+  </div>
+
+  <div class="bottom-controls">
+    <div class="controls-row">
+      <div class="hearts" id="hearts-display"></div>
+      <button class="btn-shuffle" id="btn-shuffle" onclick="shuffleGrid()">🔀 Перемішати</button>
+    </div>
+    <button class="btn-check" id="btn-check" disabled onclick="checkGuess()">ПЕРЕВІРИТИ</button>
+    <div class="hint-row">
+      <span class="selected-count" id="selected-count">Обери 4 слова</span>
+      <button class="btn-give-up" onclick="giveUp()">Здатись</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 2: WIN -->
+<div class="screen hidden" id="screen-win">
+  <div class="win-screen-inner">
+    <div class="win-emoji">🎉</div>
+    <div class="win-title" id="win-title">ЧУДОВО!</div>
+    <div class="win-subtitle" id="win-subtitle">Ти знайшов(ла) всі 4 групи!</div>
+
+    <div class="results-grid" id="results-grid"></div>
+
+    <div class="xp-card">
+      <div class="xp-icon">⚡</div>
+      <div class="xp-info">
+        <div class="xp-label">XP отримано</div>
+        <div class="xp-value" id="xp-display">+75 XP</div>
+      </div>
+    </div>
+
+    <div class="share-section">
+      <div class="share-label">Поділитись результатом</div>
+      <div class="emoji-grid-display" id="emoji-result"></div>
+      <button class="btn-share" onclick="shareResult()">📋 Скопіювати результат</button>
+    </div>
+
+    <div class="countdown-text">
+      Наступна гра о <span class="countdown-time" id="countdown-display">00:00:00</span>
+    </div>
+
+    <button class="btn-again" onclick="restartGame()">▶ Грати ще раз</button>
+  </div>
+</div>
+
+<!-- STATUS POPUP -->
+<div class="status-msg" id="status-msg"></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFETTI -->
+<div class="confetti-container" id="confetti-container"></div>
+
+<script>
+// ── GAME DATA ──
+const CATEGORIES = [
+  {
+    id: 'speed',
+    label: 'Слова зі значенням ШВИДКИЙ',
+    emoji: '🟨',
+    color: 'yellow',
+    difficulty: 1,
+    words: ['SWIFT', 'RAPID', 'QUICK', 'FAST']
+  },
+  {
+    id: 'fire',
+    label: 'Слова зі значенням ВОГОНЬ',
+    emoji: '🟩',
+    color: 'green',
+    difficulty: 2,
+    words: ['FIRE', 'FLAME', 'BLAZE', 'INFERNO']
+  },
+  {
+    id: 'stop',
+    label: 'Слова зі значенням СТОП',
+    emoji: '🟦',
+    color: 'blue',
+    difficulty: 3,
+    words: ['BREAK', 'REST', 'PAUSE', 'HALT']
+  },
+  {
+    id: 'ghost',
+    label: 'Слова зі значенням ПРИВИД',
+    emoji: '🟪',
+    color: 'purple',
+    difficulty: 4,
+    words: ['GHOST', 'SPIRIT', 'SOUL', 'PHANTOM']
+  }
+];
+
+// ── STATE ──
+let selected = [];
+let solvedIds = [];
+let mistakes = 0;
+let maxMistakes = 3;
+let guessHistory = [];
+let currentWords = [];
+let gameOver = false;
+
+// ── INIT ──
+function init() {
+  displayDate();
+  buildWordList();
+  renderGrid();
+  renderHearts();
+}
+
+function displayDate() {
+  const d = new Date();
+  const opts = { day: 'numeric', month: 'long', year: 'numeric' };
+  document.getElementById('date-display').textContent =
+    d.toLocaleDateString('uk-UA', opts);
+}
+
+function buildWordList() {
+  let all = [];
+  CATEGORIES.forEach(cat => all.push(...cat.words));
+  currentWords = shuffle([...all]);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── RENDER GRID ──
+function renderGrid() {
+  const grid = document.getElementById('word-grid');
+  grid.innerHTML = '';
+  currentWords.forEach(word => {
+    if (isSolvedWord(word)) return;
+    const card = document.createElement('div');
+    card.className = 'word-card' + (selected.includes(word) ? ' selected' : '');
+    card.textContent = word;
+    card.dataset.word = word;
+    card.addEventListener('click', () => toggleWord(word, card));
+    grid.appendChild(card);
+  });
+  updateCheckBtn();
+  updateSelectedCount();
+}
+
+function isSolvedWord(word) {
+  return solvedIds.some(id => {
+    const cat = CATEGORIES.find(c => c.id === id);
+    return cat && cat.words.includes(word);
+  });
+}
+
+// ── WORD SELECTION ──
+function toggleWord(word, card) {
+  if (gameOver) return;
+  const idx = selected.indexOf(word);
+  if (idx === -1) {
+    if (selected.length >= 4) return;
+    selected.push(word);
+    card.classList.add('selected', 'pop');
+    setTimeout(() => card.classList.remove('pop'), 300);
+  } else {
+    selected.splice(idx, 1);
+    card.classList.remove('selected');
+  }
+  updateCheckBtn();
+  updateSelectedCount();
+}
+
+function updateCheckBtn() {
+  document.getElementById('btn-check').disabled = selected.length !== 4;
+}
+
+function updateSelectedCount() {
+  const el = document.getElementById('selected-count');
+  if (selected.length === 0) el.textContent = 'Обери 4 слова';
+  else if (selected.length < 4) el.textContent = `Обрано: ${selected.length} / 4`;
+  else el.textContent = 'Готово!';
+}
+
+// ── CHECK GUESS ──
+function checkGuess() {
+  if (selected.length !== 4 || gameOver) return;
+
+  // Find matching category
+  const match = CATEGORIES.find(cat =>
+    !solvedIds.includes(cat.id) &&
+    cat.words.every(w => selected.includes(w)) &&
+    selected.every(w => cat.words.includes(w))
+  );
+
+  if (match) {
+    handleCorrect(match);
+  } else {
+    handleWrong();
+  }
+}
+
+function handleCorrect(cat) {
+  const rowEmoji = cat.words.map(() => cat.emoji).join('');
+  guessHistory.push(rowEmoji);
+
+  solvedIds.push(cat.id);
+  selected = [];
+
+  // Add solved group card
+  addSolvedGroup(cat);
+
+  // Burst particles
+  burstParticles();
+
+  // Remove solved words from currentWords display
+  renderGrid();
+
+  // Check win
+  if (solvedIds.length === CATEGORIES.length) {
+    setTimeout(() => showWin(false), 600);
+  }
+}
+
+function handleWrong() {
+  mistakes++;
+
+  // Shake selected cards
+  const grid = document.getElementById('word-grid');
+  selected.forEach(word => {
+    const card = grid.querySelector(`[data-word="${word}"]`);
+    if (card) {
+      card.classList.remove('shake');
+      void card.offsetWidth; // reflow
+      card.classList.add('shake');
+      setTimeout(() => card.classList.remove('shake'), 500);
+    }
+  });
+
+  // Check if one away
+  const oneAway = CATEGORIES.find(cat => {
+    if (solvedIds.includes(cat.id)) return false;
+    const overlap = selected.filter(w => cat.words.includes(w)).length;
+    return overlap === 3;
+  });
+  if (oneAway) {
+    showStatus('Майже! Одне слово не те...');
+  }
+
+  // Record guess
+  const rowEmoji = CATEGORIES
+    .filter(c => !solvedIds.includes(c.id))
+    .map(c => {
+      const overlap = selected.filter(w => c.words.includes(w)).length;
+      return overlap === 4 ? c.emoji : '⬛';
+    });
+  // Simple wrong row
+  const wrongEmoji = selected.map(w => {
+    const cat = CATEGORIES.find(c => c.words.includes(w));
+    return cat ? cat.emoji : '⬛';
+  }).join('');
+  guessHistory.push(wrongEmoji);
+
+  renderHearts();
+  selected = [];
+  renderGrid();
+
+  if (mistakes > maxMistakes) {
+    setTimeout(() => showWin(true), 400);
+  }
+}
+
+function renderHearts() {
+  const el = document.getElementById('hearts-display');
+  el.innerHTML = '';
+  for (let i = 0; i <= maxMistakes; i++) {
+    const span = document.createElement('span');
+    span.className = 'heart' + (i < mistakes ? ' lost' : '');
+    span.textContent = '❤️';
+    el.appendChild(span);
+  }
+}
+
+// ── SOLVED GROUP ──
+function addSolvedGroup(cat) {
+  const container = document.getElementById('solved-container');
+  const div = document.createElement('div');
+  div.className = `solved-group ${cat.color}`;
+  div.innerHTML = `
+    <div class="solved-cat-label">${cat.emoji} ${cat.label}</div>
+    <div class="solved-words">${cat.words.join(' · ')}</div>
+  `;
+  container.appendChild(div);
+}
+
+// ── SHUFFLE ──
+function shuffleGrid() {
+  const unsolved = currentWords.filter(w => !isSolvedWord(w));
+  const shuffled = shuffle([...unsolved]);
+  // Replace unsolved positions
+  let si = 0;
+  currentWords = currentWords.map(w => {
+    if (isSolvedWord(w)) return w;
+    return shuffled[si++];
+  });
+  renderGrid();
+}
+
+// ── GIVE UP ──
+function giveUp() {
+  if (!confirm('Здатись і побачити відповіді?')) return;
+  gameOver = true;
+  // Solve all remaining
+  CATEGORIES.forEach(cat => {
+    if (!solvedIds.includes(cat.id)) {
+      solvedIds.push(cat.id);
+      addSolvedGroup(cat);
+    }
+  });
+  selected = [];
+  renderGrid();
+  setTimeout(() => showWin(true), 800);
+}
+
+// ── WIN SCREEN ──
+function showWin(lost) {
+  gameOver = true;
+
+  // Populate win screen
+  document.getElementById('win-title').textContent = lost ? 'НЕ ВИЙШЛО...' : 'ЧУДОВО!';
+  document.getElementById('win-emoji').textContent = lost ? '😅' : '🎉';
+  document.getElementById('win-subtitle').textContent = lost
+    ? `Помилок: ${mistakes}. Спробуй ще раз!`
+    : `Ти знайшов(ла) всі 4 групи без поразки!`;
+
+  // XP
+  const xp = lost ? Math.max(10, 75 - mistakes * 15) : 75;
+  document.getElementById('xp-display').textContent = `+${xp} XP`;
+
+  // Results grid
+  const rg = document.getElementById('results-grid');
+  rg.innerHTML = '';
+  CATEGORIES.sort((a,b) => a.difficulty - b.difficulty).forEach((cat, i) => {
+    const row = document.createElement('div');
+    row.className = `result-row ${cat.color}`;
+    row.style.animationDelay = `${i * 0.1}s`;
+    row.innerHTML = `
+      <div>
+        <div class="result-label">${cat.emoji} ${cat.label}</div>
+        <div class="result-words">${cat.words.join(' · ')}</div>
+      </div>
+    `;
+    rg.appendChild(row);
+  });
+
+  // Emoji result
+  const emojiText = guessHistory.join('\n');
+  document.getElementById('emoji-result').textContent =
+    emojiText || (lost ? '😅 Не вийшло' : '🎉 Ідеально!');
+
+  // Countdown to midnight
+  startCountdown();
+
+  // Show screen
+  document.getElementById('screen-game').classList.add('hidden');
+  document.getElementById('screen-win').classList.remove('hidden');
+
+  if (!lost) {
+    setTimeout(spawnConfetti, 200);
+  }
+}
+
+// ── STATUS POPUP ──
+function showStatus(msg, duration = 1800) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── PARTICLES ──
+function burstParticles() {
+  const colors = ['#7c3aed','#a855f7','#f59e0b','#fbbf24','#fff','#ec4899'];
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.PI * 2 * i) / 18;
+    const dist = 60 + Math.random() * 80;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+    const size = 6 + Math.random() * 8;
+    p.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      width:${size}px; height:${size}px;
+      background:${colors[i % colors.length]};
+      --tx:${tx}px; --ty:${ty}px;
+      margin-left:${-size/2}px; margin-top:${-size/2}px;
+    `;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+}
+
+// ── CONFETTI ──
+function spawnConfetti() {
+  const container = document.getElementById('confetti-container');
+  const colors = ['#7c3aed','#a855f7','#f59e0b','#fbbf24','#ec4899','#06b6d4','#10b981','#f43f5e'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const x = Math.random() * 100;
+    const delay = Math.random() * 1.2;
+    const dur = 1.8 + Math.random() * 1.5;
+    const size = 6 + Math.random() * 8;
+    const aspect = Math.random() > 0.5 ? 1 : 0.4;
+    piece.style.cssText = `
+      left:${x}%;
+      top:-20px;
+      width:${size}px;
+      height:${size * aspect}px;
+      background:${color};
+      animation-duration:${dur}s;
+      animation-delay:${delay}s;
+      border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+    `;
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), (delay + dur + 0.5) * 1000);
+  }
+}
+
+// ── SHARE ──
+function shareResult() {
+  const today = new Date().toLocaleDateString('uk-UA');
+  const totalGuesses = guessHistory.length;
+  const text = `🔗 CONNECTIONS — Voodoo English\n${today}\nСпроб: ${totalGuesses}\n\n${guessHistory.join('\n')}\n\nhttps://voodoo.english`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('✅ Скопійовано в буфер обміну!');
+    }).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('✅ Скопійовано!');
+  } catch(e) {
+    showToast('❌ Не вдалося скопіювати');
+  }
+  document.body.removeChild(ta);
+}
+
+// ── COUNTDOWN ──
+function startCountdown() {
+  function update() {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const diff = midnight - now;
+    const h = Math.floor(diff / 3600000).toString().padStart(2,'0');
+    const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
+    const s = Math.floor((diff % 60000) / 1000).toString().padStart(2,'0');
+    const el = document.getElementById('countdown-display');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+// ── RESTART ──
+function restartGame() {
+  selected = [];
+  solvedIds = [];
+  mistakes = 0;
+  guessHistory = [];
+  gameOver = false;
+
+  document.getElementById('solved-container').innerHTML = '';
+  document.getElementById('confetti-container').innerHTML = '';
+
+  buildWordList();
+  renderGrid();
+  renderHearts();
+  updateSelectedCount();
+
+  document.getElementById('screen-win').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('hidden');
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voodoo — Вибір механік</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #08080f;
+  color: #fff;
+  min-height: 100vh;
+  padding-bottom: 120px;
+}
+
+/* HEADER */
+.hero {
+  text-align: center;
+  padding: 50px 20px 30px;
+}
+.hero-badge {
+  display: inline-block;
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.3);
+  color: #a78bfa;
+  font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  padding: 6px 16px; border-radius: 20px; margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: clamp(26px, 5vw, 44px); font-weight: 900; line-height: 1.15; margin-bottom: 10px;
+  background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hero p { font-size: 14px; color: rgba(255,255,255,0.4); max-width: 400px; margin: 0 auto 24px; line-height: 1.6; }
+
+/* COUNTERS */
+.counter-bar {
+  display: flex; gap: 20px; justify-content: center;
+  margin-bottom: 32px; flex-wrap: wrap;
+}
+.counter {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 10px 20px; text-align: center;
+  min-width: 100px;
+}
+.counter .num { font-size: 24px; font-weight: 900; color: #a78bfa; }
+.counter .lbl { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+
+/* FILTERS */
+.filters {
+  display: flex; gap: 8px; justify-content: center;
+  padding: 0 20px 24px; flex-wrap: wrap;
+}
+.filter {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5); padding: 7px 14px; border-radius: 20px;
+  font-size: 12px; cursor: pointer; transition: all .2s;
+}
+.filter:hover, .filter.on { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.4); color: #a78bfa; }
+
+/* GRID */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px; padding: 0 16px;
+  max-width: 1100px; margin: 0 auto;
+}
+
+/* CARD */
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; padding: 18px;
+  cursor: pointer; transition: all .2s;
+  position: relative; overflow: hidden;
+  user-select: none;
+}
+.card:hover { border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.05); }
+.card.liked {
+  border-color: rgba(139,92,246,0.5);
+  background: rgba(139,92,246,0.08);
+  box-shadow: 0 0 20px rgba(139,92,246,0.15);
+}
+
+.card-top {
+  display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px;
+}
+.card-icon { font-size: 36px; flex-shrink: 0; }
+.card-meta { flex: 1; }
+.card-num {
+  font-size: 10px; font-weight: 700; letter-spacing: 2px; color: rgba(255,255,255,0.2);
+  text-transform: uppercase; margin-bottom: 3px;
+}
+.card-name { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+.card-name-en { font-size: 11px; color: rgba(255,255,255,0.25); }
+
+.card-desc { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; margin-bottom: 12px; }
+
+.card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tag {
+  font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 7px; border: 1px solid;
+}
+.t-social   { color: #60a5fa; border-color: rgba(96,165,250,.25); background: rgba(96,165,250,.07); }
+.t-puzzle   { color: #fbbf24; border-color: rgba(251,191,36,.25); background: rgba(251,191,36,.07); }
+.t-action   { color: #f87171; border-color: rgba(248,113,113,.25); background: rgba(248,113,113,.07); }
+.t-story    { color: #c084fc; border-color: rgba(192,132,252,.25); background: rgba(192,132,252,.07); }
+.t-strategy { color: #34d399; border-color: rgba(52,211,153,.25); background: rgba(52,211,153,.07); }
+.t-creative { color: #fb923c; border-color: rgba(251,146,60,.25); background: rgba(251,146,60,.07); }
+.t-viral    { color: #f472b6; border-color: rgba(244,114,182,.25); background: rgba(244,114,182,.07); }
+.t-new      { color: #a78bfa; border-color: rgba(167,139,250,.25); background: rgba(167,139,250,.07); }
+
+.card-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.hook-text {
+  font-size: 12px; color: rgba(255,255,255,0.3); font-style: italic;
+  max-width: 70%;
+}
+.like-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  font-size: 18px; transition: all .2s; flex-shrink: 0;
+}
+.card.liked .like-btn {
+  background: rgba(139,92,246,0.3); border-color: rgba(139,92,246,0.6);
+  box-shadow: 0 0 12px rgba(139,92,246,0.4);
+}
+.liked-check { display: none; }
+.card.liked .liked-check { display: block; }
+.card:not(.liked) .heart-icon { display: block; }
+.card.liked .heart-icon { display: none; }
+
+/* FIXED BOTTOM BAR */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(8,8,15,0.95);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  backdrop-filter: blur(20px);
+  z-index: 100;
+}
+.bb-info { font-size: 13px; color: rgba(255,255,255,0.5); }
+.bb-info strong { color: #a78bfa; font-size: 18px; }
+.bb-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff; border: none;
+  padding: 11px 24px; border-radius: 12px;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s;
+}
+.bb-btn:hover { transform: scale(1.04); }
+.bb-btn:disabled { opacity: .4; cursor: default; transform: none; }
+
+/* Mafia confirmed badge */
+.confirmed-badge {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.4);
+  color: #34d399; font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+
+/* New tag */
+.new-tag {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.4);
+  color: #a78bfa; font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 8px;
+  letter-spacing: 1px;
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">✦ Voodoo — Вибір механік ✦</div>
+  <h1>20 різних ігор.<br>Вибери які будуємо.</h1>
+  <p>Натисни ♡ на ті що подобаються — потім одразу будуємо. 🔥 = ніхто не зробив в Telegram Mini Apps.</p>
+  <div class="counter-bar">
+    <div class="counter"><div class="num" id="totalLiked">0</div><div class="lbl">Вибрано</div></div>
+    <div class="counter"><div class="num">25</div><div class="lbl">Концепцій</div></div>
+    <div class="counter"><div class="num">1</div><div class="lbl">Точно є ✅</div></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter on" onclick="filter('all',this)">Всі</div>
+  <div class="filter" onclick="filter('social',this)">👥 Соціальні</div>
+  <div class="filter" onclick="filter('puzzle',this)">🧩 Пазли</div>
+  <div class="filter" onclick="filter('action',this)">⚡ Екшн</div>
+  <div class="filter" onclick="filter('story',this)">📖 Сторі</div>
+  <div class="filter" onclick="filter('strategy',this)">♟ Стратегія</div>
+  <div class="filter" onclick="filter('creative',this)">🎨 Творчі</div>
+</div>
+
+<div class="grid" id="grid">
+
+  <!-- 0. MAFIA - CONFIRMED -->
+  <div class="card liked" data-tags="social" id="c0" onclick="toggleLike(0)">
+    <div class="confirmed-badge">✅ Точно є</div>
+    <div class="card-top">
+      <div class="card-icon">🎭</div>
+      <div class="card-meta">
+        <div class="card-num">01</div>
+        <div class="card-name">Word Mafia</div>
+        <div class="card-name-en">Social Deduction</div>
+      </div>
+    </div>
+    <div class="card-desc">6 гравців. Один знає НЕПРАВИЛЬНИЙ переклад. Читаєш повідомлення, шукаєш хто "здає" себе у реченнях. Голосуй і викривай.</div>
+    <div class="card-tags">
+      <span class="tag t-social">👥 Соціальне</span>
+      <span class="tag t-viral">🔥 Вірусне</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Серед нас є той хто бреше..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 1. CONNECTIONS -->
+  <div class="card" data-tags="puzzle" id="c1" onclick="toggleLike(1)">
+    <div class="new-tag">NYT-style</div>
+    <div class="card-top">
+      <div class="card-icon">🧩</div>
+      <div class="card-meta">
+        <div class="card-num">02</div>
+        <div class="card-name">Connections</div>
+        <div class="card-name-en">Групування слів</div>
+      </div>
+    </div>
+    <div class="card-desc">16 слів — 4 приховані категорії. Знайди що між ними спільного. Складність зростає: легка жовта → смертоносна фіолетова. Добові пазли що всі обговорюють.</div>
+    <div class="card-tags">
+      <span class="tag t-puzzle">🧩 Пазл</span>
+      <span class="tag t-social">📢 Шерінг</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Сьогодні не зміг взяти фіолетову 😤"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 2. SKETCH/DRAW -->
+  <div class="card" data-tags="social creative" id="c2" onclick="toggleLike(2)">
+    <div class="card-top">
+      <div class="card-icon">🎨</div>
+      <div class="card-meta">
+        <div class="card-num">03</div>
+        <div class="card-name">Sketch & Guess</div>
+        <div class="card-name-en">AI малює — ти вгадуєш</div>
+      </div>
+    </div>
+    <div class="card-desc">AI малює слово — ти відгадуєш англійське слово. Або навпаки: ти описуєш по-укр., AI малює, інші гравці відгадують. 30 секунд на малюнок.</div>
+    <div class="card-tags">
+      <span class="tag t-creative">🎨 Творче</span>
+      <span class="tag t-social">👥 Мульти</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Це що, кінь?? — Ні, це BUTTERFLY!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 3. TABOO -->
+  <div class="card" data-tags="social creative" id="c3" onclick="toggleLike(3)">
+    <div class="card-top">
+      <div class="card-icon">🚫</div>
+      <div class="card-meta">
+        <div class="card-num">04</div>
+        <div class="card-name">Табу</div>
+        <div class="card-name-en">Опиши без заборонених слів</div>
+      </div>
+    </div>
+    <div class="card-desc">Тобі треба пояснити слово, але є список заборонених слів які не можна використати. Команда має вгадати за 60 сек. Змушує думати не шаблонно.</div>
+    <div class="card-tags">
+      <span class="tag t-creative">💡 Творче</span>
+      <span class="tag t-social">👥 Командна</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Скажи OCEAN без слів 'water', 'sea', 'fish'..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 4. BROKEN PHONE -->
+  <div class="card" data-tags="social" id="c4" onclick="toggleLike(4)">
+    <div class="card-top">
+      <div class="card-icon">📞</div>
+      <div class="card-meta">
+        <div class="card-num">05</div>
+        <div class="card-name">Зламаний Телефон</div>
+        <div class="card-name-en">Translation Chain</div>
+      </div>
+    </div>
+    <div class="card-desc">Слово переходить через 5 "перекладачів". Кожен передає своє розуміння далі. В кінці порівнюють оригінал і результат — зазвичай смішно. Ти одна ланка в ланцюжку.</div>
+    <div class="card-tags">
+      <span class="tag t-social">👥 Соціальне</span>
+      <span class="tag t-viral">😂 Мемне</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"BUTTERFLY → метелик → бабка → дракон 😂"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 5. PAPERS PLEASE -->
+  <div class="card" data-tags="story strategy" id="c5" onclick="toggleLike(5)">
+    <div class="new-tag">Ніхто не зробив</div>
+    <div class="card-top">
+      <div class="card-icon">📋</div>
+      <div class="card-meta">
+        <div class="card-num">06</div>
+        <div class="card-name">Papers, Please</div>
+        <div class="card-name-en">Митний інспектор</div>
+      </div>
+    </div>
+    <div class="card-desc">Ти — митний інспектор. Люди подають документи на англійській. Читаєш і вирішуєш: пустити чи ні? Помилки = штраф. Правильно = бонус. Повний текстовий контекст.</div>
+    <div class="card-tags">
+      <span class="tag t-story">📖 Наратив</span>
+      <span class="tag t-strategy">♟ Логіка</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Glory to Arstotzka. Next please."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 6. RHYTHM -->
+  <div class="card" data-tags="action" id="c6" onclick="toggleLike(6)">
+    <div class="card-top">
+      <div class="card-icon">🎵</div>
+      <div class="card-meta">
+        <div class="card-num">07</div>
+        <div class="card-name">Word Rush</div>
+        <div class="card-name-en">Ритм-гра з перекладами</div>
+      </div>
+    </div>
+    <div class="card-desc">Слова летять на тебе зверху під ритм музики. Тапни правильний переклад до того як слово вдарить. Більше слів = швидше. Combo = множник. Guitar Hero але вокабуляр.</div>
+    <div class="card-tags">
+      <span class="tag t-action">⚡ Рефлекс</span>
+      <span class="tag t-viral">🔥 Combo</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"x8 COMBO! LEGENDARY! 🎸"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 7. SPEED DATING -->
+  <div class="card" data-tags="action social" id="c7" onclick="toggleLike(7)">
+    <div class="card-top">
+      <div class="card-icon">💘</div>
+      <div class="card-meta">
+        <div class="card-num">08</div>
+        <div class="card-name">Word Dating</div>
+        <div class="card-name-en">Свайп-сортування</div>
+      </div>
+    </div>
+    <div class="card-desc">5 секунд на кожне "побачення" з словом. Свайп вправо = знаю, вліво = не знаю. В кінці дізнаєшся реальний рівень знань — і які слова "відхилили" тебе. Tinder-механіка.</div>
+    <div class="card-tags">
+      <span class="tag t-action">⚡ Швидко</span>
+      <span class="tag t-social">💘 TInder-стиль</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"EPHEMERAL відхилив тебе. Помста — вивчи його."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 8. AUCTION -->
+  <div class="card" data-tags="strategy social" id="c8" onclick="toggleLike(8)">
+    <div class="card-top">
+      <div class="card-icon">🔨</div>
+      <div class="card-meta">
+        <div class="card-num">09</div>
+        <div class="card-name">Word Auction</div>
+        <div class="card-name-en">Торги на словах</div>
+      </div>
+    </div>
+    <div class="card-desc">Слово виходить на аукціон. Гравці перебивають ставки. Хто виграв торги — відповідає. Знаєш = забираєш ставки всіх. Не знаєш = ставки йдуть іншим. Психологія торгів.</div>
+    <div class="card-tags">
+      <span class="tag t-strategy">♟ Стратегія</span>
+      <span class="tag t-social">👥 Мульти</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"500! 750! 1000! — SOLD! Тепер відповідай..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 9. BALDERDASH -->
+  <div class="card" data-tags="social creative" id="c9" onclick="toggleLike(9)">
+    <div class="new-tag">Ніхто не зробив</div>
+    <div class="card-top">
+      <div class="card-icon">🎭</div>
+      <div class="card-meta">
+        <div class="card-num">10</div>
+        <div class="card-name">Balderdash</div>
+        <div class="card-name-en">Придумай визначення</div>
+      </div>
+    </div>
+    <div class="card-desc">Дають незнайоме слово. Кожен придумує "правдоподібне" визначення. Потім голосують яке справжнє. Перемагає хто обдурив більше людей своїм фейковим визначенням.</div>
+    <div class="card-tags">
+      <span class="tag t-creative">🎭 Блеф</span>
+      <span class="tag t-social">😂 Сміх</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"PETRICHOR — запах землі після дощу. Або ні?"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 10. DETECTIVE -->
+  <div class="card" data-tags="story puzzle" id="c10" onclick="toggleLike(10)">
+    <div class="card-top">
+      <div class="card-icon">🔍</div>
+      <div class="card-meta">
+        <div class="card-num">11</div>
+        <div class="card-name">Детектив</div>
+        <div class="card-name-en">Читаєш справу — знаходиш злочинця</div>
+      </div>
+    </div>
+    <div class="card-desc">Справа про вбивство. Підозрювані, показання, докази — все англійською. Ти вибираєш ключові слова зі звітів. Розумієш слова = знаходиш правду. Повний наратив.</div>
+    <div class="card-tags">
+      <span class="tag t-story">🔍 Детектив</span>
+      <span class="tag t-puzzle">🧩 Дедукція</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"The suspect mentioned 'abandoned' and 'midnight'..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 11. THE LETTER -->
+  <div class="card" data-tags="story" id="c11" onclick="toggleLike(11)">
+    <div class="new-tag">Ніхто не зробив</div>
+    <div class="card-top">
+      <div class="card-icon">💌</div>
+      <div class="card-meta">
+        <div class="card-num">12</div>
+        <div class="card-name">Лист</div>
+        <div class="card-name-en">Емоційний наратив</div>
+      </div>
+    </div>
+    <div class="card-desc">Хтось близький написав тобі листа англійською. Мати що переїхала. Перша любов. Друг що зник. Кожне слово яке ти вивчаєш — ще один рядок відкривається. Мотивація — не монети, а зміст листа.</div>
+    <div class="card-tags">
+      <span class="tag t-story">💌 Емоція</span>
+      <span class="tag t-new">✨ Оригінально</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Вивчи ще 3 слова щоб дізнатись що вона написала..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 12. ASTEROIDS -->
+  <div class="card" data-tags="action" id="c12" onclick="toggleLike(12)">
+    <div class="card-top">
+      <div class="card-icon">🚀</div>
+      <div class="card-meta">
+        <div class="card-num">13</div>
+        <div class="card-name">Word Asteroids</div>
+        <div class="card-name-en">Збивай словами</div>
+      </div>
+    </div>
+    <div class="card-desc">Астероїди з англійськими словами летять на твій корабель. Внизу 4 варіанти перекладу. Тапни правильний → лазер збиває астероїд. Неправильно → астероїд проходить. Хвилі швидшають.</div>
+    <div class="card-tags">
+      <span class="tag t-action">🚀 Аркада</span>
+      <span class="tag t-action">⚡ Хвилі</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Wave 15 incoming! 6 asteroids at once!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 13. WRONG ANSWER WINS -->
+  <div class="card" data-tags="social creative" id="c13" onclick="toggleLike(13)">
+    <div class="new-tag">Ніхто не зробив</div>
+    <div class="card-top">
+      <div class="card-icon">😈</div>
+      <div class="card-meta">
+        <div class="card-num">14</div>
+        <div class="card-name">Найкраща Неправда</div>
+        <div class="card-name-en">Wrong Answer Wins</div>
+      </div>
+    </div>
+    <div class="card-desc">Перевернута гра: потрібно дати найСМІШНІШУ або найправдоподібнішу НЕПРАВИЛЬНУ відповідь. Гравці голосують. Щоб виграти — треба ЗНАТИ правильне щоб вигадати переконливо неправильне.</div>
+    <div class="card-tags">
+      <span class="tag t-creative">😈 Зворотнє</span>
+      <span class="tag t-social">😂 Голосування</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"LOVE = 'любов'... або 'пристрій для завивки волосся'?"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 14. RACING -->
+  <div class="card" data-tags="action social" id="c14" onclick="toggleLike(14)">
+    <div class="card-top">
+      <div class="card-icon">🏎️</div>
+      <div class="card-meta">
+        <div class="card-num">15</div>
+        <div class="card-name">Word Race</div>
+        <div class="card-name-en">Перегони знань</div>
+      </div>
+    </div>
+    <div class="card-desc">Два авто на треку. Ти і суперник. Питання з'являється — хто першим відповідає правильно, той прискорюється. Неправильно = гальмо. Реальний час PvP. Трасерті накопичуються.</div>
+    <div class="card-tags">
+      <span class="tag t-action">🏎️ PvP</span>
+      <span class="tag t-social">👥 Реальний час</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Суперник обганяє! Давай ШВИДШЕ!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 15. ZOMBIE WAVE -->
+  <div class="card" data-tags="action" id="c15" onclick="toggleLike(15)">
+    <div class="card-top">
+      <div class="card-icon">🧟</div>
+      <div class="card-meta">
+        <div class="card-num">16</div>
+        <div class="card-name">Zombie Words</div>
+        <div class="card-name-en">Зупини хвилю</div>
+      </div>
+    </div>
+    <div class="card-desc">Зомбі повільно йдуть на твою базу. Кожен зомбі — нове слово. Знаєш переклад → зомбі падає. Не знаєш → прорвався. Хвилі стають густішими. Втрата бази = кінець.</div>
+    <div class="card-tags">
+      <span class="tag t-action">🧟 Сурвайвал</span>
+      <span class="tag t-action">⚡ Хвилі</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"WAVE 20: Boss Zombie — EXTRAORDINARY!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 16. CROSSWORD -->
+  <div class="card" data-tags="puzzle" id="c16" onclick="toggleLike(16)">
+    <div class="card-top">
+      <div class="card-icon">✍️</div>
+      <div class="card-meta">
+        <div class="card-num">17</div>
+        <div class="card-name">Щоденний Кросворд</div>
+        <div class="card-name-en">Daily Crossword</div>
+      </div>
+    </div>
+    <div class="card-desc">Щоденний кросворд: питання по-українськи, відповіді англійською. Можна грати на час або без. Стрік = нагороди. Ділишся результатом. Як Wordle але глибше.</div>
+    <div class="card-tags">
+      <span class="tag t-puzzle">✍️ Щоденне</span>
+      <span class="tag t-viral">🔥 Стрік</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"День 47 стріку. Не підведи сьогодні."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 17. SPY UNDERCOVER -->
+  <div class="card" data-tags="story social" id="c17" onclick="toggleLike(17)">
+    <div class="card-top">
+      <div class="card-icon">🕵️</div>
+      <div class="card-meta">
+        <div class="card-num">18</div>
+        <div class="card-name">Розвідник</div>
+        <div class="card-name-en">Під прикриттям</div>
+      </div>
+    </div>
+    <div class="card-desc">Ти під прикриттям серед англомовних. Люди починають з тобою розмови. Розумієш слово → правильна реакція → залишаєшся в грі. Не розумієш → "здаєш" себе. Mission: Impossible + English.</div>
+    <div class="card-tags">
+      <span class="tag t-story">🕵️ Шпигун</span>
+      <span class="tag t-social">😰 Тривога</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Your cover is perfect. For now..."</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 18. CODENAMES -->
+  <div class="card" data-tags="social strategy" id="c18" onclick="toggleLike(18)">
+    <div class="card-top">
+      <div class="card-icon">🔐</div>
+      <div class="card-meta">
+        <div class="card-num">19</div>
+        <div class="card-name">Кодові Слова</div>
+        <div class="card-name-en">Codenames</div>
+      </div>
+    </div>
+    <div class="card-desc">Командна гра. Капітан дає ОДНЕ слово-підказку яке з'єднує кілька карт. Команда здогадується які карти мав на увазі. Підказки можна давати тільки англійською. Глибоке розуміння слів.</div>
+    <div class="card-tags">
+      <span class="tag t-social">👥 Командна</span>
+      <span class="tag t-strategy">♟ Асоціації</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"'DARK' — 3 карти. Яких три???"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 19. SIGNAL DECODER -->
+  <div class="card" data-tags="story action" id="c19" onclick="toggleLike(19)">
+    <div class="new-tag">Cold War Vibe</div>
+    <div class="card-top">
+      <div class="card-icon">📡</div>
+      <div class="card-meta">
+        <div class="card-num">20</div>
+        <div class="card-name">Сигнал</div>
+        <div class="card-name-en">Radio Intercept</div>
+      </div>
+    </div>
+    <div class="card-desc">Холодна Війна. Ти — радист у підземному бункері. Перехоплюєш ворожі повідомлення. Слова приходять із завадами і статикою. Декодуєш — відправляєш звіт командуванню. CRT-естетика.</div>
+    <div class="card-tags">
+      <span class="tag t-story">📡 Cold War</span>
+      <span class="tag t-new">✨ Унікально</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"...-.- .. .-.. .-.. . -.. [SIGNAL LOST]"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 20. TOWER DEFENSE -->
+  <div class="card" data-tags="action strategy" id="c20" onclick="toggleLike(20)">
+    <div class="card-top">
+      <div class="card-icon">🏰</div>
+      <div class="card-meta">
+        <div class="card-num">21</div>
+        <div class="card-name">Word Defense</div>
+        <div class="card-name-en">Tower Defense</div>
+      </div>
+    </div>
+    <div class="card-desc">Будуєш башти зі слів щоб захистити замок. Кожна вивчена слово = один блок. Ворожі армії слів атакують. Більший словниковий запас = міцніший захист. Стратегія + навчання.</div>
+    <div class="card-tags">
+      <span class="tag t-strategy">♟ Стратегія</span>
+      <span class="tag t-action">🏰 Захист</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Your FIERCE tower holds the eastern flank!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 21. EVOLUTION TREE — from research -->
+  <div class="card" data-tags="strategy social" id="c21" onclick="toggleLike(21)">
+    <div class="new-tag">🔥 Немає ніде</div>
+    <div class="card-top">
+      <div class="card-icon">🧬</div>
+      <div class="card-meta">
+        <div class="card-num">22</div>
+        <div class="card-name">Word Evolution</div>
+        <div class="card-name-en">Унікальна істота</div>
+      </div>
+    </div>
+    <div class="card-desc">Починаєш з "яйця". Кожні 5 вивчених слів — обираєш з 3 варіантів еволюції. Після 30 слів — твоя істота УНІКАЛЬНА, такої немає ні в кого. Ділишся. Ніколи не повторюється.</div>
+    <div class="card-tags">
+      <span class="tag t-strategy">🧬 Еволюція</span>
+      <span class="tag t-viral">🔥 Вірусне</span>
+      <span class="tag t-new">✨ Нова механіка</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Моя істота: Shadowfire Drake. Яка у тебе?"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 22. WORD CHAIN — from research -->
+  <div class="card" data-tags="social" id="c22" onclick="toggleLike(22)">
+    <div class="new-tag">🔥 Немає ніде</div>
+    <div class="card-top">
+      <div class="card-icon">🔗</div>
+      <div class="card-meta">
+        <div class="card-num">23</div>
+        <div class="card-name">Word Chain</div>
+        <div class="card-name-en">Ланцюжок слів</div>
+      </div>
+    </div>
+    <div class="card-desc">Групова гра в чаті. Кожен додає слово що починається з останньої літери попереднього — але тільки англійською. Таймер 10 сек. Розірвав ланцюг = група втрачає очки. Рекорд = нагорода.</div>
+    <div class="card-tags">
+      <span class="tag t-social">👥 Групова</span>
+      <span class="tag t-viral">⚡ Реальний час</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"shadow → wolf → fierce → ? — 8 секунд!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 23. ROGUELIKE RUN — from research: highest replayability, not in TMA -->
+  <div class="card" data-tags="action strategy" id="c23" onclick="toggleLike(23)">
+    <div class="new-tag">🔥 Немає в TMA</div>
+    <div class="card-top">
+      <div class="card-icon">⚔️</div>
+      <div class="card-meta">
+        <div class="card-num">24</div>
+        <div class="card-name">Word Roguelike</div>
+        <div class="card-name-en">Один більше ран</div>
+      </div>
+    </div>
+    <div class="card-desc">Процедурно згенерований підземний похід. Кімнати — різні. Помер = починай знову, але вивчені слова залишаються як "постійні заклинання". Щоразу далі. Найбільш залежна механіка в іграх.</div>
+    <div class="card-tags">
+      <span class="tag t-action">⚔️ Рогалик</span>
+      <span class="tag t-strategy">♟ Ще один ран</span>
+      <span class="tag t-new">✨ Немає в TMA</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"YOU DIED. Words kept: 12. Try again? YES"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+  <!-- 24. COLLABORATIVE RAID — from research -->
+  <div class="card" data-tags="social strategy" id="c24" onclick="toggleLike(24)">
+    <div class="new-tag">🔥 Немає в TMA</div>
+    <div class="card-top">
+      <div class="card-icon">🐉</div>
+      <div class="card-meta">
+        <div class="card-num">25</div>
+        <div class="card-name">Word Raid</div>
+        <div class="card-name-en">Спільний рейд на боса</div>
+      </div>
+    </div>
+    <div class="card-desc">5 гравців разом атакують спільного боса 48 годин. Кожен вхід = бойовий раунд (переклади = атаки). Бос має HP що відновлюється. Не зайшов сьогодні — команда страждає. Guild Wars логіка.</div>
+    <div class="card-tags">
+      <span class="tag t-social">👥 Guild</span>
+      <span class="tag t-strategy">⏰ 48h Event</span>
+      <span class="tag t-new">✨ Немає в TMA</span>
+    </div>
+    <div class="card-bottom">
+      <div class="hook-text">"Boss HP: 34%. Твоя команда чекає. Заходь!"</div>
+      <div class="like-btn"><span class="heart-icon">♡</span><span class="liked-check">♥</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="bb-info">Вибрано: <strong id="likedCount">1</strong> / 21</div>
+  <button class="bb-btn" id="buildBtn" onclick="showSelected()">Будуємо вибрані →</button>
+</div>
+
+<script>
+const liked = new Set([0]); // Mafia pre-selected
+
+function toggleLike(idx) {
+  if (idx === 0) return; // Mafia always stays
+  const card = document.getElementById('c' + idx);
+  if (liked.has(idx)) {
+    liked.delete(idx);
+    card.classList.remove('liked');
+  } else {
+    liked.add(idx);
+    card.classList.add('liked');
+  }
+  document.getElementById('likedCount').textContent = liked.size;
+  document.getElementById('totalLiked').textContent = liked.size;
+}
+
+function filter(tag, el) {
+  document.querySelectorAll('.filter').forEach(f => f.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.card').forEach(c => {
+    if (tag === 'all') { c.style.display = ''; return; }
+    const tags = c.dataset.tags || '';
+    c.style.display = tags.includes(tag) ? '' : 'none';
+  });
+}
+
+function showSelected() {
+  const names = [...liked].map(i => {
+    const card = document.getElementById('c' + i);
+    return card.querySelector('.card-name').textContent;
+  });
+  alert('Обрані:\n' + names.join('\n') + '\n\nВідправ скріншот або напиши номери — будуємо!');
+}
+</script>
+
+</body>
+</html>

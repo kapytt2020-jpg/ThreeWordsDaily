@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 02 — Mascot First</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.bg-gradient { background:linear-gradient(180deg,#1a0a3d 0%,#0b0b15 60%); }
+.pet-stage { position:relative; padding:20px 20px 0; text-align:center; }
+.pet-emotion { position:absolute; top:20px; left:50%; transform:translateX(-50%); background:rgba(20,10,50,0.8); border:1px solid rgba(124,58,237,0.4); border-radius:100px; padding:4px 14px; font-size:12px; color:#a78bfa; white-space:nowrap; }
+.pet-big { font-size:110px; display:block; cursor:pointer; transition:transform 0.2s; }
+.pet-big:hover { transform:scale(1.05); }
+.pet-name { font-size:18px; font-weight:800; margin-top:-8px; }
+.pet-subtitle { font-size:13px; color:#7c3aed; margin-top:2px; }
+.needs-row { display:flex; gap:8px; padding:12px 20px; }
+.need { flex:1; background:rgba(255,255,255,0.04); border:1px solid #1e2d45; border-radius:12px; padding:10px; text-align:center; }
+.need-icon { font-size:20px; }
+.need-label { font-size:10px; color:#64748b; margin-top:2px; }
+.need-bar-wrap { height:4px; background:#1e2d45; border-radius:100px; margin-top:6px; }
+.need-bar { height:4px; border-radius:100px; }
+.speech-bubble { margin:0 20px 12px; background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(37,99,235,0.1)); border:1px solid rgba(124,58,237,0.3); border-radius:20px; border-top-left-radius:4px; padding:16px; position:relative; }
+.speech-bubble::before { content:''; position:absolute; top:-8px; left:20px; width:16px; height:16px; background:rgba(124,58,237,0.3); clip-path:polygon(0 100%,100% 100%,50% 0); }
+.speech-text { font-size:15px; line-height:1.6; }
+.speech-text strong { color:#a78bfa; font-size:20px; }
+.speech-sub { font-size:12px; color:#64748b; margin-top:6px; font-style:italic; }
+.actions-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px 12px; }
+.action-card { background:#111827; border:1px solid #1e2d45; border-radius:16px; padding:16px; cursor:pointer; text-align:center; transition:border-color 0.2s; }
+.action-card:hover { border-color:#7c3aed; }
+.action-icon { font-size:30px; margin-bottom:6px; }
+.action-title { font-size:14px; font-weight:700; }
+.action-sub { font-size:11px; color:#64748b; margin-top:2px; }
+.action-card.highlight { background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(37,99,235,0.1)); border-color:rgba(124,58,237,0.5); }
+.reward-banner { margin:0 20px 12px; background:linear-gradient(135deg,#92400e,#b45309); border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:10px; }
+.reward-banner .icon { font-size:28px; }
+.reward-text .title { font-size:13px; font-weight:700; color:#fde68a; }
+.reward-text .sub { font-size:11px; color:#fbbf24; opacity:0.8; }
+.reward-btn { margin-left:auto; background:#f59e0b; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+
+  <div class="screen bg-gradient" style="overflow-y:auto">
+    <!-- Pet Stage -->
+    <div class="pet-stage">
+      <div class="pet-emotion">😊 Щасливий · 7 днів поспіль!</div>
+      <span class="pet-big float">🦊</span>
+      <div class="pet-name">Кікра</div>
+      <div class="pet-subtitle">Рівень 5 · Темний маг 🔮</div>
+    </div>
+
+    <!-- Needs -->
+    <div class="needs-row">
+      <div class="need">
+        <div class="need-icon">📚</div>
+        <div class="need-bar-wrap"><div class="need-bar" style="width:70%;background:#7c3aed"></div></div>
+        <div class="need-label">Знання</div>
+      </div>
+      <div class="need">
+        <div class="need-icon">❤️</div>
+        <div class="need-bar-wrap"><div class="need-bar" style="width:85%;background:#ef4444"></div></div>
+        <div class="need-label">Щастя</div>
+      </div>
+      <div class="need">
+        <div class="need-icon">⚡</div>
+        <div class="need-bar-wrap"><div class="need-bar" style="width:40%;background:#f59e0b"></div></div>
+        <div class="need-label">Енергія</div>
+      </div>
+      <div class="need">
+        <div class="need-icon">✨</div>
+        <div class="need-bar-wrap"><div class="need-bar" style="width:90%;background:#10b981"></div></div>
+        <div class="need-label">Магія</div>
+      </div>
+    </div>
+
+    <!-- Speech Bubble -->
+    <div class="speech-bubble">
+      <div class="speech-text">
+        Привіт! Сьогодні вивчимо слово<br>
+        <strong>Resilient</strong> — <em>стійкий</em> 💜<br>
+      </div>
+      <div class="speech-sub">🔊 Натисни щоб почути · /rɪˈzɪliənt/</div>
+    </div>
+
+    <!-- Daily reward -->
+    <div class="reward-banner">
+      <div class="icon">🎁</div>
+      <div class="reward-text">
+        <div class="title">Щоденна нагорода готова!</div>
+        <div class="sub">День 7 · Особлива нагорода</div>
+      </div>
+      <button class="reward-btn">Взяти</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-grid">
+      <div class="action-card highlight">
+        <div class="action-icon">🎓</div>
+        <div class="action-title">Вчити з Кікрою</div>
+        <div class="action-sub">5 нових слів · 3 хв</div>
+      </div>
+      <div class="action-card">
+        <div class="action-icon">🔊</div>
+        <div class="action-title">Вимова</div>
+        <div class="action-sub">Практика звуків</div>
+      </div>
+      <div class="action-card">
+        <div class="action-icon">🃏</div>
+        <div class="action-title">Картки</div>
+        <div class="action-sub">Повтори 12 слів</div>
+      </div>
+      <div class="action-card">
+        <div class="action-icon">⚔️</div>
+        <div class="action-title">Дуель</div>
+        <div class="action-sub">Проти друга</div>
+      </div>
+    </div>
+
+    <div style="padding:0 20px 12px">
+      <div class="section-title">Прогрес тижня</div>
+      <div style="display:flex;gap:6px">
+        <div style="flex:1;height:40px;background:rgba(124,58,237,0.4);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#a78bfa;padding-bottom:4px">Пн</div>
+        <div style="flex:1;height:60px;background:rgba(124,58,237,0.6);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#a78bfa;padding-bottom:4px">Вт</div>
+        <div style="flex:1;height:30px;background:rgba(124,58,237,0.3);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#a78bfa;padding-bottom:4px">Ср</div>
+        <div style="flex:1;height:70px;background:rgba(124,58,237,0.7);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#a78bfa;padding-bottom:4px">Чт</div>
+        <div style="flex:1;height:50px;background:rgba(124,58,237,0.5);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#a78bfa;padding-bottom:4px">Пт</div>
+        <div style="flex:1;height:80px;background:linear-gradient(180deg,#7c3aed,#2563eb);border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#fff;padding-bottom:4px;box-shadow:0 0 12px rgba(124,58,237,0.5)">Сб</div>
+        <div style="flex:1;height:20px;background:#1e2d45;border-radius:8px;display:flex;align-items:flex-end;justify-content:center;font-size:10px;color:#64748b;padding-bottom:4px">Нд</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active"><div class="icon">🦊</div><div class="label">Пет</div></div>
+    <div class="tab"><div class="icon">📖</div><div class="label">Вчити</div></div>
+    <div class="tab"><div class="icon">🎁</div><div class="label">Нагороди</div></div>
+    <div class="tab"><div class="icon">👥</div><div class="label">Друзі</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Я</div></div>
+  </div>
+</div>
+<div style="position:fixed;top:20px;left:20px;background:#1e2a3a;border:1px solid #2a3a4a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#94a3b8;line-height:1.6">
+  <strong style="color:#c084fc">🦊 Mockup 02 — Mascot First</strong><br><br>
+  <strong style="color:#e2e8f0">Для кого:</strong> Юзери що хочуть емоційний зв'язок<br>
+  <strong style="color:#e2e8f0">Retention loop:</strong> Пет потребує уваги щодня<br>
+  <strong style="color:#e2e8f0">Фішка:</strong> Пет "говорить" слово — вимова природна<br>
+  <strong style="color:#e2e8f0">Ризик:</strong> Може відволікати від реального навчання<br><br>
+  <a href="index.html" style="color:#60a5fa">← Всі мокапи</a>
+</div>
+</body>
+</html>

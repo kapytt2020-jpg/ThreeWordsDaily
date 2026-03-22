@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 10 — Hybrid Complete ⭐ RECOMMENDED</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.mode-switcher { display:flex; gap:6px; padding:8px 16px; background:rgba(0,0,0,0.3); }
+.mode-btn { flex:1; padding:8px 4px; border-radius:12px; border:none; font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.mode-btn.active { background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; box-shadow:0 4px 15px rgba(124,58,237,0.4); }
+.mode-btn.inactive { background:#1a2234; color:#64748b; }
+/* HOME SCREEN */
+.hero-section { padding:12px 16px; display:flex; align-items:center; gap:12px; }
+.pet-home { font-size:64px; flex-shrink:0; }
+.hero-text .greeting { font-size:13px; color:#64748b; }
+.hero-text .name { font-size:22px; font-weight:800; }
+.hero-text .mood { font-size:12px; color:#a78bfa; margin-top:2px; }
+.quick-stats { display:flex; gap:8px; padding:0 16px 12px; }
+.qstat { flex:1; background:#111827; border:1px solid #1e2d45; border-radius:14px; padding:10px; text-align:center; }
+.qstat-val { font-size:18px; font-weight:800; }
+.qstat-label { font-size:10px; color:#64748b; margin-top:2px; }
+/* WORD OF THE DAY */
+.wotd { margin:0 16px 12px; background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(37,99,235,0.1)); border:1px solid rgba(124,58,237,0.35); border-radius:20px; padding:16px; }
+.wotd-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.wotd-label { font-size:11px; color:#7c3aed; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+.wotd-word { font-size:28px; font-weight:800; }
+.wotd-ipa { font-size:13px; color:#7c3aed; font-style:italic; }
+.wotd-ua { font-size:15px; color:#94a3b8; margin:4px 0 10px; }
+.wotd-row { display:flex; gap:8px; align-items:center; }
+.listen-btn { display:flex; align-items:center; gap:6px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.3); color:#10b981; border-radius:100px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; border-style:solid; }
+.phrase-btn { display:flex; align-items:center; gap:6px; background:rgba(37,99,235,0.15); border:1px solid rgba(37,99,235,0.3); color:#60a5fa; border-radius:100px; padding:6px 14px; font-size:12px; font-weight:600; cursor:pointer; border-style:solid; }
+/* QUICK ACTIONS */
+.quick-actions { padding:0 16px 12px; }
+.qa-scroll { display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; }
+.qa-scroll::-webkit-scrollbar { display:none; }
+.qa-card { flex-shrink:0; width:100px; background:#111827; border:1px solid #1e2d45; border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer; transition:border-color 0.2s; }
+.qa-card:hover { border-color:#7c3aed; }
+.qa-card.highlight { background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(37,99,235,0.1)); border-color:rgba(124,58,237,0.4); }
+.qa-icon { font-size:28px; margin-bottom:6px; }
+.qa-title { font-size:12px; font-weight:700; }
+.qa-sub { font-size:10px; color:#64748b; margin-top:2px; }
+/* STREAK / PROGRESS */
+.streak-section { margin:0 16px 12px; background:#111827; border:1px solid #1e2d45; border-radius:18px; padding:14px; }
+.streak-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.streak-big { font-size:28px; font-weight:900; color:#f87171; }
+.week-dots { display:flex; gap:6px; }
+.wdot { width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+.wdot.done { background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; }
+.wdot.today { background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; box-shadow:0 0 10px rgba(245,158,11,0.4); }
+.wdot.empty { background:#1e2d45; color:#64748b; }
+.freeze-btn { font-size:11px; color:#64748b; background:#1e2d45; border:none; border-radius:8px; padding:4px 10px; cursor:pointer; }
+/* LEARNING SCREEN (active on learn tab) */
+#learn-screen { display:none; flex-direction:column; padding-bottom:0; }
+.lrn-progress { padding:12px 16px 8px; }
+.lrn-prog-row { display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:6px; }
+.lrn-card { margin:0 16px; background:#111827; border:1px solid #1e2d45; border-radius:22px; padding:24px 20px; text-align:center; }
+.lrn-word { font-size:36px; font-weight:800; background:linear-gradient(135deg,#fff,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:6px; }
+.lrn-ipa { font-size:15px; color:#7c3aed; font-style:italic; margin-bottom:4px; }
+.lrn-ua { font-size:18px; color:#94a3b8; margin-bottom:14px; }
+.lrn-example { background:rgba(255,255,255,0.04); border-left:3px solid #7c3aed; border-radius:0 10px 10px 0; padding:10px 12px; text-align:left; font-size:13px; color:#cbd5e1; margin-bottom:14px; line-height:1.5; }
+.lrn-audio-row { display:flex; justify-content:center; gap:10px; margin-bottom:16px; }
+.lrn-options { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.opt { padding:12px; border-radius:12px; background:#1a2234; border:1px solid #1e2d45; font-size:14px; font-weight:600; cursor:pointer; text-align:center; transition:all 0.2s; }
+.opt:hover { border-color:#7c3aed; background:rgba(124,58,237,0.1); }
+/* TAMAGOTCHI SCREEN */
+#tama-screen { display:none; flex-direction:column; align-items:center; padding:12px 16px; gap:12px; }
+.tama-room { width:100%; height:220px; background:linear-gradient(180deg,#0f1a2e,#1a2a40); border-radius:20px; border:1px solid #1e3a5a; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.tama-pet { font-size:90px; }
+.tama-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
+.tama-stat { background:#111827; border:1px solid #1e2d45; border-radius:14px; padding:12px; }
+.tama-stat-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:13px; }
+.tama-stat-bar { height:8px; background:#1e2d45; border-radius:100px; overflow:hidden; }
+.tama-stat-fill { height:100%; border-radius:100px; }
+.tama-actions { display:flex; gap:8px; width:100%; }
+.tama-btn { flex:1; padding:12px; border:none; border-radius:14px; font-size:13px; font-weight:700; cursor:pointer; }
+/* Tabs state management */
+body.tab-home #home-screen { display:flex; flex-direction:column; }
+body.tab-learn #learn-screen { display:flex; }
+body.tab-tama #tama-screen { display:flex; }
+</style>
+</head>
+<body class="tab-home">
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+
+  <!-- MODE SWITCHER -->
+  <div class="mode-switcher">
+    <button class="mode-btn" id="mb-home" onclick="setTab('home')">🏠 Дім</button>
+    <button class="mode-btn" id="mb-learn" onclick="setTab('learn')">📖 Вчити</button>
+    <button class="mode-btn" id="mb-tama" onclick="setTab('tama')">🐾 Пет</button>
+    <button class="mode-btn inactive" onclick="">⚔️ Битва</button>
+  </div>
+
+  <div class="screen" style="overflow-y:auto; position:relative;">
+
+    <!-- HOME SCREEN -->
+    <div id="home-screen">
+      <!-- Hero -->
+      <div class="hero-section">
+        <div class="pet-home float">🦊</div>
+        <div class="hero-text">
+          <div class="greeting">Доброго ранку!</div>
+          <div class="name">Привіт, Максим 👋</div>
+          <div class="mood">Кікра готова вчитись з тобою</div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="quick-stats">
+        <div class="qstat">
+          <div class="qstat-val" style="color:#f87171">🔥 7</div>
+          <div class="qstat-label">Стрік</div>
+        </div>
+        <div class="qstat">
+          <div class="qstat-val" style="color:#a78bfa">⭐ 340</div>
+          <div class="qstat-label">XP</div>
+        </div>
+        <div class="qstat">
+          <div class="qstat-val" style="color:#34d399">📚 248</div>
+          <div class="qstat-label">Слів</div>
+        </div>
+        <div class="qstat">
+          <div class="qstat-val" style="color:#fbbf24">🏅 Рів.4</div>
+          <div class="qstat-label">Рівень</div>
+        </div>
+      </div>
+
+      <!-- XP -->
+      <div style="padding:0 16px 12px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:5px">
+          <span>Apprentice → Wizard</span><span>340/500 XP</span>
+        </div>
+        <div class="xp-bar-wrap" style="height:10px">
+          <div class="xp-bar" style="height:10px;width:68%"></div>
+        </div>
+      </div>
+
+      <!-- Word of the Day -->
+      <div class="wotd">
+        <div class="wotd-header">
+          <div class="wotd-label">⚡ Слово дня</div>
+          <div class="badge">Новe!</div>
+        </div>
+        <div class="wotd-word">Resilient</div>
+        <div class="wotd-ipa">/rɪˈzɪliənt/</div>
+        <div class="wotd-ua">стійкий, витривалий</div>
+        <div class="wotd-row">
+          <button class="listen-btn" onclick="this.textContent='⏸️ Слухай...'">🔊 Слово</button>
+          <button class="phrase-btn" onclick="this.textContent='⏸️ Фраза...'">🔊 Приклад</button>
+          <button onclick="setTab('learn')" style="margin-left:auto;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;border:none;border-radius:100px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer">Вчити →</button>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="section-title">Швидкі дії</div>
+        <div class="qa-scroll">
+          <div class="qa-card highlight" onclick="setTab('learn')">
+            <div class="qa-icon">🎓</div>
+            <div class="qa-title">Урок</div>
+            <div class="qa-sub">5 слів · 3хв</div>
+          </div>
+          <div class="qa-card" onclick="setTab('tama')">
+            <div class="qa-icon">🦊</div>
+            <div class="qa-title">Кікра</div>
+            <div class="qa-sub">Настрій 85%</div>
+          </div>
+          <div class="qa-card">
+            <div class="qa-icon">🔊</div>
+            <div class="qa-title">Вимова</div>
+            <div class="qa-sub">Практика</div>
+          </div>
+          <div class="qa-card">
+            <div class="qa-icon">⚔️</div>
+            <div class="qa-title">Дуель</div>
+            <div class="qa-sub">vs Друг</div>
+          </div>
+          <div class="qa-card">
+            <div class="qa-icon">📜</div>
+            <div class="qa-title">Квест</div>
+            <div class="qa-sub">2/3 виконано</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Streak -->
+      <div class="streak-section">
+        <div class="streak-header">
+          <div>
+            <div style="font-size:12px;color:#64748b">Поточний стрік</div>
+            <div class="streak-big">🔥 7 днів!</div>
+          </div>
+          <button class="freeze-btn">❄️ Заморозка</button>
+        </div>
+        <div class="week-dots">
+          <div class="wdot done">Пн</div>
+          <div class="wdot done">Вт</div>
+          <div class="wdot done">Ср</div>
+          <div class="wdot done">Чт</div>
+          <div class="wdot done">Пт</div>
+          <div class="wdot today">Сб</div>
+          <div class="wdot empty">Нд</div>
+        </div>
+      </div>
+
+      <!-- Referral -->
+      <div style="margin:0 16px 12px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1));border:1px solid rgba(245,158,11,0.3);border-radius:16px;padding:14px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">🎁 Запроси друга</div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Ти + друг отримаєте по 100 XP бонусу</div>
+        <button style="width:100%;padding:10px;background:linear-gradient(135deg,#d97706,#f59e0b);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:13px;cursor:pointer">📤 Поділитись</button>
+      </div>
+    </div>
+
+    <!-- LEARN SCREEN -->
+    <div id="learn-screen">
+      <div class="lrn-progress">
+        <div class="lrn-prog-row">
+          <span>Вправа 3 з 5</span><span style="color:#a78bfa">+20 XP за урок</span>
+        </div>
+        <div class="xp-bar-wrap" style="height:6px">
+          <div class="xp-bar" style="height:6px;width:60%"></div>
+        </div>
+      </div>
+
+      <div class="lrn-card">
+        <div style="font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px">Обери переклад</div>
+        <div class="lrn-word">Resilient</div>
+        <div class="lrn-ipa">/rɪˈzɪliənt/</div>
+        <div class="lrn-ua">???</div>
+        <div class="lrn-audio-row">
+          <button class="listen-btn">🔊 Слово</button>
+          <button class="phrase-btn">🔊 Приклад</button>
+        </div>
+        <div class="lrn-example">
+          <em>"She is incredibly <strong style="color:#a78bfa">resilient</strong> under pressure."</em>
+        </div>
+        <div class="lrn-options">
+          <div class="opt">сумний</div>
+          <div class="opt" style="border-color:#10b981;background:rgba(16,185,129,0.15);color:#34d399" onclick="showNext()">стійкий ✓</div>
+          <div class="opt">красивий</div>
+          <div class="opt">повільний</div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px">
+        <div style="background:#111827;border:1px solid #1e2d45;border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">🦊</span>
+          <span style="font-size:13px;color:#94a3b8">Кікра підказує: <em>resilient</em> = міцний як гумовий м'яч!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAMAGOTCHI SCREEN -->
+    <div id="tama-screen">
+      <div class="tama-room">
+        <div class="tama-pet float">🦊</div>
+        <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(10,10,30,0.8);border:1px solid rgba(124,58,237,0.4);border-radius:100px;padding:5px 16px;font-size:12px;color:#a78bfa;white-space:nowrap">
+          😊 Кікра у чудовому настрої!
+        </div>
+        <div style="position:absolute;bottom:8px;right:12px;font-size:20px">📚🪑🌿</div>
+      </div>
+
+      <div class="tama-stats">
+        <div class="tama-stat">
+          <div class="tama-stat-row"><span>❤️ HP</span><span style="color:#ef4444;font-weight:700">85%</span></div>
+          <div class="tama-stat-bar"><div class="tama-stat-fill" style="width:85%;background:#ef4444"></div></div>
+        </div>
+        <div class="tama-stat">
+          <div class="tama-stat-row"><span>📚 Знання</span><span style="color:#7c3aed;font-weight:700">70%</span></div>
+          <div class="tama-stat-bar"><div class="tama-stat-fill" style="width:70%;background:#7c3aed"></div></div>
+        </div>
+        <div class="tama-stat">
+          <div class="tama-stat-row"><span>😊 Щастя</span><span style="color:#f59e0b;font-weight:700">90%</span></div>
+          <div class="tama-stat-bar"><div class="tama-stat-fill" style="width:90%;background:#f59e0b"></div></div>
+        </div>
+        <div class="tama-stat">
+          <div class="tama-stat-row"><span>⚡ Енергія</span><span style="color:#10b981;font-weight:700">45%</span></div>
+          <div class="tama-stat-bar"><div class="tama-stat-fill" style="width:45%;background:#10b981"></div></div>
+        </div>
+      </div>
+
+      <div class="tama-actions">
+        <button class="tama-btn" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff" onclick="setTab('learn')">📖 Вчити (+знання)</button>
+        <button class="tama-btn" style="background:#1a2234;color:#94a3b8">🍎 Годувати</button>
+      </div>
+      <div class="tama-actions">
+        <button class="tama-btn" style="background:#1a2234;color:#94a3b8">🎮 Грати</button>
+        <button class="tama-btn" style="background:#1a2234;color:#94a3b8">🏡 Кімната</button>
+      </div>
+
+      <!-- Evolution -->
+      <div style="width:100%;background:#111827;border:1px solid #1e2d45;border-radius:16px;padding:14px">
+        <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:1px">Еволюція Кікри</div>
+        <div style="display:flex;gap:4px;align-items:center">
+          <div style="text-align:center;opacity:0.5;font-size:11px">🐣<br>Яйце</div>
+          <div style="flex:1;height:2px;background:#1e2d45"></div>
+          <div style="text-align:center;opacity:0.5;font-size:11px">🐾<br>Малюк</div>
+          <div style="flex:1;height:2px;background:#7c3aed"></div>
+          <div style="text-align:center;font-size:14px;position:relative">🦊<br><span style="font-size:10px;color:#a78bfa">Зараз</span><div style="position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:4px;height:4px;background:#a78bfa;border-radius:50%"></div></div>
+          <div style="flex:1;height:2px;background:#1e2d45"></div>
+          <div style="text-align:center;opacity:0.4;font-size:11px">🔮<br>Маг</div>
+          <div style="flex:1;height:2px;background:#1e2d45"></div>
+          <div style="text-align:center;opacity:0.3;font-size:11px">🐉<br>Дракон</div>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:8px;text-align:center">Ще 152 слова до еволюції у Мага 🔮</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" id="tb-home" onclick="setTab('home')"><div class="icon">🏠</div><div class="label">Дім</div></div>
+    <div class="tab" id="tb-learn" onclick="setTab('learn')"><div class="icon">📖</div><div class="label">Вчити</div></div>
+    <div class="tab" id="tb-tama" onclick="setTab('tama')"><div class="icon">🦊</div><div class="label">Пет</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Топ</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Я</div></div>
+  </div>
+</div>
+
+<script>
+function setTab(tab) {
+  document.body.className = 'tab-' + tab;
+  ['home','learn','tama'].forEach(t => {
+    document.getElementById(t+'-screen').style.display = t===tab ? 'flex' : 'none';
+    const mb = document.getElementById('mb-'+t);
+    const tb = document.getElementById('tb-'+t);
+    if(mb) { mb.className = 'mode-btn ' + (t===tab ? 'active' : 'inactive'); }
+    if(tb) { tb.className = 'tab ' + (t===tab ? 'active' : ''); }
+  });
+  document.querySelector('.screen').scrollTop = 0;
+}
+setTab('home');
+</script>
+
+<div style="position:fixed;top:20px;left:20px;background:#1e2a3a;border:1px solid #2a3a4a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#94a3b8;line-height:1.6">
+  <strong style="color:#a78bfa">⭐ Mockup 10 — Hybrid Complete</strong><br><br>
+  <strong style="color:#e2e8f0">Для кого:</strong> Всі типи юзерів<br>
+  <strong style="color:#e2e8f0">Фішка:</strong> 3 режими перемикаються одним тапом<br>
+  <strong style="color:#e2e8f0">Retention:</strong> Стрік + Пет + XP = triple hook<br>
+  <strong style="color:#e2e8f0">Аудіо:</strong> 🔊 кнопки в кожному режимі<br>
+  <strong style="color:#10b981">✅ РЕКОМЕНДОВАНИЙ</strong><br><br>
+  <a href="index.html" style="color:#60a5fa">← Всі мокапи</a>
+</div>
+</body>
+</html>

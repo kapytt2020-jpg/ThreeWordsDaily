@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 03 — RPG Game HUD</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #050e05; }
+.phone { background: #0c1a0c; border-color: #1a3a1a; }
+
+/* Scanline overlay */
+.phone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.015) 2px, rgba(0,255,0,0.015) 4px);
+  pointer-events: none;
+  z-index: 99;
+  border-radius: 40px;
+}
+
+.game-screen { background: #0c1a0c; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Top HUD Bar */
+.hud-top {
+  background: linear-gradient(180deg, #071407 0%, #0c1a0c 100%);
+  border-bottom: 1px solid #1a3a1a;
+  padding: 6px 12px 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Hero Portrait */
+.hero-portrait {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1a3a1a, #0a2010);
+  border: 2px solid #2a6a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(0,200,0,0.3);
+}
+.level-badge {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  border-radius: 6px;
+  padding: 1px 5px;
+  border: 1px solid #0c1a0c;
+}
+
+.hud-bars { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+
+.hud-bar-row { display: flex; align-items: center; gap: 6px; }
+.hud-bar-label { font-size: 10px; font-weight: 800; width: 22px; color: #4ade80; font-family: monospace; }
+.hud-bar-label.mp { color: #60a5fa; }
+.hud-bar-wrap { flex: 1; height: 10px; background: #071407; border: 1px solid #1a3a1a; border-radius: 3px; overflow: hidden; }
+.hud-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; position: relative; }
+.hud-bar-fill.hp { background: linear-gradient(90deg, #7f1d1d, #dc2626, #ef4444); box-shadow: 0 0 8px rgba(239,68,68,0.6); }
+.hud-bar-fill.mp { background: linear-gradient(90deg, #1e3a8a, #2563eb, #60a5fa); box-shadow: 0 0 8px rgba(96,165,250,0.6); }
+.hud-bar-val { font-size: 9px; color: #4ade80; font-family: monospace; width: 36px; text-align: right; }
+
+.gold-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.gold-amount { font-size: 14px; font-weight: 900; color: #f59e0b; font-family: monospace; line-height: 1; }
+.gold-label { font-size: 9px; color: #92400e; font-weight: 700; }
+
+/* Battle Arena */
+.battle-arena {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background grid */
+.battle-arena::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,255,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,0,0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.enemy-section {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(127,29,29,0.3), rgba(30,10,10,0.5));
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 16px;
+  padding: 14px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.enemy-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.enemy-name-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.enemy-skull { font-size: 18px; }
+.enemy-title { font-size: 11px; color: #fca5a5; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.enemy-name { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 1px; text-shadow: 0 0 20px rgba(239,68,68,0.5); }
+.enemy-type { font-size: 10px; color: #ef4444; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 100px; padding: 2px 8px; }
+
+.enemy-hp-section { margin-bottom: 6px; }
+.enemy-hp-label { display: flex; justify-content: space-between; font-size: 10px; color: #fca5a5; margin-bottom: 4px; font-family: monospace; }
+.enemy-hp-wrap { height: 14px; background: #1a0505; border: 1px solid rgba(239,68,68,0.3); border-radius: 4px; overflow: hidden; }
+.enemy-hp-fill {
+  height: 100%;
+  width: 65%;
+  background: linear-gradient(90deg, #7f1d1d, #dc2626, #ef4444);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(239,68,68,0.5);
+  position: relative;
+  animation: hpPulse 2s ease-in-out infinite;
+}
+@keyframes hpPulse { 0%,100%{box-shadow:0 0 10px rgba(239,68,68,0.5)} 50%{box-shadow:0 0 20px rgba(239,68,68,0.8)} }
+.enemy-hp-fill::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px;
+}
+
+.enemy-ipa { font-size: 12px; color: #6b7280; font-style: italic; text-align: center; margin-top: 6px; }
+
+/* VS Divider */
+.vs-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  z-index: 1;
+  width: 100%;
+}
+.vs-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(74,222,128,0.3), transparent); }
+.vs-text { font-size: 13px; font-weight: 900; color: #4ade80; font-family: monospace; text-shadow: 0 0 10px rgba(74,222,128,0.5); letter-spacing: 2px; }
+
+/* Battle Question */
+.battle-question {
+  width: 100%;
+  background: rgba(0,30,0,0.6);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: center;
+  z-index: 1;
+}
+.battle-q-label { font-size: 10px; color: #4ade80; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 700; }
+.battle-q-text { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
+.battle-q-text strong { color: #a7f3d0; }
+
+/* Battle Actions */
+.battle-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 16px;
+  z-index: 1;
+  width: 100%;
+}
+.battle-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+.battle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+.battle-btn:active { transform: scale(0.96); }
+.battle-btn.attack {
+  background: linear-gradient(135deg, #7f1d1d, #dc2626);
+  color: #fca5a5;
+  box-shadow: 0 4px 15px rgba(220,38,38,0.4);
+}
+.battle-btn.listen {
+  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  color: #93c5fd;
+  box-shadow: 0 4px 15px rgba(37,99,235,0.4);
+}
+.battle-btn.skip {
+  background: linear-gradient(135deg, #1c1c2e, #2d2d44);
+  color: #94a3b8;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+.battle-btn.hint {
+  background: linear-gradient(135deg, #3b1f6e, #7c3aed);
+  color: #c4b5fd;
+  box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+}
+
+/* Bottom HUD */
+.hud-bottom {
+  background: linear-gradient(0deg, #071407 0%, #0c1a0c 100%);
+  border-top: 1px solid #1a3a1a;
+  padding: 8px 12px 6px;
+}
+
+.xp-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.xp-bottom-label { font-size: 10px; color: #4ade80; font-family: monospace; white-space: nowrap; }
+.xp-bottom-wrap { flex: 1; height: 8px; background: #071407; border: 1px solid #1a3a1a; border-radius: 3px; overflow: hidden; }
+.xp-bottom-fill { height: 100%; width: 68%; background: linear-gradient(90deg, #14532d, #16a34a, #4ade80); box-shadow: 0 0 8px rgba(74,222,128,0.4); border-radius: 2px; }
+.xp-bottom-val { font-size: 10px; color: #4ade80; font-family: monospace; }
+
+.party-row { display: flex; align-items: center; justify-content: space-between; }
+.party-label { font-size: 10px; color: #4a7c4a; font-family: monospace; text-transform: uppercase; }
+.party-members { display: flex; gap: 6px; }
+.party-member {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1a3a1a, #0a2010);
+  border: 1.5px solid #2a5a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  position: relative;
+}
+.party-member.active { border-color: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.4); }
+.party-hp-dot {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  border: 1px solid #0c1a0c;
+}
+.party-hp-dot.low { background: #f59e0b; }
+
+.quest-btn {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: #f59e0b;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: monospace;
+}
+
+/* Damage flash animation */
+@keyframes damageFlash {
+  0% { background-color: transparent; }
+  30% { background-color: rgba(239,68,68,0.1); }
+  100% { background-color: transparent; }
+}
+.enemy-section:hover { animation: damageFlash 0.3s ease; }
+
+/* Floating numbers */
+.dmg-number {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ef4444;
+  font-family: monospace;
+  animation: floatUp 1s ease forwards;
+  z-index: 10;
+}
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-30px)} }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#071407; color:#4a7c4a; font-family:monospace; font-size:11px;">
+    <span>9:41</span>
+    <span style="color:#4ade80;">⚔ BATTLE MODE</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="game-screen">
+    <!-- HUD Top Bar -->
+    <div class="hud-top">
+      <div class="hero-portrait">
+        🦊
+        <div class="level-badge">Lv4</div>
+      </div>
+
+      <div class="hud-bars">
+        <div class="hud-bar-row">
+          <div class="hud-bar-label">HP</div>
+          <div class="hud-bar-wrap">
+            <div class="hud-bar-fill hp" style="width:72%"></div>
+          </div>
+          <div class="hud-bar-val">72/100</div>
+        </div>
+        <div class="hud-bar-row">
+          <div class="hud-bar-label mp">MP</div>
+          <div class="hud-bar-wrap">
+            <div class="hud-bar-fill mp" style="width:55%"></div>
+          </div>
+          <div class="hud-bar-val">55/100</div>
+        </div>
+      </div>
+
+      <div class="gold-counter">
+        <div class="gold-amount">💰248</div>
+        <div class="gold-label">GOLD</div>
+      </div>
+    </div>
+
+    <!-- Battle Arena -->
+    <div class="battle-arena">
+
+      <!-- Enemy Card -->
+      <div class="enemy-section">
+        <div class="enemy-header">
+          <div class="enemy-name-tag">
+            <span class="enemy-skull">💀</span>
+            <div>
+              <div class="enemy-title">Word Boss</div>
+              <div class="enemy-name">RESILIENT</div>
+            </div>
+          </div>
+          <div class="enemy-type">ADJECTIVE</div>
+        </div>
+        <div class="enemy-hp-section">
+          <div class="enemy-hp-label">
+            <span>BOSS HP</span>
+            <span style="color:#ef4444">65 / 100</span>
+          </div>
+          <div class="enemy-hp-wrap">
+            <div class="enemy-hp-fill"></div>
+          </div>
+        </div>
+        <div class="enemy-ipa">/rɪˈzɪliənt/ · ★★★☆☆ Difficulty</div>
+      </div>
+
+      <!-- VS Divider -->
+      <div class="vs-divider">
+        <div class="vs-line"></div>
+        <div class="vs-text">⚔ VS ⚔</div>
+        <div class="vs-line"></div>
+      </div>
+
+      <!-- Battle Question -->
+      <div class="battle-question">
+        <div class="battle-q-label">⚔ Your Attack — Choose the correct translation</div>
+        <div class="battle-q-text">
+          What does <strong>"resilient"</strong> mean in Ukrainian?
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Battle Actions -->
+    <div class="battle-actions">
+      <button class="battle-btn attack" onclick="this.closest('.phone').querySelector('.enemy-hp-fill').style.width='40%'">
+        ⚔️ Translate
+      </button>
+      <button class="battle-btn listen">
+        🔊 Listen
+      </button>
+      <button class="battle-btn skip">
+        🛡️ Skip
+      </button>
+      <button class="battle-btn hint">
+        ✨ Hint
+      </button>
+    </div>
+
+    <!-- Bottom HUD -->
+    <div class="hud-bottom">
+      <div class="xp-row">
+        <div class="xp-bottom-label">XP</div>
+        <div class="xp-bottom-wrap">
+          <div class="xp-bottom-fill"></div>
+        </div>
+        <div class="xp-bottom-val">340/500</div>
+      </div>
+
+      <div class="party-row">
+        <div class="party-label">Party</div>
+        <div class="party-members">
+          <div class="party-member active">
+            🦊
+            <div class="party-hp-dot"></div>
+          </div>
+          <div class="party-member">
+            🐰
+            <div class="party-hp-dot"></div>
+          </div>
+          <div class="party-member">
+            🐺
+            <div class="party-hp-dot low"></div>
+          </div>
+          <div class="party-member">
+            🐱
+            <div class="party-hp-dot"></div>
+          </div>
+        </div>
+        <button class="quest-btn">📜 Quest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="background:#071407; border-color:#1a3a1a;">
+    <div class="tab"><div class="icon">🏠</div><div class="label" style="color:#4a7c4a">Home</div></div>
+    <div class="tab active"><div class="icon">⚔️</div><div class="label" style="color:#4ade80">Battle</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label" style="color:#4a7c4a">Pet</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label" style="color:#4a7c4a">Rank</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label" style="color:#4a7c4a">Profile</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#0d1f0d;border:1px solid #1a3a1a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#6b8f6b;line-height:1.6;">
+  <strong style="color:#4ade80">⚔️ Mockup 03 — RPG Game HUD</strong><br><br>
+  <strong style="color:#a7f3d0">For:</strong> Gamers who learn through competition<br>
+  <strong style="color:#a7f3d0">Retention:</strong> Level-up dopamine hit after each boss<br>
+  <strong style="color:#a7f3d0">Audio:</strong> Pre-battle Listen button prominent<br>
+  <strong style="color:#a7f3d0">Risk:</strong> May confuse non-gamers<br><br>
+  <a href="index.html" style="color:#4ade80">← All Mockups</a>
+</div>
+</body>
+</html>

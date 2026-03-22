@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 · The Oracle — Пет розмовляє тільки англійською</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#050c12;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#070f18;border-radius:44px;overflow:hidden;border:1.5px solid #0f2a40;box-shadow:0 0 80px rgba(6,182,212,0.2),0 40px 120px rgba(0,0,0,0.7);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#1e3a50}
+
+/* ORACLE STAGE */
+.oracle-stage{position:relative;height:260px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 50%,#0a1a28 0%,#040c14 100%)}
+.oracle-rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.ring{position:absolute;border-radius:50%;border:1px solid;animation:ringPulse var(--d) ease-in-out infinite}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:0.3}50%{transform:scale(1.05);opacity:0.7}}
+.oracle-core{position:relative;z-index:2;text-align:center}
+.oracle-emoji{font-size:80px;filter:drop-shadow(0 0 30px rgba(6,182,212,0.6));animation:oracleFloat 4s ease-in-out infinite;cursor:pointer;display:block}
+@keyframes oracleFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+.oracle-name{font-size:14px;font-weight:700;color:#06b6d4;letter-spacing:2px;text-transform:uppercase;margin-top:6px}
+.oracle-level{font-size:10px;color:#0e4a6a;margin-top:2px}
+.oracle-speak{position:absolute;top:18px;left:50%;transform:translateX(-50%);background:rgba(6,182,212,0.1);border:1px solid rgba(6,182,212,0.3);border-radius:100px;padding:5px 16px;font-size:11px;color:#67e8f9;white-space:nowrap;backdrop-filter:blur(4px)}
+.particles{position:absolute;inset:0;pointer-events:none}
+.particle{position:absolute;width:4px;height:4px;border-radius:50%;background:#06b6d4;animation:particleFly var(--d) linear infinite var(--delay)}
+@keyframes particleFly{0%{opacity:0;transform:translateY(0) scale(0)}20%{opacity:0.8}100%{opacity:0;transform:translateY(-100px) scale(1.5)}}
+
+/* CONVERSATION */
+.conversation{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+
+.oracle-msg{display:flex;align-items:flex-start;gap:8px}
+.om-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0891b2,#6366f1);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;box-shadow:0 0 10px rgba(6,182,212,0.4)}
+.om-bubble{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:4px 16px 16px 16px;padding:9px 12px;max-width:270px}
+.om-en{font-size:14px;color:#e2e8f0;line-height:1.5;margin-bottom:4px}
+.om-en em{color:#06b6d4;font-style:normal;font-weight:700}
+.om-hint{font-size:11px;color:#0e4a6a;cursor:pointer;border-bottom:1px dashed #0e4a6a}
+.om-translation{font-size:11px;color:#475569;margin-top:4px;display:none;background:rgba(0,0,0,0.2);border-radius:6px;padding:4px 8px}
+
+.user-msg{display:flex;justify-content:flex-end}
+.um-bubble{background:linear-gradient(135deg,#0e4a6a,#164e63);border-radius:16px 4px 16px 16px;padding:9px 12px;max-width:240px;font-size:13px;color:#e2e8f0;line-height:1.5}
+
+/* LEVEL UP BADGE */
+.levelup{background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(99,102,241,0.1));border:1px solid rgba(6,182,212,0.3);border-radius:12px;padding:8px 14px;text-align:center;font-size:12px;color:#67e8f9;font-weight:700;margin:0 auto;max-width:280px}
+
+/* QUICK REPLIES */
+.qr-wrap{padding:8px 14px 4px;overflow-x:auto}
+.qr-label{font-size:9px;font-weight:700;color:#0e4a6a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.qr-btns{display:flex;gap:6px}
+.qr-btn{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.2);border-radius:100px;padding:6px 12px;font-size:11px;color:#67e8f9;cursor:pointer;white-space:nowrap;transition:all 0.15s;font-weight:500}
+.qr-btn:hover{background:rgba(6,182,212,0.2);border-color:#06b6d4}
+.qr-en{color:#06b6d4;font-weight:700}
+
+/* INPUT */
+.input-area{background:rgba(6,182,212,0.04);border-top:1px solid rgba(6,182,212,0.1);padding:10px 14px;flex-shrink:0}
+.input-hint{font-size:10px;color:#0e4a6a;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.input-row{display:flex;gap:8px;align-items:center}
+.chat-inp{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(6,182,212,0.2);border-radius:20px;padding:10px 14px;color:#e2e8f0;font-size:13px;outline:none}
+.chat-inp::placeholder{color:#1e4a60}
+.chat-inp:focus{border-color:#06b6d4}
+.send-btn{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0891b2,#6366f1);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(6,182,212,0.4);flex-shrink:0}
+
+/* TAB */
+.tabbar{display:flex;background:rgba(7,15,24,0.97);border-top:1px solid rgba(255,255,255,0.03);padding:8px 0 22px;flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#1e3a50;font-weight:500}
+.tab.on .tl{color:#06b6d4}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- ORACLE STAGE -->
+  <div class="oracle-stage" onclick="oracleTap()">
+    <div class="oracle-rings">
+      <div class="ring" style="width:180px;height:180px;border-color:rgba(6,182,212,0.2);--d:3s"></div>
+      <div class="ring" style="width:220px;height:220px;border-color:rgba(6,182,212,0.1);--d:4s;animation-delay:0.5s"></div>
+      <div class="ring" style="width:260px;height:260px;border-color:rgba(99,102,241,0.08);--d:5s;animation-delay:1s"></div>
+    </div>
+    <div class="particles" id="particles"></div>
+    <div class="oracle-speak">🔮 Speaks only English · Level B1</div>
+    <div class="oracle-core">
+      <span class="oracle-emoji" id="oe">🦉</span>
+      <div class="oracle-name">The Oracle</div>
+      <div class="oracle-level">English Level unlocked: A2 → B1</div>
+    </div>
+  </div>
+
+  <!-- CONVERSATION -->
+  <div class="conversation" id="conv">
+
+    <div class="oracle-msg">
+      <div class="om-avatar">🦉</div>
+      <div class="om-bubble">
+        <div class="om-en">Good morning! I am your <em>Oracle</em>. I will <em>only speak English</em> with you. It's the best way to truly learn! 🌟</div>
+        <div class="om-hint" onclick="toggleHint(this)">👆 Тисни щоб побачити переклад</div>
+        <div class="om-translation">Доброго ранку! Я твій Оракул. Я буду розмовляти з тобою ТІЛЬКИ англійською. Це найкращий спосіб справді вивчити!</div>
+      </div>
+    </div>
+
+    <div class="user-msg">
+      <div class="um-bubble">Okay! I will try to speak English with you! 💪</div>
+    </div>
+
+    <div class="oracle-msg">
+      <div class="om-avatar">🦉</div>
+      <div class="om-bubble">
+        <div class="om-en"><em>Excellent!</em> That's the spirit! 🔥 Today's word is: <em>resilient</em>. Can you use it in a sentence?</div>
+        <div class="om-hint" onclick="toggleHint(this)">👆 Тисни щоб побачити переклад</div>
+        <div class="om-translation">Чудово! Ось той дух! Сьогоднішнє слово: "resilient" (стійкий). Можеш використати його у реченні?</div>
+      </div>
+    </div>
+
+    <div class="user-msg">
+      <div class="um-bubble">I think I am very resilient person! 🦊</div>
+    </div>
+
+    <div class="oracle-msg">
+      <div class="om-avatar">🦉</div>
+      <div class="om-bubble">
+        <div class="om-en"><em>Almost perfect!</em> 🎉 Small correction: "I am a very <em>resilient person</em>" — don't forget the article "a"! +15 XP earned!</div>
+        <div class="om-hint" onclick="toggleHint(this)">👆 Тисни щоб побачити переклад</div>
+        <div class="om-translation">Майже ідеально! Маленьке виправлення: не забудь артикль "a"! +15 XP зароблено!</div>
+      </div>
+    </div>
+
+    <div class="levelup">⭐ +15 XP · Правильне речення! Streak: 12 поспіль</div>
+
+  </div>
+
+  <!-- QUICK REPLIES -->
+  <div class="qr-wrap">
+    <div class="qr-label">Відповіді англійською</div>
+    <div class="qr-btns">
+      <div class="qr-btn" onclick="sendEn(this,'<span class=qr-en>Thank you!</span> Can you give me another example?')">Thank you! 🙏</div>
+      <div class="qr-btn" onclick="sendEn(this,'<span class=qr-en>I understand!</span> Let me try again.')">I understand! ✅</div>
+      <div class="qr-btn" onclick="sendEn(this,'<span class=qr-en>What does</span> it mean exactly?')">What does it mean?</div>
+    </div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-area">
+    <div class="input-hint">🔮 Пиши англійською · Оракул виправить помилки</div>
+    <div class="input-row">
+      <input class="chat-inp" id="ci" placeholder="Write in English...">
+      <button class="send-btn" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab"><div class="ti">🏠</div><div class="tl">Головна</div></div>
+    <div class="tab on"><div class="ti">🔮</div><div class="tl">Оракул</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Слова</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#070f18;border:1px solid #0f2a40;border-radius:14px;padding:14px 18px;max-width:265px;font-size:12px;color:#0e4a6a;line-height:1.7;box-shadow:0 4px 20px rgba(6,182,212,0.1)">
+  <strong style="color:#67e8f9">07 · The Oracle 🔮 (ОРИГІНАЛЬНО)</strong><br><br>
+  <strong style="color:#e2e8f0">Концепт:</strong> Пет розмовляє ТІЛЬКИ англійською<br>
+  <strong style="color:#e2e8f0">Навчання:</strong> Занурення через діалог — найефективніше<br>
+  <strong style="color:#e2e8f0">AI корекція:</strong> GPT виправляє помилки природньо<br>
+  <strong style="color:#e2e8f0">Підказки:</strong> Переклад доступний, але не нав'язаний<br>
+  <strong style="color:#e2e8f0">Унікальність:</strong> Перший immersion-бот у TG mini apps<br><br>
+  <a href="new_index.html" style="color:#06b6d4">← Всі мокапи</a>
+</div>
+
+<script>
+// Particles
+const pc=document.getElementById('particles');
+for(let i=0;i<15;i++){
+  const p=document.createElement('div');
+  p.className='particle';
+  p.style.cssText=`left:${20+Math.random()*60}%;bottom:${Math.random()*40}%;--d:${(Math.random()*2+2).toFixed(1)}s;--delay:-${(Math.random()*3).toFixed(1)}s;opacity:0`;
+  pc.appendChild(p);
+}
+
+function toggleHint(el){
+  const tr=el.nextElementSibling;
+  if(tr.style.display==='block'){tr.style.display='none';el.textContent='👆 Тисни щоб побачити переклад';}
+  else{tr.style.display='block';el.textContent='👆 Сховати переклад';}
+}
+
+const oracleReplies=[
+  {en:"Great sentence! 🌟 You're improving very quickly! Next word: <em>ambitious</em> — can you tell me what it means?", ua:"Чудове речення! Ти покращуєшся дуже швидко! Наступне слово: 'ambitious' — чи можеш сказати що воно означає?"},
+  {en:"<em>Perfect</em>! I'm so proud of you! 🎉 Your English level is growing. Keep going!", ua:"Ідеально! Я так пишаюся тобою! Твій рівень англійської зростає. Продовжуй!"},
+  {en:"Hmm, small mistake! 🤔 You wrote '<em>very</em>' but should be '<em>really</em>' here. Try again?", ua:"Хмм, маленька помилка! Ти написав 'very' але тут краще 'really'. Спробуй ще раз?"},
+];
+let repIdx=0;
+
+function sendMsg(){
+  const v=document.getElementById('ci').value.trim();
+  if(!v) return;
+  addUserMsg(v);
+  document.getElementById('ci').value='';
+  setTimeout(addOracleReply,1200);
+}
+
+function sendEn(btn,text){
+  addUserMsg(btn.textContent);
+  setTimeout(addOracleReply,1200);
+}
+
+function addUserMsg(text){
+  const conv=document.getElementById('conv');
+  const d=document.createElement('div');
+  d.className='user-msg';
+  d.innerHTML=`<div class="um-bubble">${text}</div>`;
+  d.style.opacity='0';
+  conv.appendChild(d);
+  setTimeout(()=>{d.style.transition='opacity 0.3s';d.style.opacity='1';},50);
+  conv.scrollTop=conv.scrollHeight;
+}
+
+function addOracleReply(){
+  const conv=document.getElementById('conv');
+  const r=oracleReplies[repIdx%oracleReplies.length]; repIdx++;
+  const d=document.createElement('div');
+  d.className='oracle-msg';
+  d.innerHTML=`<div class="om-avatar">🦉</div><div class="om-bubble"><div class="om-en">${r.en}</div><div class="om-hint" onclick="toggleHint(this)">👆 Тисни щоб побачити переклад</div><div class="om-translation" style="display:none">${r.ua}</div></div>`;
+  d.style.opacity='0';
+  conv.appendChild(d);
+  setTimeout(()=>{d.style.transition='opacity 0.3s';d.style.opacity='1';},50);
+  conv.scrollTop=conv.scrollHeight;
+  document.getElementById('oe').style.fontSize='90px';
+  setTimeout(()=>document.getElementById('oe').style.fontSize='80px',300);
+}
+
+function oracleTap(){
+  const e=document.getElementById('oe');
+  e.style.transform='scale(1.2)';
+  setTimeout(()=>e.style.transform='',300);
+}
+</script>
+</body>
+</html>

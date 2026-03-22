@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 04 — Quest Board</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #0d0800; }
+.phone { background: #1a1000; border-color: #2e1f00; }
+
+/* Parchment texture overlay */
+.phone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(180,120,0,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 40px;
+}
+
+.quest-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 1; }
+
+/* Header */
+.quest-header {
+  background: linear-gradient(180deg, #251800 0%, #1a1000 100%);
+  border-bottom: 1px solid #3d2a00;
+  padding: 12px 20px 14px;
+}
+.quest-header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.quest-title-block {}
+.quest-eyebrow { font-size: 10px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+.quest-title { font-size: 22px; font-weight: 900; color: #fde68a; text-shadow: 0 0 20px rgba(253,230,138,0.3); }
+.quest-date { font-size: 11px; color: #78350f; }
+.quest-progress-badge {
+  background: linear-gradient(135deg, #92400e, #d97706);
+  border-radius: 12px;
+  padding: 8px 14px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(180,83,9,0.4);
+}
+.quest-progress-num { font-size: 22px; font-weight: 900; color: #fff; line-height: 1; }
+.quest-progress-label { font-size: 9px; color: #fde68a; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+
+.header-progress-wrap { height: 6px; background: #251800; border-radius: 100px; overflow: hidden; border: 1px solid #3d2a00; }
+.header-progress-fill { height: 100%; width: 40%; background: linear-gradient(90deg, #92400e, #f59e0b, #fde68a); border-radius: 100px; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+
+/* Scroll area */
+.quest-scroll { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+.quest-scroll::-webkit-scrollbar { display: none; }
+
+/* Quest Card */
+.quest-card {
+  background: linear-gradient(135deg, #1f1500, #1a1000);
+  border: 1px solid #3d2a00;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.quest-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.quest-card.done { border-color: rgba(16,185,129,0.3); }
+.quest-card.done::before { background: #10b981; }
+.quest-card.active { border-color: rgba(245,158,11,0.4); box-shadow: 0 0 12px rgba(245,158,11,0.1); }
+.quest-card.active::before { background: #f59e0b; }
+.quest-card.locked { opacity: 0.5; }
+.quest-card.locked::before { background: #374151; }
+.quest-card.bonus { border-color: rgba(139,92,246,0.4); background: linear-gradient(135deg, #1e1030, #1a1000); }
+.quest-card.bonus::before { background: #8b5cf6; }
+
+.quest-checkbox {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  border: 2px solid #3d2a00;
+}
+.quest-checkbox.done { background: rgba(16,185,129,0.2); border-color: rgba(16,185,129,0.4); }
+.quest-checkbox.active { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); animation: activeGlow 2s ease-in-out infinite; }
+.quest-checkbox.locked { background: rgba(55,65,81,0.3); border-color: #374151; }
+.quest-checkbox.bonus { background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.4); }
+
+@keyframes activeGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+  50% { box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
+}
+
+.quest-info { flex: 1; min-width: 0; }
+.quest-name { font-size: 14px; font-weight: 700; color: #e2e8f0; margin-bottom: 2px; }
+.quest-card.done .quest-name { text-decoration: line-through; color: #6b7280; }
+.quest-card.locked .quest-name { color: #4b5563; }
+.quest-sub { font-size: 11px; color: #78350f; }
+.quest-card.done .quest-sub { color: #10b981; }
+.quest-card.active .quest-sub { color: #f59e0b; }
+
+.quest-sub-bar { height: 4px; background: #251800; border-radius: 100px; margin-top: 6px; overflow: hidden; }
+.quest-sub-fill { height: 100%; background: linear-gradient(90deg, #d97706, #f59e0b); border-radius: 100px; }
+
+.quest-reward {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.quest-xp { font-size: 13px; font-weight: 800; color: #f59e0b; }
+.quest-xp.claimed { color: #10b981; }
+.quest-xp-label { font-size: 9px; color: #78350f; text-transform: uppercase; letter-spacing: 0.5px; }
+.quest-lock-icon { font-size: 18px; }
+
+/* Section label */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 2px;
+}
+.section-divider-line { flex: 1; height: 1px; background: #3d2a00; }
+.section-divider-text { font-size: 10px; color: #78350f; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+
+/* Weekly Quest */
+.weekly-quest {
+  background: linear-gradient(135deg, #1c1400, #251800);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 0 20px rgba(245,158,11,0.05);
+}
+.weekly-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.weekly-title { font-size: 13px; font-weight: 800; color: #fde68a; }
+.weekly-badge { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; border-radius: 100px; padding: 2px 10px; font-size: 10px; font-weight: 700; }
+.weekly-desc { font-size: 12px; color: #a16207; margin-bottom: 8px; }
+.weekly-progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.weekly-numbers { font-size: 14px; font-weight: 800; color: #f59e0b; }
+.weekly-pct { font-size: 11px; color: #92400e; }
+.weekly-bar-wrap { height: 8px; background: #251800; border-radius: 100px; overflow: hidden; border: 1px solid #3d2a00; }
+.weekly-bar-fill { height: 100%; width: 68%; background: linear-gradient(90deg, #92400e, #d97706, #f59e0b); border-radius: 100px; box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+
+/* Word of the Day */
+.wotd-card {
+  background: linear-gradient(135deg, #1a0f2e, #1a1000);
+  border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.wotd-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.wotd-label { font-size: 10px; color: #7c3aed; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.wotd-listen { display: flex; align-items: center; gap: 5px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); color: #a78bfa; border-radius: 100px; padding: 4px 12px; font-size: 11px; font-weight: 600; cursor: pointer; }
+.wotd-word { font-size: 24px; font-weight: 900; color: #e2e8f0; }
+.wotd-translation { font-size: 14px; color: #78350f; margin-top: 2px; }
+.wotd-ipa { font-size: 12px; color: #7c3aed; font-style: italic; margin-top: 2px; }
+
+/* Reward chest */
+.reward-chest {
+  background: linear-gradient(135deg, #251800, #1c1400);
+  border: 1px solid rgba(245,158,11,0.4);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 20px rgba(245,158,11,0.08), inset 0 1px 0 rgba(245,158,11,0.1);
+}
+.chest-icon { font-size: 36px; animation: chestFloat 2.5s ease-in-out infinite; }
+@keyframes chestFloat { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-5px) rotate(3deg)} }
+.chest-info { flex: 1; }
+.chest-title { font-size: 12px; font-weight: 700; color: #fde68a; margin-bottom: 3px; }
+.chest-desc { font-size: 11px; color: #92400e; }
+.chest-rewards { display: flex; gap: 4px; margin-top: 5px; }
+.chest-reward-tag { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: #f59e0b; border-radius: 6px; padding: 2px 7px; font-size: 11px; font-weight: 700; }
+.chest-pct { font-size: 20px; font-weight: 900; color: #f59e0b; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#251800; color:#78350f;">
+    <span>9:41</span>
+    <span>📜 Daily Quests</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="quest-screen">
+    <!-- Header -->
+    <div class="quest-header">
+      <div class="quest-header-top">
+        <div class="quest-title-block">
+          <div class="quest-eyebrow">Today's Missions</div>
+          <div class="quest-title">Daily Quests</div>
+          <div class="quest-date">March 22 · Sunday</div>
+        </div>
+        <div class="quest-progress-badge">
+          <div class="quest-progress-num">2/5</div>
+          <div class="quest-progress-label">Done</div>
+        </div>
+      </div>
+      <div class="header-progress-wrap">
+        <div class="header-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Quest List -->
+    <div class="quest-scroll">
+
+      <!-- Done quests -->
+      <div class="quest-card done">
+        <div class="quest-checkbox done">✅</div>
+        <div class="quest-info">
+          <div class="quest-name">Learn 3 new words</div>
+          <div class="quest-sub">✓ Completed · XP claimed</div>
+        </div>
+        <div class="quest-reward">
+          <div class="quest-xp claimed">+30 XP</div>
+          <div class="quest-xp-label">Claimed</div>
+        </div>
+      </div>
+
+      <div class="quest-card done">
+        <div class="quest-checkbox done">✅</div>
+        <div class="quest-info">
+          <div class="quest-name">Listen to pronunciation</div>
+          <div class="quest-sub">✓ Completed · Great work!</div>
+        </div>
+        <div class="quest-reward">
+          <div class="quest-xp claimed">+20 XP</div>
+          <div class="quest-xp-label">Claimed</div>
+        </div>
+      </div>
+
+      <!-- Active quest -->
+      <div class="quest-card active">
+        <div class="quest-checkbox active">🔄</div>
+        <div class="quest-info">
+          <div class="quest-name">Complete a quiz</div>
+          <div class="quest-sub">In progress · 1 of 3 done</div>
+          <div class="quest-sub-bar">
+            <div class="quest-sub-fill" style="width:33%"></div>
+          </div>
+        </div>
+        <div class="quest-reward">
+          <div class="quest-xp">+50 XP</div>
+          <div class="quest-xp-label">Reward</div>
+        </div>
+      </div>
+
+      <!-- Locked quests -->
+      <div class="quest-card locked">
+        <div class="quest-checkbox locked">🔒</div>
+        <div class="quest-info">
+          <div class="quest-name">Streak day</div>
+          <div class="quest-sub">Unlocks after quiz</div>
+        </div>
+        <div class="quest-reward">
+          <div class="quest-lock-icon">🔒</div>
+        </div>
+      </div>
+
+      <div class="quest-card bonus">
+        <div class="quest-checkbox bonus">⭐</div>
+        <div class="quest-info">
+          <div class="quest-name">Challenge a friend</div>
+          <div class="quest-sub" style="color:#8b5cf6">Bonus Quest · Optional</div>
+        </div>
+        <div class="quest-reward">
+          <div class="quest-xp" style="color:#a78bfa">+75 XP</div>
+          <div class="quest-xp-label" style="color:#6d28d9">Bonus</div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-text">Weekly Challenge</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <!-- Weekly Quest -->
+      <div class="weekly-quest">
+        <div class="weekly-header">
+          <div class="weekly-title">⚡ Earn 500 XP this week</div>
+          <div class="weekly-badge">WEEKLY</div>
+        </div>
+        <div class="weekly-desc">You've earned 340 XP so far. 160 more to go!</div>
+        <div class="weekly-progress-row">
+          <div class="weekly-numbers">340 / 500 XP</div>
+          <div class="weekly-pct">68%</div>
+        </div>
+        <div class="weekly-bar-wrap">
+          <div class="weekly-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-text">Word of the Day</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <!-- Word of the Day -->
+      <div class="wotd-card">
+        <div class="wotd-header">
+          <div class="wotd-label">✨ Featured Word</div>
+          <button class="wotd-listen" onclick="this.textContent='⏸️ Playing...'">🔊 Listen</button>
+        </div>
+        <div class="wotd-word">Resilient</div>
+        <div class="wotd-ipa">/rɪˈzɪliənt/</div>
+        <div class="wotd-translation">стійкий, витривалий</div>
+      </div>
+
+      <!-- Divider -->
+      <div class="section-divider">
+        <div class="section-divider-line"></div>
+        <div class="section-divider-text">Completion Reward</div>
+        <div class="section-divider-line"></div>
+      </div>
+
+      <!-- Reward Chest -->
+      <div class="reward-chest">
+        <div class="chest-icon">🎁</div>
+        <div class="chest-info">
+          <div class="chest-title">Complete All → Claim Chest</div>
+          <div class="chest-desc">Finish all 5 quests to unlock</div>
+          <div class="chest-rewards">
+            <div class="chest-reward-tag">100 XP</div>
+            <div class="chest-reward-tag">Pet Item</div>
+          </div>
+        </div>
+        <div class="chest-pct">40%</div>
+      </div>
+
+      <div style="height:12px"></div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="background:rgba(15,10,0,0.97); border-color:#3d2a00;">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Home</div></div>
+    <div class="tab active"><div class="icon">📜</div><div class="label" style="color:#f59e0b">Quests</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label">Pet</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Rank</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Profile</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#1a1000;border:1px solid #3d2a00;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#92400e;line-height:1.6;">
+  <strong style="color:#f59e0b">📜 Mockup 04 — Quest Board</strong><br><br>
+  <strong style="color:#fde68a">For:</strong> Goal-oriented users<br>
+  <strong style="color:#fde68a">Retention:</strong> Must complete quests before unlocking next<br>
+  <strong style="color:#fde68a">Audio:</strong> Pronunciation baked into daily quest<br>
+  <strong style="color:#fde68a">Risk:</strong> Can feel like homework<br><br>
+  <a href="index.html" style="color:#f59e0b">← All Mockups</a>
+</div>
+</body>
+</html>

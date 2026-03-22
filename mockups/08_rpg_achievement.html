@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 08 — RPG Achievement / Skill Tree</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #0a0010; }
+.phone { background: #1a001a; border-color: #2d0035; }
+
+/* Purple aurora at top */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 200px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 40px 40px 0 0;
+}
+
+.rpg-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 1; }
+
+/* Header / Character Class */
+.char-header {
+  background: linear-gradient(180deg, #1f0025 0%, #1a001a 100%);
+  border-bottom: 1px solid #2d0035;
+  padding: 10px 16px 14px;
+}
+.char-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.char-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3b0764, #7c3aed);
+  border: 2px solid rgba(167,139,250,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30px;
+  box-shadow: 0 0 20px rgba(124,58,237,0.4);
+  position: relative;
+  flex-shrink: 0;
+}
+.char-class-badge {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  color: #e9d5ff;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 100px;
+  white-space: nowrap;
+  border: 1px solid rgba(167,139,250,0.3);
+}
+.char-info {}
+.char-class { font-size: 17px; font-weight: 900; color: #e9d5ff; }
+.char-subtitle { font-size: 12px; color: #7c3aed; margin-top: 2px; }
+.char-xp-row { display: flex; align-items: center; gap: 8px; }
+.char-xp-wrap { flex: 1; height: 6px; background: #1f0025; border-radius: 100px; overflow: hidden; border: 1px solid #2d0035; }
+.char-xp-fill { height: 100%; width: 68%; background: linear-gradient(90deg, #5b21b6, #7c3aed, #a855f7); border-radius: 100px; box-shadow: 0 0 8px rgba(168,85,247,0.5); }
+.char-xp-label { font-size: 11px; color: #7c3aed; font-weight: 700; white-space: nowrap; }
+
+/* Scroll */
+.rpg-scroll { flex: 1; overflow-y: auto; padding: 12px 16px; }
+.rpg-scroll::-webkit-scrollbar { display: none; }
+
+/* Section label */
+.rpg-section { font-size: 10px; color: #6d28d9; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.rpg-section::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(124,58,237,0.4), transparent); }
+
+/* Skill Tree */
+.skill-tree {
+  background: linear-gradient(135deg, #120015, #0d0018);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 16px;
+  padding: 16px 12px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.skill-tree::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.skill-row + .skill-row { margin-top: 8px; }
+
+/* Connector lines between rows */
+.skill-connectors {
+  display: flex;
+  justify-content: space-around;
+  padding: 0 20px;
+  height: 12px;
+  position: relative;
+  z-index: 1;
+}
+.connector { width: 1px; background: linear-gradient(180deg, rgba(124,58,237,0.4), rgba(124,58,237,0.1)); }
+.connector.done { background: linear-gradient(180deg, rgba(16,185,129,0.6), rgba(16,185,129,0.2)); }
+.connector.active { background: linear-gradient(180deg, rgba(245,158,11,0.6), rgba(245,158,11,0.1)); }
+
+.skill-node {
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s;
+}
+.skill-node:active { transform: scale(0.95); }
+
+.skill-node.done {
+  background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(16,185,129,0.08));
+  border: 1px solid rgba(16,185,129,0.35);
+}
+.skill-node.active {
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
+  border: 1px solid rgba(245,158,11,0.4);
+  animation: activeNodeGlow 2s ease-in-out infinite;
+}
+@keyframes activeNodeGlow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); }
+  50% { box-shadow: 0 0 10px rgba(245,158,11,0.25); }
+}
+.skill-node.locked {
+  background: rgba(20,0,25,0.6);
+  border: 1px solid rgba(124,58,237,0.12);
+  opacity: 0.5;
+}
+
+.skill-icon { font-size: 20px; margin-bottom: 4px; }
+.skill-name { font-size: 10px; font-weight: 700; line-height: 1.2; }
+.skill-node.done .skill-name { color: #34d399; }
+.skill-node.active .skill-name { color: #fbbf24; }
+.skill-node.locked .skill-name { color: #4b5563; }
+.skill-status { font-size: 9px; margin-top: 3px; }
+.skill-node.done .skill-status { color: #10b981; }
+.skill-node.active .skill-status { color: #f59e0b; }
+.skill-node.locked .skill-status { color: #374151; }
+
+/* Current Skill Progress */
+.current-skill {
+  background: linear-gradient(135deg, #1c0020, #150015);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.cs-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.cs-label { font-size: 10px; color: #92400e; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.cs-pct { font-size: 18px; font-weight: 900; color: #f59e0b; }
+.cs-name { font-size: 15px; font-weight: 800; color: #fde68a; margin-bottom: 8px; }
+.cs-bar-wrap { height: 8px; background: #120015; border-radius: 100px; overflow: hidden; border: 1px solid rgba(245,158,11,0.2); }
+.cs-bar-fill { height: 100%; width: 60%; background: linear-gradient(90deg, #92400e, #d97706, #f59e0b); border-radius: 100px; box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+.cs-desc { font-size: 11px; color: #78350f; margin-top: 6px; }
+
+/* Achievements */
+.achievements {
+  background: linear-gradient(135deg, #120015, #0d0018);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.badge-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.badge-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  position: relative;
+}
+.badge-item.earned {
+  background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(124,58,237,0.1));
+  border: 1px solid rgba(167,139,250,0.3);
+  box-shadow: 0 0 10px rgba(124,58,237,0.2);
+}
+.badge-item.locked-badge {
+  background: rgba(20,0,25,0.6);
+  border: 1px solid rgba(124,58,237,0.1);
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+.badge-item.locked-badge::after {
+  content: '🔒';
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  font-size: 10px;
+}
+.badges-meta { font-size: 11px; color: #6d28d9; margin-top: 6px; }
+
+/* Stats Card */
+.stats-card {
+  background: linear-gradient(135deg, #120015, #0d0018);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.stat-item { }
+.stat-item-num { font-size: 22px; font-weight: 900; }
+.stat-item-label { font-size: 10px; color: #6d28d9; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+.stat-item:nth-child(1) .stat-item-num { color: #a78bfa; }
+.stat-item:nth-child(2) .stat-item-num { color: #34d399; }
+.stat-item:nth-child(3) .stat-item-num { color: #60a5fa; }
+.stat-item:nth-child(4) .stat-item-num { color: #f59e0b; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#0d0015; color:#6d28d9;">
+    <span>9:41</span>
+    <span style="color:#a78bfa">🔮 Skill Tree</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="rpg-screen">
+    <!-- Character Header -->
+    <div class="char-header">
+      <div class="char-top">
+        <div class="char-avatar">
+          🦊
+          <div class="char-class-badge">LEVEL 4</div>
+        </div>
+        <div class="char-info">
+          <div class="char-class">Apprentice Wizard 🔮</div>
+          <div class="char-subtitle">Rank #1,240 worldwide · 248 words</div>
+        </div>
+      </div>
+      <div class="char-xp-row">
+        <div class="char-xp-wrap">
+          <div class="char-xp-fill"></div>
+        </div>
+        <div class="char-xp-label">340 / 500 XP</div>
+      </div>
+    </div>
+
+    <div class="rpg-scroll">
+
+      <!-- Skill Tree Section -->
+      <div class="rpg-section">Skill Tree</div>
+
+      <div class="skill-tree">
+        <!-- Row 1 -->
+        <div class="skill-row">
+          <div class="skill-node done">
+            <div class="skill-icon">📚</div>
+            <div class="skill-name">Basic Vocab</div>
+            <div class="skill-status">✅ Mastered</div>
+          </div>
+          <div class="skill-node done">
+            <div class="skill-icon">💬</div>
+            <div class="skill-name">Phrases</div>
+            <div class="skill-status">✅ Mastered</div>
+          </div>
+          <div class="skill-node locked">
+            <div class="skill-icon">📖</div>
+            <div class="skill-name">Grammar</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+        </div>
+
+        <!-- Connectors -->
+        <div class="skill-connectors">
+          <div class="connector done"></div>
+          <div class="connector active"></div>
+          <div class="connector"></div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="skill-row">
+          <div class="skill-node active">
+            <div class="skill-icon">🔊</div>
+            <div class="skill-name">Pronunciation</div>
+            <div class="skill-status">60% done</div>
+          </div>
+          <div class="skill-node locked">
+            <div class="skill-icon">👂</div>
+            <div class="skill-name">Listening</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+          <div class="skill-node locked">
+            <div class="skill-icon">🗣️</div>
+            <div class="skill-name">Speaking</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+        </div>
+
+        <!-- Connectors -->
+        <div class="skill-connectors">
+          <div class="connector"></div>
+          <div class="connector"></div>
+          <div class="connector"></div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="skill-row">
+          <div class="skill-node locked">
+            <div class="skill-icon">💼</div>
+            <div class="skill-name">Business</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+          <div class="skill-node locked">
+            <div class="skill-icon">🎓</div>
+            <div class="skill-name">Academic</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+          <div class="skill-node locked">
+            <div class="skill-icon">👑</div>
+            <div class="skill-name">Master</div>
+            <div class="skill-status">🔒 Locked</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Skill Progress -->
+      <div class="rpg-section">Active Skill</div>
+      <div class="current-skill">
+        <div class="cs-header">
+          <div class="cs-label">In Progress</div>
+          <div class="cs-pct">60%</div>
+        </div>
+        <div class="cs-name">🔊 Pronunciation Mastery</div>
+        <div class="cs-bar-wrap">
+          <div class="cs-bar-fill"></div>
+        </div>
+        <div class="cs-desc">Listen to 40 more words to unlock Listening skill</div>
+      </div>
+
+      <!-- Achievements -->
+      <div class="rpg-section">Achievements</div>
+      <div class="achievements">
+        <div class="badge-grid">
+          <div class="badge-item earned" title="First Word">🌟</div>
+          <div class="badge-item earned" title="7-Day Streak">🔥</div>
+          <div class="badge-item earned" title="100 Words">📚</div>
+          <div class="badge-item earned" title="Quiz Master">🧠</div>
+          <div class="badge-item earned" title="Social">👥</div>
+          <div class="badge-item locked-badge" title="Grammar King">📖</div>
+          <div class="badge-item locked-badge" title="Fluent">🗣️</div>
+          <div class="badge-item locked-badge" title="Legend">👑</div>
+        </div>
+        <div class="badges-meta">5 earned · 3 locked · 8 total achievements</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="rpg-section">Character Stats</div>
+      <div class="stats-card">
+        <div class="stat-item">
+          <div class="stat-item-num">248</div>
+          <div class="stat-item-label">Words Learned</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-num">87%</div>
+          <div class="stat-item-label">Accuracy</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-num">34</div>
+          <div class="stat-item-label">Sessions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-item-num">#1,240</div>
+          <div class="stat-item-label">World Rank</div>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="background:rgba(8,0,12,0.97); border-color:#2d0035;">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Home</div></div>
+    <div class="tab"><div class="icon">📖</div><div class="label">Learn</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label">Pet</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Rank</div></div>
+    <div class="tab active"><div class="icon">🔮</div><div class="label" style="color:#a78bfa">Skills</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#1a001a;border:1px solid #2d0035;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#6d28d9;line-height:1.6;">
+  <strong style="color:#a78bfa">🔮 Mockup 08 — RPG Achievement</strong><br><br>
+  <strong style="color:#e9d5ff">For:</strong> Achievement hunters &amp; completionists<br>
+  <strong style="color:#e9d5ff">Retention:</strong> Unlocking nodes keeps users coming back<br>
+  <strong style="color:#e9d5ff">Audio:</strong> Pronunciation skill node is the gateway<br>
+  <strong style="color:#e9d5ff">Risk:</strong> Can feel complex for new users<br><br>
+  <a href="index.html" style="color:#a78bfa">← All Mockups</a>
+</div>
+</body>
+</html>

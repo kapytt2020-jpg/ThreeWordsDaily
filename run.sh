@@ -46,14 +46,46 @@ BOTS=(
     voodoo_test_bot
 )
 
+start_service() {
+    local name="$1"
+    local cmd="$2"
+    echo "▶ Starting $name..."
+    eval "nohup $cmd >> $LOG_DIR/${name}.log 2>&1 &"
+    echo "$!" > "$LOG_DIR/${name}.pid"
+    echo "✅ $name started (PID $!)"
+}
+
 case "${1:-all}" in
     all)
+        # Start all bots
         for bot in "${BOTS[@]}"; do
             start_bot "$bot"
         done
+
+        # Start miniapp
+        start_service "miniapp" "cd miniapp && $PYTHON -m uvicorn voodoo_api:app --host 0.0.0.0 --port 8000"
+
+        # Start group_manager
+        start_service "group_manager" "$PYTHON group_manager.py"
+
+        # Start autonomous_loop
+        start_service "autonomous_loop" "$PYTHON agents/autonomous_loop.py"
+
+        # Start cloudflared tunnel for miniapp
+        echo "▶ Starting cloudflare tunnel..."
+        nohup cloudflared tunnel --url http://localhost:8000 >> "$LOG_DIR/cloudflared.log" 2>&1 &
+        sleep 6
+        TUNNEL_URL=$(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG_DIR/cloudflared.log" | tail -1)
+        if [ -n "$TUNNEL_URL" ]; then
+            sed -i '' "s|MINIAPP_URL=.*|MINIAPP_URL=$TUNNEL_URL|" .env
+            echo "🌐 MiniApp URL: $TUNNEL_URL"
+        fi
+
         echo ""
-        echo "✅ All Voodoo bots started"
-        echo "Logs: $LOG_DIR/"
+        echo "✅ Voodoo Platform запущено"
+        echo "📱 MiniApp: $TUNNEL_URL"
+        echo "📊 Group API: http://127.0.0.1:9000/status"
+        echo "📁 Logs: $LOG_DIR/"
         ;;
     stop)
         for bot in "${BOTS[@]}"; do

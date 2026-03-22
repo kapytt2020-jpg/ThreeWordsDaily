@@ -29,15 +29,16 @@ OPS_BOT_TOKEN = os.getenv("VOODOO_OPS_BOT_TOKEN", "")
 ADMIN_CHAT_ID  = int(os.getenv("ADMIN_CHAT_ID", "0"))
 
 SERVICES = {
-    "voodoo_bot":       ("com.voodoo.bot",          "voodoo_bot.py"),
-    "speak_bot":        ("com.voodoo.speak_bot",     "voodoo_speak_bot.py"),
-    "teacher_bot":      ("com.voodoo.teacher_bot",   "voodoo_teacher_bot.py"),
-    "publisher_bot":    ("com.voodoo.publisher_bot", "voodoo_publisher_bot.py"),
-    "analyst_bot":      ("com.voodoo.analyst_bot",   "voodoo_analyst_bot.py"),
-    "growth_bot":       ("com.voodoo.growth_bot",    "voodoo_growth_bot.py"),
-    "ops_bot":          ("com.voodoo.ops_bot",       "voodoo_ops_bot.py"),
-    "test_bot":         ("com.voodoo.test_bot",      "voodoo_test_bot.py"),
-    "miniapp":          ("com.voodoo.miniapp",       "uvicorn"),
+    "voodoo_bot":       ("com.voodoo.bot",              "voodoo_bot.py"),
+    "speak_bot":        ("com.voodoo.speak_bot",         "voodoo_speak_bot.py"),
+    "teacher_bot":      ("com.voodoo.teacher_bot",       "voodoo_teacher_bot.py"),
+    "publisher_bot":    ("com.voodoo.publisher_bot",     "voodoo_publisher_bot.py"),
+    "analyst_bot":      ("com.voodoo.analyst_bot",       "voodoo_analyst_bot.py"),
+    "growth_bot":       ("com.voodoo.growth_bot",        "voodoo_growth_bot.py"),
+    "ops_bot":          ("com.voodoo.ops_bot",           "voodoo_ops_bot.py"),
+    "miniapp":          ("com.voodoo.miniapp",           "uvicorn"),
+    "group_manager":    ("com.voodoo.group_manager",     "group_manager.py"),
+    "autonomous_loop":  ("com.voodoo.autonomous_loop",   "autonomous_loop.py"),
 }
 
 

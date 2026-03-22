@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Voodoo — The Living Universe</title>
+<style>
+  /* ─── RESET & BASE ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #010008;
+    color: #fff;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ─── SCREEN SYSTEM ────────────────────────────────────────── */
+  .screen {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.45s ease;
+    overflow: hidden;
+  }
+  .screen.active { opacity: 1; pointer-events: all; }
+
+  /* ─── STARFIELD ─────────────────────────────────────────────── */
+  .starfield {
+    position: absolute; inset: 0; overflow: hidden; z-index: 0;
+  }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    animation: twinkle var(--dur, 3s) ease-in-out infinite;
+    animation-delay: var(--delay, 0s);
+    opacity: var(--op, 0.6);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--op, 0.6); transform: scale(1); }
+    50%       { opacity: 0.1;           transform: scale(0.6); }
+  }
+
+  /* ─── NEBULA GLOW ───────────────────────────────────────────── */
+  .nebula {
+    position: absolute; border-radius: 50%;
+    filter: blur(60px); pointer-events: none; z-index: 0;
+  }
+
+  /* ─── TOP BAR ───────────────────────────────────────────────── */
+  .topbar {
+    position: relative; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 14px 16px 10px;
+    background: linear-gradient(180deg, rgba(1,0,8,0.95) 0%, transparent 100%);
+  }
+  .topbar-stat {
+    background: rgba(0,220,255,0.1);
+    border: 1px solid rgba(0,220,255,0.3);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px; font-weight: 600;
+    color: #00dcff;
+    white-space: nowrap;
+  }
+  .topbar-stat.level { color: #c084fc; border-color: rgba(192,132,252,0.3); background: rgba(192,132,252,0.1); }
+  .topbar-bell {
+    margin-left: auto;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    position: relative;
+  }
+  .bell-dot {
+    position: absolute; top: 5px; right: 5px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff4444;
+    box-shadow: 0 0 6px #ff4444;
+    animation: pulseDot 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%,100%{transform:scale(1);} 50%{transform:scale(1.4);} }
+
+  /* ─── GALAXY MAP ────────────────────────────────────────────── */
+  .galaxy-wrap {
+    position: relative; flex: 1; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .galaxy-svg-wrap {
+    width: 100%; height: 100%;
+    position: relative;
+    cursor: grab;
+  }
+  .galaxy-svg {
+    width: 100%; height: 100%;
+    overflow: visible;
+  }
+
+  /* Orbital paths */
+  .orbit-path { fill: none; stroke: rgba(0,220,255,0.07); stroke-width: 0.5; }
+
+  /* Planets on SVG */
+  .planet-g { cursor: pointer; }
+  .planet-g text {
+    font-size: 10px; fill: rgba(255,255,255,0.65);
+    text-anchor: middle; pointer-events: none;
+    font-family: -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  /* ─── DANGER TICKER ─────────────────────────────────────────── */
+  .danger-ticker {
+    position: relative; z-index: 10;
+    margin: 0 12px 8px;
+    background: rgba(255,60,0,0.12);
+    border: 1px solid rgba(255,60,0,0.4);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px; color: #ff8060;
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer;
+  }
+  .danger-pulse {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ff4400;
+    box-shadow: 0 0 8px #ff4400;
+    animation: pulseDot 0.9s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  .ticker-arrow { margin-left: auto; opacity: 0.5; }
+
+  /* ─── BOTTOM TAB ────────────────────────────────────────────── */
+  .bottom-tab {
+    position: relative; z-index: 10;
+    display: flex;
+    background: rgba(5,0,20,0.95);
+    border-top: 1px solid rgba(0,220,255,0.12);
+    padding-bottom: env(safe-area-inset-bottom, 8px);
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 4px 8px;
+    font-size: 10px; color: rgba(255,255,255,0.35);
+    cursor: pointer; gap: 3px; transition: color 0.2s;
+  }
+  .tab-item .tab-icon { font-size: 20px; line-height: 1; }
+  .tab-item.active { color: #00dcff; }
+  .tab-item.active .tab-icon { filter: drop-shadow(0 0 6px #00dcff); }
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCREEN 2 — PLANET DETAIL
+  ═══════════════════════════════════════════════════════════════ */
+  .planet-screen { background: #010008; }
+
+  .planet-header {
+    position: relative; z-index: 5;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .back-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+  }
+  .planet-header h2 { font-size: 18px; font-weight: 700; }
+
+  .planet-showcase {
+    position: relative; z-index: 5;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 0 24px;
+  }
+  .planet-ball {
+    width: 140px; height: 140px; border-radius: 50%;
+    position: relative;
+    animation: floatPlanet 4s ease-in-out infinite;
+    margin-bottom: 18px;
+  }
+  @keyframes floatPlanet {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-12px) rotate(3deg); }
+  }
+  .planet-ring {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) rotateX(70deg);
+    width: 200px; height: 200px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.15);
+    pointer-events: none;
+  }
+  .planet-glow {
+    position: absolute; inset: -20px; border-radius: 50%;
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%,100%{ opacity: 0.5; transform: scale(1); }
+    50%    { opacity: 0.9; transform: scale(1.06); }
+  }
+  .planet-name { font-size: 22px; font-weight: 800; letter-spacing: 0.02em; }
+  .planet-emoji { font-size: 28px; margin-bottom: 4px; }
+
+  .planet-card {
+    position: relative; z-index: 5;
+    margin: 0 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 20px;
+  }
+  .planet-desc {
+    font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.7);
+    margin-bottom: 16px;
+  }
+  .planet-stats {
+    display: flex; gap: 8px; margin-bottom: 16px;
+  }
+  .pstat {
+    flex: 1; background: rgba(0,0,0,0.3); border-radius: 12px;
+    padding: 10px 8px; text-align: center;
+  }
+  .pstat-val { font-size: 16px; font-weight: 700; color: #00dcff; }
+  .pstat-lbl { font-size: 10px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+  .health-label {
+    font-size: 11px; color: rgba(255,255,255,0.5);
+    margin-bottom: 6px; display: flex; justify-content: space-between;
+  }
+  .health-bar-wrap {
+    background: rgba(255,255,255,0.1); border-radius: 6px; height: 8px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .health-fill {
+    height: 100%; border-radius: 6px;
+    background: linear-gradient(90deg, #00ff88, #00dcff);
+    transition: width 0.4s ease;
+    box-shadow: 0 0 8px rgba(0,220,255,0.5);
+  }
+
+  .explore-btn {
+    width: 100%; padding: 16px;
+    border: none; border-radius: 16px; cursor: pointer;
+    font-size: 16px; font-weight: 800; letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #00dcff, #7b61ff);
+    color: #fff;
+    box-shadow: 0 4px 24px rgba(0,220,255,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin-bottom: 16px;
+  }
+  .explore-btn:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(0,220,255,0.2); }
+
+  .similar-title { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
+  .similar-list { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .similar-chip {
+    background: rgba(0,220,255,0.08);
+    border: 1px solid rgba(0,220,255,0.2);
+    border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; white-space: nowrap; cursor: pointer;
+    flex-shrink: 0;
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCREEN 3 — SUPERNOVA VOTE
+  ═══════════════════════════════════════════════════════════════ */
+  .vote-screen {
+    background: radial-gradient(ellipse at center, #1a0600 0%, #010008 70%);
+  }
+  .supernova-header {
+    position: relative; z-index: 5;
+    padding: 18px 16px 10px;
+    text-align: center;
+  }
+  .supernova-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,80,0,0.15);
+    border: 1px solid rgba(255,80,0,0.5);
+    border-radius: 30px; padding: 8px 20px;
+    font-size: 14px; font-weight: 800; letter-spacing: 0.1em;
+    color: #ff8040;
+    text-shadow: 0 0 10px rgba(255,128,64,0.6);
+    margin-bottom: 6px;
+  }
+  .supernova-subtitle {
+    font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 6px;
+  }
+
+  .supernova-visual {
+    position: relative; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    height: 120px;
+  }
+  .collapse-star {
+    width: 60px; height: 60px; border-radius: 50%;
+    background: radial-gradient(circle, #ffdd00 0%, #ff6600 40%, #aa0000 80%, transparent 100%);
+    box-shadow: 0 0 40px rgba(255,100,0,0.8), 0 0 80px rgba(255,60,0,0.4);
+    animation: collapse 3s ease-in-out infinite;
+  }
+  @keyframes collapse {
+    0%  { transform: scale(1);   box-shadow: 0 0 40px rgba(255,100,0,0.8), 0 0 80px rgba(255,60,0,0.4); }
+    40% { transform: scale(1.2); box-shadow: 0 0 60px rgba(255,100,0,1),   0 0 120px rgba(255,60,0,0.6); }
+    70% { transform: scale(0.6); box-shadow: 0 0 20px rgba(255,100,0,0.5), 0 0 40px rgba(255,60,0,0.2); }
+    100%{ transform: scale(1);   box-shadow: 0 0 40px rgba(255,100,0,0.8), 0 0 80px rgba(255,60,0,0.4); }
+  }
+  .collapse-ring {
+    position: absolute; border-radius: 50%;
+    border: 2px solid rgba(255,100,0,0.3);
+    animation: expandRing 3s ease-out infinite;
+  }
+  @keyframes expandRing {
+    0%   { width: 60px; height: 60px; opacity: 0.8; }
+    100% { width: 180px; height: 180px; opacity: 0; }
+  }
+
+  .vote-timer {
+    position: relative; z-index: 5;
+    text-align: center; margin: 0 16px 12px;
+    background: rgba(255,60,0,0.1);
+    border: 1px solid rgba(255,60,0,0.3);
+    border-radius: 12px; padding: 10px;
+  }
+  .timer-label { font-size: 10px; color: rgba(255,180,100,0.6); margin-bottom: 4px; }
+  .timer-val { font-size: 24px; font-weight: 800; color: #ff8040; font-variant-numeric: tabular-nums; letter-spacing: 0.05em; }
+
+  .vote-list { position: relative; z-index: 5; padding: 0 16px; flex: 1; overflow-y: auto; }
+  .vote-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 14px;
+    margin-bottom: 10px; cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .vote-item:hover { background: rgba(255,80,0,0.08); border-color: rgba(255,80,0,0.3); }
+  .vote-item.selected { background: rgba(255,80,0,0.12); border-color: rgba(255,80,0,0.6); }
+  .vote-item-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .vote-item-icon { font-size: 22px; }
+  .vote-item-name { font-size: 14px; font-weight: 700; flex: 1; }
+  .vote-item-pct { font-size: 12px; color: #ff8040; font-weight: 600; }
+  .life-bar-wrap { background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; overflow: hidden; }
+  .life-fill {
+    height: 100%; border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+  .life-fill.danger { background: linear-gradient(90deg, #ff2200, #ff6600); box-shadow: 0 0 6px rgba(255,60,0,0.7); }
+  .life-fill.warning { background: linear-gradient(90deg, #ff8800, #ffcc00); }
+  .life-fill.ok { background: linear-gradient(90deg, #00cc44, #00ff88); }
+
+  .vote-footer {
+    position: relative; z-index: 5;
+    padding: 10px 16px 14px;
+    font-size: 11px; color: rgba(255,180,80,0.5);
+    text-align: center;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SCREEN 4 — NEW STAR BORN
+  ═══════════════════════════════════════════════════════════════ */
+  .born-screen {
+    background: #010008;
+    align-items: center; justify-content: center;
+  }
+  .born-screen .starfield { z-index: 0; }
+
+  .explosion-wrap {
+    position: relative; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    width: 220px; height: 220px; margin: 0 auto 10px;
+  }
+  .explosion-core {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, #fffacc 20%, #ffdd00 50%, #ff8800 80%, transparent 100%);
+    box-shadow: 0 0 60px #ffcc00, 0 0 120px rgba(255,200,0,0.5);
+    animation: bornCore 2s ease-in-out infinite;
+    position: relative; z-index: 2;
+  }
+  @keyframes bornCore {
+    0%,100%{ transform: scale(1);   box-shadow: 0 0 60px #ffcc00, 0 0 120px rgba(255,200,0,0.5); }
+    50%    { transform: scale(1.15); box-shadow: 0 0 80px #ffcc00, 0 0 160px rgba(255,200,0,0.7); }
+  }
+  .explosion-ray {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 60px;
+    background: linear-gradient(to top, rgba(255,220,0,0), #ffee44);
+    transform-origin: bottom center;
+    border-radius: 2px;
+    animation: rayPulse 2s ease-in-out infinite;
+  }
+  @keyframes rayPulse {
+    0%,100%{ opacity: 0.7; transform: scaleY(1) rotate(var(--angle)); }
+    50%    { opacity: 1;   transform: scaleY(1.2) rotate(var(--angle)); }
+  }
+  .explosion-ring {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,220,0,0.4);
+    animation: bornRing 2.5s ease-out infinite;
+  }
+  @keyframes bornRing {
+    0%  { width: 80px;  height: 80px;  opacity: 0.8; }
+    100%{ width: 220px; height: 220px; opacity: 0; }
+  }
+
+  .born-content { position: relative; z-index: 5; text-align: center; padding: 0 24px; width: 100%; }
+  .born-badge {
+    display: inline-block;
+    font-size: 11px; letter-spacing: 0.12em; font-weight: 700;
+    color: rgba(255,220,0,0.7);
+    margin-bottom: 10px;
+  }
+  .born-title {
+    font-size: 24px; font-weight: 900; line-height: 1.15;
+    background: linear-gradient(135deg, #fff 0%, #ffee44 50%, #ffaa00 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .born-game-name {
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, #00ffcc 0%, #00dcff 50%, #7b61ff 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .born-ai-note {
+    font-size: 12px; color: rgba(255,255,255,0.4);
+    margin-bottom: 14px; line-height: 1.5;
+  }
+  .born-desc {
+    font-size: 13px; color: rgba(255,255,255,0.65);
+    line-height: 1.55; margin-bottom: 24px;
+  }
+  .born-btn {
+    width: 100%; padding: 16px 24px;
+    border: none; border-radius: 16px; cursor: pointer;
+    font-size: 15px; font-weight: 800; letter-spacing: 0.06em;
+    background: linear-gradient(135deg, #ffcc00, #ff8800);
+    color: #1a0800;
+    box-shadow: 0 4px 24px rgba(255,180,0,0.5);
+    transition: transform 0.15s;
+  }
+  .born-btn:active { transform: scale(0.97); }
+
+
+  /* ─── SHARED UTILS ──────────────────────────────────────────── */
+  .scrollable { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .scrollable::-webkit-scrollbar { display: none; }
+
+  /* SVG planet labels */
+  .pl-label { user-select: none; }
+
+  /* "You are here" pulsing */
+  @keyframes youHere {
+    0%,100%{ r: 10; opacity: 1; }
+    50%    { r: 14; opacity: 0.6; }
+  }
+
+  /* planet orbit animation */
+  @keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  /* slide-up animation for planet screen */
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .slide-up { animation: slideUp 0.4s ease forwards; }
+
+  /* star map connecting paths */
+  .star-path { stroke: rgba(0,220,255,0.12); stroke-width: 1; fill: none; stroke-dasharray: 4 6; }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1: GALAXY MAP
+═══════════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s1">
+
+  <!-- Starfield -->
+  <div class="starfield" id="sf1"></div>
+
+  <!-- Nebula glows -->
+  <div class="nebula" style="width:300px;height:300px;top:-80px;left:-100px;background:radial-gradient(circle,rgba(60,0,180,0.25),transparent 70%);"></div>
+  <div class="nebula" style="width:250px;height:250px;bottom:-60px;right:-60px;background:radial-gradient(circle,rgba(0,80,180,0.2),transparent 70%);"></div>
+  <div class="nebula" style="width:200px;height:200px;top:40%;left:30%;background:radial-gradient(circle,rgba(100,0,200,0.1),transparent 70%);"></div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-stat">⭐ 3,240 зорі</div>
+    <div class="topbar-stat level">🚀 Explorer</div>
+    <div class="topbar-bell">
+      🔔
+      <div class="bell-dot"></div>
+    </div>
+  </div>
+
+  <!-- Galaxy map -->
+  <div class="galaxy-wrap">
+    <div class="galaxy-svg-wrap">
+      <svg class="galaxy-svg" id="galaxySvg" viewBox="0 0 390 420" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <!-- Danger ticker -->
+  <div class="danger-ticker" onclick="showScreen('s3')">
+    <div class="danger-pulse"></div>
+    <span>💥 Зоря TABOO агонізує — голосуй!</span>
+    <span class="ticker-arrow">›</span>
+  </div>
+
+  <!-- Bottom tab -->
+  <div class="bottom-tab">
+    <div class="tab-item active"><div class="tab-icon">🌌</div>Галактика</div>
+    <div class="tab-item"       onclick="showScreen('s1')"><div class="tab-icon">🗺️</div>Подорожі</div>
+    <div class="tab-item"       onclick="showScreen('s3')"><div class="tab-icon">🏆</div>Трофеї</div>
+    <div class="tab-item"       onclick="showScreen('s3')"><div class="tab-icon">🗳️</div>Голос</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2: PLANET DETAIL
+═══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s2">
+  <div class="starfield" id="sf2"></div>
+
+  <!-- Header -->
+  <div class="planet-header">
+    <div class="back-btn" onclick="showScreen('s1')">‹</div>
+    <h2>Деталі планети</h2>
+  </div>
+
+  <!-- Planet showcase -->
+  <div class="planet-showcase" id="planetShowcase">
+    <div class="planet-emoji" id="planetEmoji">🧩</div>
+    <div style="position:relative; display:inline-block; margin-bottom:18px;">
+      <div class="planet-glow" id="planetGlow"
+           style="background:radial-gradient(circle,rgba(0,220,255,0.35),transparent 70%);"></div>
+      <div class="planet-ball" id="planetBall"
+           style="background:radial-gradient(circle at 35% 35%, #00ffee, #0080cc 50%, #002244);
+                  box-shadow:0 0 30px rgba(0,220,255,0.6),inset 0 0 20px rgba(0,0,0,0.4);">
+      </div>
+      <div class="planet-ring" id="planetRing"></div>
+    </div>
+    <div class="planet-name" id="planetName">WORD MAZE</div>
+  </div>
+
+  <!-- Card -->
+  <div class="planet-card slide-up scrollable" style="flex:1; overflow-y:auto; margin-bottom:10px;">
+    <p class="planet-desc" id="planetDesc">
+      Зберіть слова з розкиданих літер, обходячи астероїди-пастки. Чим швидше — тим більше зір! Кожен рівень генерується унікально.
+    </p>
+    <div class="planet-stats">
+      <div class="pstat">
+        <div class="pstat-val">14,234</div>
+        <div class="pstat-lbl">🌍 дослідників</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-val">⭐ 4.7</div>
+        <div class="pstat-lbl">рейтинг</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-val">#3</div>
+        <div class="pstat-lbl">в галактиці</div>
+      </div>
+    </div>
+    <div class="health-label">
+      <span>Планета: 78% живих</span>
+      <span style="color:#00ff88">✓ Стабільна</span>
+    </div>
+    <div class="health-bar-wrap">
+      <div class="health-fill" style="width:78%"></div>
+    </div>
+    <button class="explore-btn" onclick="showScreen('s1')">🚀 ДОСЛІДИТИ</button>
+    <div class="similar-title">Схожі планети</div>
+    <div class="similar-list">
+      <div class="similar-chip">🔤 Anagram Storm</div>
+      <div class="similar-chip">🌀 Letter Vortex</div>
+      <div class="similar-chip">🧬 Word Evo</div>
+      <div class="similar-chip">💬 Chat Duel</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3: SUPERNOVA VOTE
+═══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s3">
+  <div class="starfield" id="sf3"></div>
+  <div class="nebula" style="width:280px;height:280px;top:0;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(200,50,0,0.2),transparent 70%);"></div>
+
+  <!-- Header -->
+  <div class="supernova-header">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+      <div class="back-btn" style="width:32px;height:32px;font-size:16px;" onclick="showScreen('s1')">‹</div>
+      <div class="supernova-badge">💥 SUPERNOVA VOTE</div>
+      <div style="width:32px;"></div>
+    </div>
+    <div class="supernova-subtitle">Яка зоря зникне з галактики?</div>
+  </div>
+
+  <!-- Collapsing star visual -->
+  <div class="supernova-visual">
+    <div class="collapse-ring" style="animation-delay:0s;"></div>
+    <div class="collapse-ring" style="animation-delay:1s;"></div>
+    <div class="collapse-star"></div>
+  </div>
+
+  <!-- Timer -->
+  <div class="vote-timer">
+    <div class="timer-label">⏱ ЗАЛИШИЛОСЬ</div>
+    <div class="timer-val" id="voteTimer">08:23:44</div>
+  </div>
+
+  <!-- Vote list -->
+  <div class="vote-list scrollable" style="flex:1;">
+    <div class="vote-item selected" onclick="selectVote(this)">
+      <div class="vote-item-top">
+        <div class="vote-item-icon">🃏</div>
+        <div class="vote-item-name">TABOO EXTREME</div>
+        <div class="vote-item-pct">34%</div>
+      </div>
+      <div class="life-bar-wrap"><div class="life-fill danger" style="width:18%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vote-item-top">
+        <div class="vote-item-icon">🔤</div>
+        <div class="vote-item-name">ALPHABET CHAOS</div>
+        <div class="vote-item-pct">22%</div>
+      </div>
+      <div class="life-bar-wrap"><div class="life-fill warning" style="width:35%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vote-item-top">
+        <div class="vote-item-icon">🌀</div>
+        <div class="vote-item-name">SPIN & SPELL</div>
+        <div class="vote-item-pct">18%</div>
+      </div>
+      <div class="life-bar-wrap"><div class="life-fill warning" style="width:50%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vote-item-top">
+        <div class="vote-item-icon">🎯</div>
+        <div class="vote-item-name">TARGET WORD</div>
+        <div class="vote-item-pct">15%</div>
+      </div>
+      <div class="life-bar-wrap"><div class="life-fill ok" style="width:62%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vote-item-top">
+        <div class="vote-item-icon">🧩</div>
+        <div class="vote-item-name">CROSSWORD RUSH</div>
+        <div class="vote-item-pct">11%</div>
+      </div>
+      <div class="life-bar-wrap"><div class="life-fill ok" style="width:75%"></div></div>
+    </div>
+  </div>
+
+  <!-- Footer note -->
+  <div class="vote-footer">
+    🌟 Нова зоря народиться о 00:00 зі списку AI
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 4: NEW STAR BORN
+═══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="s4">
+  <div class="starfield" id="sf4"></div>
+  <div class="nebula" style="width:350px;height:350px;top:-50px;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(255,200,0,0.12),transparent 70%);"></div>
+
+  <!-- Explosion -->
+  <div class="explosion-wrap" id="explosionWrap">
+    <div class="explosion-ring" style="animation-delay:0s;"></div>
+    <div class="explosion-ring" style="animation-delay:0.8s;"></div>
+    <div class="explosion-ring" style="animation-delay:1.6s;"></div>
+    <div class="explosion-core"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="born-content">
+    <div class="born-badge">✦ VOODOO UNIVERSE ✦</div>
+    <div class="born-title">🌟 НАРОДИЛАСЬ<br>НОВА ЗОРЯ</div>
+    <div class="born-ai-note">
+      VOODOO AI досліджував 1,247 механік...<br>
+      і обрав найяскравішу.
+    </div>
+    <div class="born-game-name">WORD EVOLUTION 🧬</div>
+    <div class="born-desc">
+      Слова еволюціонують у реальному часі! Змінюй літери, схрещуй слова, виживай у лінгвістичному природному відборі.
+    </div>
+    <button class="born-btn" onclick="showScreen('s1')">
+      СТАТИ ПЕРШИМ ДОСЛІДНИКОМ →
+    </button>
+  </div>
+</div>
+
+
+<!-- ─── DEV NAV (hidden after interaction) ──────────────────── -->
+<div id="devNav" style="
+  position:fixed; bottom:90px; right:12px; z-index:9999;
+  display:flex; flex-direction:column; gap:6px; align-items:flex-end;
+">
+  <div style="font-size:10px;color:rgba(255,255,255,0.3);text-align:right;margin-bottom:2px;">screens</div>
+  <button onclick="showScreen('s1')" style="background:rgba(0,220,255,0.15);border:1px solid rgba(0,220,255,0.3);color:#00dcff;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">1 Galaxy</button>
+  <button onclick="showScreen('s2')" style="background:rgba(0,220,255,0.15);border:1px solid rgba(0,220,255,0.3);color:#00dcff;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">2 Planet</button>
+  <button onclick="showScreen('s3')" style="background:rgba(255,80,0,0.15);border:1px solid rgba(255,80,0,0.3);color:#ff8040;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">3 Vote</button>
+  <button onclick="showScreen('s4')" style="background:rgba(255,200,0,0.15);border:1px solid rgba(255,200,0,0.3);color:#ffcc00;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;">4 Born</button>
+</div>
+
+
+<script>
+/* ── SCREEN NAVIGATION ─────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── STARFIELD GENERATOR ───────────────────────────────────── */
+function buildStarfield(containerId, count) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < count; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() < 0.85 ? (Math.random() * 1.5 + 0.5) : (Math.random() * 2.5 + 1.5);
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const dur  = (Math.random() * 4 + 2).toFixed(1);
+    const del  = (Math.random() * 5).toFixed(1);
+    const op   = (Math.random() * 0.5 + 0.2).toFixed(2);
+    // Add a slight color tint to some stars
+    const colors = ['#fff', '#fff', '#fff', '#aaddff', '#ffeecc', '#ccccff'];
+    const c = colors[Math.floor(Math.random() * colors.length)];
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${x}%; top:${y}%;
+      --dur:${dur}s; --delay:${del}s; --op:${op};
+      background:${c};
+    `;
+    frag.appendChild(s);
+  }
+  el.appendChild(frag);
+}
+
+buildStarfield('sf1', 110);
+buildStarfield('sf2', 70);
+buildStarfield('sf3', 80);
+buildStarfield('sf4', 90);
+
+/* ── GALAXY MAP (SVG) ─────────────────────────────────────── */
+const GAMES = [
+  { id:'wm',  name:'Word Maze',      emoji:'🧩', cx:195, cy:200, r:13,  color:'#00dcff', glow:'rgba(0,220,255,0.5)', active:true,  yours:true  },
+  { id:'sd',  name:'Speed Def',      emoji:'⚡', cx:120, cy:130, r:10,  color:'#7b61ff', glow:'rgba(123,97,255,0.5)', active:true,  yours:false },
+  { id:'wc',  name:'Word Chain',     emoji:'🔗', cx:280, cy:115, r:11,  color:'#00ff88', glow:'rgba(0,255,136,0.5)', active:true,  yours:false },
+  { id:'ss',  name:'Spin Spell',     emoji:'🌀', cx:310, cy:220, r:9,   color:'#ff88cc', glow:'rgba(255,136,204,0.5)', active:true, yours:false },
+  { id:'qz',  name:'Quiz Storm',     emoji:'🎯', cx:250, cy:310, r:10,  color:'#ffcc00', glow:'rgba(255,204,0,0.5)', active:true,  yours:false },
+  { id:'an',  name:'Anagram',        emoji:'🔤', cx:100, cy:270, r:8,   color:'#00ccff', glow:'rgba(0,204,255,0.4)', active:true,  yours:false },
+  { id:'cd',  name:'Chat Duel',      emoji:'💬', cx:160, cy:340, r:9,   color:'#ff6644', glow:'rgba(255,102,68,0.5)', active:true, yours:false },
+  { id:'wb',  name:'Word Battle',    emoji:'⚔️', cx:340, cy:155, r:7,   color:'#88ffcc', glow:'rgba(136,255,204,0.4)', active:true, yours:false },
+  { id:'mr',  name:'Memory Rush',    emoji:'🧠', cx:60,  cy:185, r:9,   color:'#cc88ff', glow:'rgba(204,136,255,0.5)', active:true, yours:false },
+  { id:'pt',  name:'Phrase Train',   emoji:'🚂', cx:80,  cy:355, r:8,   color:'#44ddff', glow:'rgba(68,221,255,0.4)', active:true, yours:false },
+  { id:'tx',  name:'TABOO XTREME',   emoji:'🃏', cx:220, cy:60,  r:8,   color:'#ff4400', glow:'rgba(255,68,0,0.5)',  active:false, dying:true  },
+  { id:'ac',  name:'Alpha Chaos',    emoji:'🔀', cx:340, cy:340, r:7,   color:'#ffaa44', glow:'rgba(255,170,68,0.4)', active:false, dying:true  },
+];
+
+const PATHS = [
+  ['wm','sd'],['wm','wc'],['wm','qz'],['wm','an'],['wm','ss'],
+  ['sd','mr'],['sd','wb'],['wc','wb'],['wc','ss'],['qz','cd'],
+  ['an','cd'],['an','mr'],['cd','pt'],['qz','pt'],['tx','wm'],
+];
+
+function buildGalaxy() {
+  const svg = document.getElementById('galaxySvg');
+  svg.innerHTML = '';
+
+  // Orbital background circles (decorative)
+  const orbits = [80, 130, 175, 220, 265];
+  orbits.forEach(r => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', 195); c.setAttribute('cy', 200);
+    c.setAttribute('r', r); c.setAttribute('class', 'orbit-path');
+    svg.appendChild(c);
+  });
+
+  // Connection paths
+  PATHS.forEach(([a, b]) => {
+    const ga = GAMES.find(g => g.id === a);
+    const gb = GAMES.find(g => g.id === b);
+    if (!ga || !gb) return;
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('class', 'star-path');
+    line.setAttribute('d', `M${ga.cx},${ga.cy} Q${(ga.cx+gb.cx)/2},${(ga.cy+gb.cy)/2-20} ${gb.cx},${gb.cy}`);
+    svg.appendChild(line);
+  });
+
+  // Planets
+  GAMES.forEach(g => {
+    const grp = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    grp.setAttribute('class', 'planet-g');
+    grp.setAttribute('transform', `translate(${g.cx},${g.cy})`);
+
+    // Outer glow
+    const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    glow.setAttribute('r', g.r + 8);
+    glow.setAttribute('fill', g.glow.replace('0.5', '0.15').replace('0.4', '0.1'));
+    if (g.dying) glow.setAttribute('fill', 'rgba(255,60,0,0.1)');
+    grp.appendChild(glow);
+
+    // Main circle
+    const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circ.setAttribute('r', g.r);
+    if (g.dying) {
+      circ.setAttribute('fill', '#ff4400');
+      circ.setAttribute('opacity', '0.5');
+      // Dying animation
+      circ.style.animation = 'twinkle 1.2s ease-in-out infinite';
+    } else {
+      circ.setAttribute('fill', g.color);
+    }
+    circ.setAttribute('style', `filter:drop-shadow(0 0 6px ${g.dying ? '#ff4400' : g.color})`);
+    grp.appendChild(circ);
+
+    // "You are here" pulsing outer ring
+    if (g.yours) {
+      const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      pulse.setAttribute('r', g.r + 5);
+      pulse.setAttribute('fill', 'none');
+      pulse.setAttribute('stroke', g.color);
+      pulse.setAttribute('stroke-width', '1.5');
+      pulse.setAttribute('opacity', '0.7');
+      pulse.style.animation = 'youHerePulse 1.8s ease-in-out infinite';
+      grp.appendChild(pulse);
+
+      // "You" dot at top
+      const youTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      youTxt.setAttribute('y', -(g.r + 12));
+      youTxt.setAttribute('font-size', '9');
+      youTxt.setAttribute('fill', g.color);
+      youTxt.setAttribute('text-anchor', 'middle');
+      youTxt.setAttribute('font-weight', '700');
+      youTxt.textContent = '▲ ВИ ТУТ';
+      grp.appendChild(youTxt);
+    }
+
+    // Label
+    const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    lbl.setAttribute('class', 'pl-label');
+    lbl.setAttribute('y', g.r + 14);
+    lbl.setAttribute('font-size', '9');
+    lbl.setAttribute('fill', g.dying ? 'rgba(255,100,60,0.6)' : 'rgba(255,255,255,0.6)');
+    lbl.setAttribute('text-anchor', 'middle');
+    lbl.textContent = g.emoji + ' ' + (g.name.length > 10 ? g.name.slice(0,10) + '…' : g.name);
+    grp.appendChild(lbl);
+
+    // Tap handler
+    grp.addEventListener('click', () => openPlanet(g));
+    svg.appendChild(grp);
+  });
+}
+
+// Add pulsing keyframe for SVG
+const svgStyle = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+svgStyle.textContent = `
+  @keyframes youHerePulse {
+    0%,100% { r: ${12}; opacity: 0.8; }
+    50%      { r: ${16}; opacity: 0.2; }
+  }
+`;
+document.getElementById('galaxySvg').appendChild(svgStyle);
+buildGalaxy();
+
+
+/* ── PLANET OPEN ───────────────────────────────────────────── */
+const PLANET_STYLES = {
+  wm:  { grad:'radial-gradient(circle at 35% 35%, #00ffee, #0080cc 50%, #002244)', glow:'rgba(0,220,255,0.4)', ring:true  },
+  sd:  { grad:'radial-gradient(circle at 40% 30%, #cc99ff, #5500bb 50%, #1a003a)', glow:'rgba(123,97,255,0.4)', ring:false },
+  wc:  { grad:'radial-gradient(circle at 35% 35%, #ccffdd, #00aa44 50%, #002210)', glow:'rgba(0,255,136,0.4)', ring:true  },
+  ss:  { grad:'radial-gradient(circle at 40% 35%, #ffccee, #cc44aa 50%, #330020)', glow:'rgba(255,68,170,0.4)', ring:false },
+  qz:  { grad:'radial-gradient(circle at 35% 30%, #ffffaa, #cc8800 50%, #1a0900)', glow:'rgba(255,200,0,0.4)', ring:false },
+  an:  { grad:'radial-gradient(circle at 35% 35%, #aaeeff, #0088bb 50%, #001a22)', glow:'rgba(0,204,255,0.4)', ring:true  },
+  cd:  { grad:'radial-gradient(circle at 38% 32%, #ffccaa, #cc4400 50%, #220800)', glow:'rgba(255,100,50,0.4)', ring:false },
+  wb:  { grad:'radial-gradient(circle at 35% 35%, #ccffee, #009966 50%, #001a10)', glow:'rgba(0,200,150,0.4)', ring:true  },
+  mr:  { grad:'radial-gradient(circle at 38% 35%, #ddaaff, #8800cc 50%, #1a0030)', glow:'rgba(180,80,255,0.4)', ring:false },
+  pt:  { grad:'radial-gradient(circle at 35% 35%, #aaddff, #0055aa 50%, #000f22)', glow:'rgba(60,150,255,0.4)', ring:true  },
+  tx:  { grad:'radial-gradient(circle at 35% 35%, #ffaa88, #cc2200 50%, #220000)', glow:'rgba(255,60,0,0.4)', ring:false },
+  ac:  { grad:'radial-gradient(circle at 38% 32%, #ffddaa, #bb6600 50%, #1a0a00)', glow:'rgba(255,150,50,0.4)', ring:false },
+};
+const PLANET_DESCS = {
+  wm:  'Зберіть слова з розкиданих літер, обходячи астероїди-пастки. Кожен рівень — унікальна процедурна карта!',
+  sd:  'Дай визначення слову швидше за суперника. Кожна секунда — ваша зброя.',
+  wc:  'Ланцюжки слів, де кожне починається з останньої літери попереднього. Безкінечний і медитативний.',
+  ss:  'Крути колесо, збирай літери, склади слово першим. Удача + стратегія.',
+  qz:  'Вихор запитань зі словникового запасу B1–C2. Хто встигне — той виграє.',
+  an:  'Переставляй літери, знаходь приховані слова. Від простих до шалено складних.',
+  cd:  'Поєдинки один на один у перекладах та синонімах. Тільки двоє — хтось вийде з орбіти.',
+  wb:  'Командні битви: твій словниковий запас проти чужого. Тактика і командна робота.',
+  mr:  'Запам\'ятай слова, їх значення, фрази. Тренуй пам\'ять, відкривай нові рівні.',
+  pt:  'Вирази думки одним реченням за 10 секунд. Kreativität на межі.',
+  tx:  'TABOO у ваккуумі: заборонені слова, ліміт часу, нерви — зоря агонізує.',
+  ac:  'Хаос алфавіту — де кожна буква стає пасткою. Скоро ця планета зникне.',
+};
+
+function openPlanet(g) {
+  const style = PLANET_STYLES[g.id] || PLANET_STYLES.wm;
+  document.getElementById('planetEmoji').textContent = g.emoji;
+  document.getElementById('planetName').textContent = g.name;
+  document.getElementById('planetDesc').textContent  = PLANET_DESCS[g.id] || 'Унікальна гра для вивчення англійської.';
+  const ball = document.getElementById('planetBall');
+  ball.style.background = style.grad;
+  ball.style.boxShadow = `0 0 30px ${style.glow}, inset 0 0 20px rgba(0,0,0,0.4)`;
+  const glowEl = document.getElementById('planetGlow');
+  glowEl.style.background = `radial-gradient(circle,${style.glow},transparent 70%)`;
+  document.getElementById('planetRing').style.display = style.ring ? '' : 'none';
+  showScreen('s2');
+}
+
+
+/* ── VOTE INTERACTION ──────────────────────────────────────── */
+function selectVote(el) {
+  document.querySelectorAll('.vote-item').forEach(i => i.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+
+/* ── COUNTDOWN TIMER ───────────────────────────────────────── */
+let timerSecs = 8 * 3600 + 23 * 60 + 44;
+function fmtTime(s) {
+  const h = String(Math.floor(s / 3600)).padStart(2,'0');
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2,'0');
+  const ss = String(s % 60).padStart(2,'0');
+  return `${h}:${m}:${ss}`;
+}
+setInterval(() => {
+  if (timerSecs > 0) timerSecs--;
+  const el = document.getElementById('voteTimer');
+  if (el) el.textContent = fmtTime(timerSecs);
+}, 1000);
+
+
+/* ── EXPLOSION RAYS ────────────────────────────────────────── */
+(function buildRays() {
+  const wrap = document.getElementById('explosionWrap');
+  const rayCount = 12;
+  for (let i = 0; i < rayCount; i++) {
+    const angle = (360 / rayCount) * i;
+    const length = 40 + Math.random() * 30;
+    const ray = document.createElement('div');
+    ray.className = 'explosion-ray';
+    ray.style.cssText = `
+      height:${length}px;
+      margin-left:-1px; margin-top:-${length}px;
+      --angle:${angle}deg;
+      transform-origin: bottom center;
+      transform: rotate(${angle}deg) translateY(-40px);
+      animation-delay:${(Math.random()*1.5).toFixed(2)}s;
+    `;
+    wrap.appendChild(ray);
+  }
+})();
+
+/* ── SCREEN 4 AUTO-SHOW after small delay for demo ─────────── */
+// (not auto-navigating — user uses nav buttons)
+</script>
+</body>
+</html>

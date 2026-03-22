@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Voodoo League</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; background:#070a14; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#fff; height:100vh; display:flex; flex-direction:column; }
+
+/* SCREENS */
+.screen { display:none; flex-direction:column; height:calc(100vh - 60px); overflow-y:auto; }
+.screen.active { display:flex; }
+
+/* BOTTOM NAV */
+.nav { height:60px; background:#0d1220; border-top:1px solid rgba(255,255,255,0.07); display:flex; flex-shrink:0; }
+.nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .2s; color:rgba(255,255,255,0.3); font-size:10px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+.nav-btn.on { color:#3b82f6; }
+.nav-btn .nav-icon { font-size:20px; }
+
+/* ══ SCREEN 1: HOME ══ */
+.home-header {
+  background:linear-gradient(180deg, #0f1830 0%, #07101f 100%);
+  padding:16px 16px 20px; flex-shrink:0;
+  position:relative; overflow:hidden;
+}
+.home-header::before {
+  content:''; position:absolute; top:-40px; left:-40px; right:-40px;
+  height:180px;
+  background:radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.15) 0%, transparent 70%);
+}
+.hh-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.season-badge {
+  background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.3);
+  color:#60a5fa; font-size:11px; font-weight:700; padding:5px 12px; border-radius:20px;
+  letter-spacing:1px; text-transform:uppercase;
+}
+.xp-display { display:flex; align-items:center; gap:6px; }
+.xp-icon { font-size:18px; }
+.xp-val { font-size:16px; font-weight:800; color:#fbbf24; }
+
+.division-card {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+  border-radius:16px; padding:16px; display:flex; align-items:center; gap:16px;
+}
+.div-badge {
+  width:60px; height:60px; border-radius:50%;
+  background:linear-gradient(135deg, #1d4ed8, #3b82f6);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  box-shadow:0 0 20px rgba(59,130,246,0.4);
+  flex-shrink:0;
+}
+.div-info { flex:1; }
+.div-name { font-size:18px; font-weight:900; color:#60a5fa; letter-spacing:1px; }
+.div-sub { font-size:12px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.div-rank { text-align:right; }
+.div-rank-num { font-size:24px; font-weight:900; }
+.div-rank-lbl { font-size:10px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; }
+.progress-bar { height:4px; background:rgba(255,255,255,0.08); border-radius:2px; margin-top:10px; }
+.progress-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, #3b82f6, #60a5fa); transition:width .5s; }
+.progress-lbl { font-size:10px; color:rgba(255,255,255,0.3); margin-top:4px; display:flex; justify-content:space-between; }
+
+.section-title {
+  font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,255,255,0.3); padding:16px 16px 8px; flex-shrink:0;
+}
+
+/* GAME OF THE WEEK */
+.gotw {
+  margin:0 16px; background:linear-gradient(135deg, #0f2040, #1a3060);
+  border:1px solid rgba(59,130,246,0.3); border-radius:16px; padding:16px;
+  flex-shrink:0;
+}
+.gotw-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:#3b82f6; margin-bottom:8px; }
+.gotw-main { display:flex; align-items:center; gap:14px; margin-bottom:12px; }
+.gotw-icon { font-size:40px; }
+.gotw-name { font-size:20px; font-weight:900; }
+.gotw-desc { font-size:12px; color:rgba(255,255,255,0.5); margin-top:3px; }
+.gotw-stats { display:flex; gap:16px; }
+.gotw-stat { font-size:12px; color:rgba(255,255,255,0.4); }
+.gotw-stat strong { color:#60a5fa; }
+.play-gotw-btn { width:100%; background:linear-gradient(135deg,#1d4ed8,#3b82f6); border:none; color:#fff; padding:12px; border-radius:12px; font-size:14px; font-weight:700; margin-top:12px; cursor:pointer; }
+
+/* VOTE ALERT */
+.vote-alert {
+  margin:12px 16px 0; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2);
+  border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; cursor:pointer;
+  flex-shrink:0;
+}
+.va-dot { width:8px; height:8px; border-radius:50%; background:#ef4444; animation:alertBlink 1s ease infinite; flex-shrink:0; }
+@keyframes alertBlink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.va-text { font-size:13px; color:rgba(255,255,255,0.7); flex:1; }
+.va-text strong { color:#f87171; }
+.va-arrow { font-size:16px; color:rgba(255,255,255,0.3); }
+
+/* LEAGUE TABLE */
+.table-card { margin:12px 16px 0; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden; flex-shrink:0; }
+.table-header { display:grid; grid-template-columns:32px 1fr 60px 60px; gap:8px; padding:10px 14px; background:rgba(255,255,255,0.03); font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.25); }
+.table-row { display:grid; grid-template-columns:32px 1fr 60px 60px; gap:8px; padding:10px 14px; border-top:1px solid rgba(255,255,255,0.04); align-items:center; }
+.table-row.me { background:rgba(59,130,246,0.08); }
+.tr-pos { font-size:14px; font-weight:800; color:rgba(255,255,255,0.4); text-align:center; }
+.tr-pos.top { color:#fbbf24; }
+.tr-player { display:flex; align-items:center; gap:8px; }
+.tr-ava { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; background:rgba(255,255,255,0.06); }
+.tr-name { font-size:13px; font-weight:600; }
+.tr-name.me-name { color:#60a5fa; }
+.tr-xp { font-size:13px; font-weight:700; color:#fbbf24; text-align:right; }
+.tr-streak { font-size:12px; color:rgba(255,255,255,0.4); text-align:right; }
+
+/* ══ SCREEN 2: GAMES ══ */
+.games-list { padding:8px 16px; display:flex; flex-direction:column; gap:8px; }
+.game-row {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+  border-radius:14px; padding:14px; display:flex; align-items:center; gap:12px;
+  cursor:pointer;
+}
+.game-row.featured { background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.25); }
+.game-row.danger { border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.05); }
+.gr-icon { font-size:28px; flex-shrink:0; }
+.gr-info { flex:1; }
+.gr-name { font-size:14px; font-weight:700; }
+.gr-tags { display:flex; gap:6px; margin-top:4px; }
+.gr-tag { font-size:9px; font-weight:600; padding:2px 8px; border-radius:6px; }
+.gr-tag.week { background:rgba(59,130,246,0.15); color:#60a5fa; }
+.gr-tag.new  { background:rgba(52,211,153,0.15); color:#34d399; }
+.gr-tag.risk { background:rgba(239,68,68,0.15); color:#f87171; }
+.gr-score { text-align:right; }
+.gr-score .s-num { font-size:16px; font-weight:800; color:#fbbf24; }
+.gr-score .s-lbl { font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-top:1px; }
+
+/* ══ SCREEN 3: VOTE ══ */
+#vote { background:linear-gradient(180deg,#0e0008 0%,#070a14 100%); }
+.vote-header { padding:20px 16px 12px; text-align:center; flex-shrink:0; }
+.vote-title { font-size:24px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#f87171; }
+.vote-sub { font-size:12px; color:rgba(255,255,255,0.3); margin-top:4px; }
+.vote-timer { font-size:28px; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; margin:8px 0; }
+.vote-items { padding:0 16px; display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+.vote-item {
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  border-radius:14px; padding:14px; cursor:pointer; transition:all .2s;
+}
+.vote-item.selected { border-color:rgba(239,68,68,0.5); background:rgba(239,68,68,0.08); }
+.vi-top { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.vi-icon { font-size:24px; flex-shrink:0; }
+.vi-name { font-size:14px; font-weight:700; flex:1; }
+.vi-votes { font-size:13px; font-weight:800; color:#f87171; }
+.vi-bar { height:4px; background:rgba(255,255,255,0.08); border-radius:2px; }
+.vi-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,#ef4444,#f87171); }
+.vote-note { margin:16px; padding:14px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; font-size:12px; color:rgba(255,255,255,0.4); line-height:1.6; text-align:center; flex-shrink:0; }
+.vote-submit-btn { margin:0 16px; background:linear-gradient(135deg,#b91c1c,#ef4444); color:#fff; border:none; width:calc(100% - 32px); padding:14px; border-radius:14px; font-size:15px; font-weight:800; letter-spacing:1px; text-transform:uppercase; cursor:pointer; flex-shrink:0; }
+
+/* ══ SCREEN 4: PROFILE ══ */
+.profile-header { background:linear-gradient(135deg,#0f1830,#0a1020); padding:24px 16px 20px; text-align:center; flex-shrink:0; }
+.profile-ava { font-size:56px; margin-bottom:8px; }
+.profile-name { font-size:20px; font-weight:800; }
+.profile-id { font-size:12px; color:rgba(255,255,255,0.3); margin-top:2px; }
+.profile-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px; flex-shrink:0; }
+.ps-card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:12px; text-align:center; }
+.ps-val { font-size:22px; font-weight:900; color:#60a5fa; }
+.ps-lbl { font-size:9px; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:1px; margin-top:2px; }
+.history-item { margin:0 16px 8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+.hi-game { font-size:13px; font-weight:600; }
+.hi-result { font-size:12px; color:#34d399; font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- SCREEN 1: HOME -->
+<div class="screen active" id="home">
+  <div class="home-header">
+    <div class="hh-top">
+      <div class="season-badge">⚽ Сезон 3 · Тиждень 2</div>
+      <div class="xp-display"><div class="xp-icon">⭐</div><div class="xp-val">4,280 XP</div></div>
+    </div>
+    <div class="division-card">
+      <div class="div-badge">🥈</div>
+      <div class="div-info">
+        <div class="div-name">SILVER I</div>
+        <div class="div-sub">Дивізіон Срібло · 48 гравців</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:68%"></div></div>
+        <div class="progress-lbl"><span>4280 / 5000 XP</span><span>Gold I →</span></div>
+      </div>
+      <div class="div-rank">
+        <div class="div-rank-num">#7</div>
+        <div class="div-rank-lbl">місце</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">🏆 Гра тижня</div>
+  <div class="gotw">
+    <div class="gotw-label">Featured Game · Week 2</div>
+    <div class="gotw-main">
+      <div class="gotw-icon">🎭</div>
+      <div>
+        <div class="gotw-name">Word Mafia</div>
+        <div class="gotw-desc">Знайди хто знає неправильне слово</div>
+      </div>
+    </div>
+    <div class="gotw-stats">
+      <div class="gotw-stat">Гравців: <strong>12,847</strong></div>
+      <div class="gotw-stat">XP бонус: <strong>x2.5</strong></div>
+      <div class="gotw-stat">Чемпіон: <strong>🐺 Олексій</strong></div>
+    </div>
+    <button class="play-gotw-btn">ГРАТИ ЗА ЛІГУ →</button>
+  </div>
+
+  <div class="vote-alert" onclick="goScreen('vote')">
+    <div class="va-dot"></div>
+    <div class="va-text"><strong>Голосування відкрите!</strong> Яку гру прибрати з сезону?</div>
+    <div class="va-arrow">›</div>
+  </div>
+
+  <div class="section-title">📊 Таблиця ліги</div>
+  <div class="table-card">
+    <div class="table-header"><div>#</div><div>Гравець</div><div>XP</div><div>Стрік</div></div>
+    <div class="table-row"><div class="tr-pos top">1</div><div class="tr-player"><div class="tr-ava">🐺</div><div class="tr-name">Олексій</div></div><div class="tr-xp">6,240</div><div class="tr-streak">🔥 12</div></div>
+    <div class="table-row"><div class="tr-pos top">2</div><div class="tr-player"><div class="tr-ava">🦊</div><div class="tr-name">Марія</div></div><div class="tr-xp">5,810</div><div class="tr-streak">🔥 8</div></div>
+    <div class="table-row"><div class="tr-pos top">3</div><div class="tr-player"><div class="tr-ava">🦋</div><div class="tr-name">Катя</div></div><div class="tr-xp">5,340</div><div class="tr-streak">🔥 5</div></div>
+    <div class="table-row me"><div class="tr-pos">7</div><div class="tr-player"><div class="tr-ava">😎</div><div class="tr-name me-name">Ти</div></div><div class="tr-xp">4,280</div><div class="tr-streak">🔥 3</div></div>
+    <div class="table-row"><div class="tr-pos">8</div><div class="tr-player"><div class="tr-ava">🐱</div><div class="tr-name">Денис</div></div><div class="tr-xp">4,100</div><div class="tr-streak">💤 0</div></div>
+  </div>
+  <div style="height:20px"></div>
+</div>
+
+<!-- SCREEN 2: GAMES -->
+<div class="screen" id="games">
+  <div class="section-title" style="padding-top:16px">🎮 Всі ігри сезону</div>
+  <div class="games-list">
+    <div class="game-row featured"><div class="gr-icon">🎭</div><div class="gr-info"><div class="gr-name">Word Mafia</div><div class="gr-tags"><span class="gr-tag week">Гра тижня</span></div></div><div class="gr-score"><div class="s-num">4.9</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row"><div class="gr-icon">💣</div><div class="gr-info"><div class="gr-name">Bomb Defusal</div><div class="gr-tags"><span class="gr-tag new">Нова</span></div></div><div class="gr-score"><div class="s-num">4.7</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row"><div class="gr-icon">🃏</div><div class="gr-info"><div class="gr-name">Word Poker</div><div class="gr-tags"></div></div><div class="gr-score"><div class="s-num">4.6</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row"><div class="gr-icon">🧩</div><div class="gr-info"><div class="gr-name">Connections</div><div class="gr-tags"></div></div><div class="gr-score"><div class="s-num">4.5</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row"><div class="gr-icon">🎙</div><div class="gr-info"><div class="gr-name">Hot Seat</div><div class="gr-tags"></div></div><div class="gr-score"><div class="s-num">4.4</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row"><div class="gr-icon">📋</div><div class="gr-info"><div class="gr-name">Papers Please</div><div class="gr-tags"></div></div><div class="gr-score"><div class="s-num">4.2</div><div class="s-lbl">рейтинг</div></div></div>
+    <div class="game-row danger"><div class="gr-icon">🚫</div><div class="gr-info"><div class="gr-name">Taboo</div><div class="gr-tags"><span class="gr-tag risk">⚠️ Ризик</span></div></div><div class="gr-score"><div class="s-num">2.8</div><div class="s-lbl">рейтинг</div></div></div>
+  </div>
+</div>
+
+<!-- SCREEN 3: VOTE -->
+<div class="screen" id="vote">
+  <div class="vote-header">
+    <div class="vote-title">Яку гру прибрати?</div>
+    <div class="vote-sub">Щотижневе голосування ліги</div>
+    <div class="vote-timer" id="voteTimer">14:32:07</div>
+  </div>
+  <div class="vote-items">
+    <div class="vote-item selected" onclick="selectVote(this)">
+      <div class="vi-top"><div class="vi-icon">🚫</div><div class="vi-name">Taboo</div><div class="vi-votes">234 голоси</div></div>
+      <div class="vi-bar"><div class="vi-bar-fill" style="width:78%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vi-top"><div class="vi-icon">✍️</div><div class="vi-name">Daily Crossword</div><div class="vi-votes">89</div></div>
+      <div class="vi-bar"><div class="vi-bar-fill" style="width:30%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vi-top"><div class="vi-icon">📞</div><div class="vi-name">Broken Phone</div><div class="vi-votes">67</div></div>
+      <div class="vi-bar"><div class="vi-bar-fill" style="width:22%"></div></div>
+    </div>
+    <div class="vote-item" onclick="selectVote(this)">
+      <div class="vi-top"><div class="vi-icon">🏎️</div><div class="vi-name">Word Race</div><div class="vi-votes">41</div></div>
+      <div class="vi-bar"><div class="vi-bar-fill" style="width:14%"></div></div>
+    </div>
+  </div>
+  <div class="vote-note">Гра з найбільшою кількістю голосів автоматично вибуває о 00:00. VOODOO AI одразу генерує нову унікальну механіку на заміну.</div>
+  <button class="vote-submit-btn">ПІДТВЕРДИТИ ГОЛОС</button>
+</div>
+
+<!-- SCREEN 4: PROFILE -->
+<div class="screen" id="profile">
+  <div class="profile-header">
+    <div class="profile-ava">😎</div>
+    <div class="profile-name">Ти</div>
+    <div class="profile-id">Учасник #04892 · Silver I</div>
+  </div>
+  <div class="profile-stats">
+    <div class="ps-card"><div class="ps-val">4,280</div><div class="ps-lbl">XP</div></div>
+    <div class="ps-card"><div class="ps-val">847</div><div class="ps-lbl">Слів</div></div>
+    <div class="ps-card"><div class="ps-val">🔥 3</div><div class="ps-lbl">Стрік</div></div>
+  </div>
+  <div class="section-title">Останні ігри</div>
+  <div class="history-item"><div class="hi-game">🎭 Word Mafia</div><div class="hi-result">+180 XP</div></div>
+  <div class="history-item"><div class="hi-game">💣 Bomb Defusal</div><div class="hi-result">+120 XP</div></div>
+  <div class="history-item"><div class="hi-game">🃏 Word Poker</div><div class="hi-result">+95 XP</div></div>
+  <div class="history-item"><div class="hi-game">🧩 Connections</div><div class="hi-result">+140 XP</div></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="nav">
+  <div class="nav-btn on" onclick="goScreen('home')"><div class="nav-icon">🏠</div>Головна</div>
+  <div class="nav-btn" onclick="goScreen('games')"><div class="nav-icon">🎮</div>Ігри</div>
+  <div class="nav-btn" onclick="goScreen('vote')"><div class="nav-icon">🗳️</div>Голосувати</div>
+  <div class="nav-btn" onclick="goScreen('profile')"><div class="nav-icon">👤</div>Профіль</div>
+</div>
+
+<script>
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('active');
+  const idx = ['home','games','vote','profile'].indexOf(id);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('on');
+}
+
+function selectVote(el) {
+  document.querySelectorAll('.vote-item').forEach(v => v.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Timer
+let sec = 14*3600 + 32*60 + 7;
+setInterval(() => {
+  sec = Math.max(0, sec - 1);
+  const h = String(Math.floor(sec/3600)).padStart(2,'0');
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  const el = document.getElementById('voteTimer');
+  if (el) el.textContent = `${h}:${m}:${s}`;
+}, 1000);
+</script>
+</body>
+</html>

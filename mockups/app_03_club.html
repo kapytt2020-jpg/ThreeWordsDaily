@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Voodoo Club</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0a0008;
+    --bg2:       #0f000d;
+    --bg3:       #140012;
+    --gold:      #c9a84c;
+    --gold2:     #e8c96e;
+    --gold3:     #f5e098;
+    --burgundy:  #3d0015;
+    --burgundy2: #5c0020;
+    --red-accent:#8b0022;
+    --text:      #e2d4bc;
+    --text-dim:  #8a7a66;
+    --text-faint:#4a3d30;
+    --vip:       #7c3aed;
+    --vip2:      #a855f7;
+    --border:    rgba(201,168,76,0.25);
+    --border2:   rgba(201,168,76,0.12);
+    --glow:      rgba(201,168,76,0.15);
+    --glow2:     rgba(201,168,76,0.08);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ===== APP SHELL ===== */
+  #app {
+    position: relative;
+    width: 100%;
+    max-width: 390px;
+    height: 100dvh;
+    margin: 0 auto;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    overflow: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ===== SCROLLABLE BODY ===== */
+  .screen-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .screen-body::-webkit-scrollbar { display: none; }
+
+  /* ===== ART DECO PATTERNS ===== */
+  .deco-top {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold2), var(--gold), transparent);
+  }
+  .deco-top-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px 6px;
+  }
+  .deco-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .deco-diamond {
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    transform: rotate(45deg);
+    flex-shrink: 0;
+  }
+  .deco-ornament {
+    color: var(--gold);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  /* corner art deco */
+  .deco-corner-box {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 16px;
+  }
+  .deco-corner-box::before,
+  .deco-corner-box::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--gold);
+    border-style: solid;
+  }
+  .deco-corner-box::before {
+    top: -1px; left: -1px;
+    border-width: 2px 0 0 2px;
+  }
+  .deco-corner-box::after {
+    bottom: -1px; right: -1px;
+    border-width: 0 2px 2px 0;
+  }
+
+  /* ===== TYPOGRAPHY ===== */
+  .title-main {
+    font-size: 28px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--gold), var(--gold2), var(--gold3), var(--gold2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: normal;
+    line-height: 1.2;
+  }
+  .title-section {
+    font-size: 13px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: normal;
+  }
+  .subtitle {
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+  .label-gold {
+    font-family: -apple-system, sans-serif;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 600;
+  }
+
+  /* ===== BOTTOM NAV ===== */
+  .bottom-nav {
+    display: flex;
+    background: #08000a;
+    border-top: 1px solid var(--border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    flex-shrink: 0;
+  }
+  .nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 4px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+  .nav-btn .nav-label {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: var(--text-faint);
+    transition: color 0.2s;
+  }
+  .nav-btn.active .nav-label { color: var(--gold); }
+  .nav-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 2px;
+    background: var(--gold);
+    transition: width 0.3s;
+    border-radius: 0 0 2px 2px;
+  }
+  .nav-btn.active::after { width: 24px; }
+
+  /* ===== SCREEN 1: LOBBY ===== */
+  .lobby-header {
+    background: linear-gradient(180deg, #0f000d 0%, #0a0008 100%);
+    padding: 16px 20px 12px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .lobby-emoji {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 0 12px rgba(201,168,76,0.5));
+  }
+  .member-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(201,168,76,0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    margin-top: 8px;
+  }
+  .member-dot {
+    width: 6px; height: 6px;
+    background: var(--gold2);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--gold2);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.8); }
+  }
+  .member-text {
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--gold2);
+    letter-spacing: 0.5px;
+  }
+
+  /* Featured game card */
+  .tonight-label {
+    padding: 12px 20px 6px;
+    flex-shrink: 0;
+  }
+  .featured-card {
+    margin: 0 16px;
+    background: linear-gradient(135deg, #200020, #150012, var(--burgundy));
+    border: 1px solid rgba(201,168,76,0.35);
+    border-radius: 4px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(61,0,21,0.6), 0 0 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(201,168,76,0.2);
+  }
+  .featured-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .featured-card::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(139,0,34,0.3) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .featured-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .featured-emoji {
+    font-size: 38px;
+    line-height: 1;
+    filter: drop-shadow(0 0 16px rgba(201,168,76,0.4));
+  }
+  .featured-live {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(139,0,34,0.5);
+    border: 1px solid rgba(139,0,34,0.8);
+    border-radius: 3px;
+    padding: 3px 8px;
+  }
+  .live-dot {
+    width: 5px; height: 5px;
+    background: #ff3355;
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+  .live-text {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #ff6680;
+    font-weight: 600;
+  }
+  .featured-name {
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--gold2);
+    margin-bottom: 4px;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+  }
+  .featured-desc {
+    font-family: -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .featured-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .feat-stat {
+    text-align: center;
+  }
+  .feat-stat-num {
+    font-size: 18px;
+    color: var(--gold2);
+    display: block;
+    line-height: 1;
+  }
+  .feat-stat-lbl {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    color: var(--text-faint);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+  }
+  .btn-play {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0a0008;
+    border: none;
+    border-radius: 3px;
+    padding: 13px;
+    font-family: -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+  .btn-play:active { transform: scale(0.98); }
+  .next-game-bar {
+    margin: 10px 16px 0;
+    padding: 10px 14px;
+    background: rgba(201,168,76,0.04);
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .next-game-text {
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .countdown {
+    font-size: 16px;
+    color: var(--gold2);
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 10px rgba(201,168,76,0.4);
+  }
+
+  /* Activity feed */
+  .activity-section {
+    padding: 16px 20px 0;
+  }
+  .activity-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border2);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--burgundy), var(--burgundy2));
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .activity-text {
+    flex: 1;
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+  }
+  .activity-name { color: var(--text); }
+  .activity-time {
+    font-family: -apple-system, sans-serif;
+    font-size: 10px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  /* Week schedule */
+  .week-section {
+    padding: 16px 0 8px;
+  }
+  .week-section-label {
+    padding: 0 20px 10px;
+  }
+  .week-scroll {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .week-scroll::-webkit-scrollbar { display: none; }
+  .week-day {
+    flex-shrink: 0;
+    width: 52px;
+    background: rgba(201,168,76,0.04);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .week-day.today {
+    background: rgba(201,168,76,0.1);
+    border-color: var(--border);
+    box-shadow: 0 0 12px rgba(201,168,76,0.15);
+  }
+  .week-day.past { opacity: 0.4; }
+  .week-day-name {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 4px;
+  }
+  .week-day.today .week-day-name { color: var(--gold); }
+  .week-day-emoji { font-size: 18px; margin-bottom: 3px; display: block; }
+  .week-day-num {
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .week-day.today .week-day-num { color: var(--gold2); font-weight: 600; }
+
+  /* ===== SCREEN 2: GAMES ===== */
+  .screen2-header {
+    background: linear-gradient(180deg, #0f000d 0%, #0a0008 100%);
+    padding: 20px 20px 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border2);
+  }
+  .screen2-header-inner {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  /* filter pills */
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 0 0 2px;
+  }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .pill.active {
+    background: rgba(201,168,76,0.12);
+    border-color: var(--border);
+    color: var(--gold2);
+  }
+
+  /* game list cards */
+  .game-list {
+    padding: 12px 16px 16px;
+  }
+  .game-card {
+    background: linear-gradient(135deg, #120010, #0e000c);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .game-card:active { transform: scale(0.99); }
+  .game-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 4px 0 0 4px;
+  }
+  .game-card.featured-game::before { opacity: 1; }
+  .game-card.danger-game::before { background: #ff3355; opacity: 1; }
+  .game-card.vip-game {
+    border-color: rgba(124,58,237,0.3);
+    background: linear-gradient(135deg, #12001e, #0e000c);
+  }
+  .game-card.vip-game::before { background: var(--vip2); opacity: 1; }
+  .game-emoji {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .game-info { flex: 1; min-width: 0; }
+  .game-header-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .game-name {
+    font-size: 15px;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .badge {
+    font-family: -apple-system, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .badge-classic {
+    background: rgba(201,168,76,0.15);
+    color: var(--gold);
+    border: 1px solid rgba(201,168,76,0.3);
+  }
+  .badge-new {
+    background: rgba(0,180,100,0.15);
+    color: #4ecb8d;
+    border: 1px solid rgba(0,180,100,0.3);
+  }
+  .badge-danger {
+    background: rgba(255,51,85,0.15);
+    color: #ff6680;
+    border: 1px solid rgba(255,51,85,0.3);
+  }
+  .badge-vip {
+    background: rgba(124,58,237,0.2);
+    color: var(--vip2);
+    border: 1px solid rgba(124,58,237,0.4);
+  }
+  .game-desc {
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .game-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .game-plays {
+    font-family: -apple-system, sans-serif;
+    font-size: 10px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+  }
+  .game-rating {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .star { font-size: 10px; color: var(--gold); }
+  .rating-val {
+    font-family: -apple-system, sans-serif;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .lock-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,0,8,0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 10px 12px;
+    pointer-events: none;
+  }
+  .lock-icon { font-size: 16px; opacity: 0.7; }
+
+  /* ===== SCREEN 3: VOTING ===== */
+  .voting-bg {
+    background: linear-gradient(180deg, #150008 0%, #0a0008 100%);
+    flex-shrink: 0;
+  }
+  .voting-header {
+    padding: 20px 20px 16px;
+    text-align: center;
+    border-bottom: 1px solid rgba(139,0,34,0.4);
+  }
+  .voting-ornament {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin: 10px 0;
+  }
+  .ornament-line {
+    height: 1px;
+    width: 50px;
+    background: linear-gradient(90deg, transparent, var(--red-accent));
+  }
+  .ornament-line.right {
+    background: linear-gradient(90deg, var(--red-accent), transparent);
+  }
+  .ornament-center { font-size: 14px; }
+  .voting-subtitle {
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: #a06070;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .voting-deadline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(139,0,34,0.2);
+    border: 1px solid rgba(139,0,34,0.4);
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    color: #d06080;
+  }
+  .drama-text {
+    margin: 12px 16px;
+    padding: 10px 14px;
+    background: rgba(139,0,34,0.1);
+    border: 1px solid rgba(139,0,34,0.25);
+    border-radius: 3px;
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: #c05070;
+    text-align: center;
+    font-style: italic;
+    letter-spacing: 0.3px;
+  }
+  .vote-card {
+    margin: 0 16px 10px;
+    background: linear-gradient(135deg, #180010, #100009);
+    border: 1px solid rgba(139,0,34,0.3);
+    border-radius: 4px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .vote-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(139,0,34,0.12) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .vote-card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .vote-emoji { font-size: 24px; line-height: 1; }
+  .vote-name {
+    flex: 1;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .vote-rank {
+    font-family: -apple-system, sans-serif;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #804060;
+  }
+  .vote-desc {
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    margin-bottom: 12px;
+  }
+  .vote-bar-container {
+    margin-bottom: 10px;
+  }
+  .vote-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .vote-bar-pct {
+    font-family: -apple-system, sans-serif;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .vote-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+  }
+  .vote-bar-up {
+    background: linear-gradient(90deg, #2d8a5a, #4ecb8d);
+    border-radius: 3px 0 0 3px;
+    transition: width 1s ease;
+  }
+  .vote-bar-down {
+    background: linear-gradient(90deg, #8b1a2a, #c0334d);
+    border-radius: 0 3px 3px 0;
+    transition: width 1s ease;
+  }
+  .btn-vote {
+    width: 100%;
+    background: linear-gradient(135deg, var(--burgundy2), var(--red-accent));
+    color: var(--text);
+    border: 1px solid rgba(139,0,34,0.6);
+    border-radius: 3px;
+    padding: 10px;
+    font-family: -apple-system, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-vote:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-vote.voted {
+    background: rgba(201,168,76,0.15);
+    border-color: var(--border);
+    color: var(--gold);
+    cursor: default;
+  }
+
+  /* ===== SCREEN 4: NEW GAME CEREMONY ===== */
+  .ceremony-screen {
+    background: #050003;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Curtain animation */
+  .curtain-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .curtain-left,
+  .curtain-right {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 55%;
+    background: linear-gradient(180deg, #2a0a00, #1a0500, #2a0a00);
+    transition: transform 1.8s cubic-bezier(0.77, 0, 0.18, 1);
+  }
+  .curtain-left {
+    left: 0;
+    transform: translateX(0);
+    background: linear-gradient(170deg, #3d1200 0%, #2a0a00 40%, #1a0500 70%, #2a0a00 100%);
+    box-shadow: inset -4px 0 20px rgba(0,0,0,0.5), 4px 0 30px rgba(0,0,0,0.6);
+  }
+  .curtain-right {
+    right: 0;
+    transform: translateX(0);
+    background: linear-gradient(190deg, #3d1200 0%, #2a0a00 40%, #1a0500 70%, #2a0a00 100%);
+    box-shadow: inset 4px 0 20px rgba(0,0,0,0.5), -4px 0 30px rgba(0,0,0,0.6);
+  }
+  .curtain-open .curtain-left { transform: translateX(-100%); }
+  .curtain-open .curtain-right { transform: translateX(100%); }
+
+  /* curtain folds */
+  .curtain-left::before, .curtain-left::after,
+  .curtain-right::before, .curtain-right::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 3px;
+    background: rgba(0,0,0,0.3);
+  }
+  .curtain-left::before { right: 30%; }
+  .curtain-left::after  { right: 60%; }
+  .curtain-right::before { left: 30%; }
+  .curtain-right::after  { left: 60%; }
+
+  /* curtain swag top */
+  .curtain-swag {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: linear-gradient(180deg, #5a1800, #3d1200);
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .curtain-swag::before,
+  .curtain-swag::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 20px;
+    background: radial-gradient(ellipse 30px 20px at 50% 0%, #3d1200, transparent) repeat-x;
+    background-size: 60px 20px;
+  }
+  .curtain-gold-bar {
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold2), var(--gold), transparent);
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+  }
+
+  .ceremony-content {
+    position: relative;
+    z-index: 5;
+    padding: 80px 20px 20px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.8s 0.5s ease;
+  }
+  .curtain-open + .ceremony-content,
+  .ceremony-content.revealed {
+    opacity: 1;
+  }
+  .ceremony-announce {
+    font-size: 11px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 16px;
+    text-shadow: 0 0 20px rgba(201,168,76,0.5);
+  }
+  .ceremony-title {
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--gold), var(--gold2), var(--gold3), var(--gold2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 24px;
+    line-height: 1.3;
+    text-shadow: none;
+  }
+  .ceremony-card {
+    background: linear-gradient(135deg, #200020, #150012, #1a000f);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin: 0 0 20px;
+    box-shadow: 0 0 40px rgba(201,168,76,0.1), 0 0 80px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+  }
+  .ceremony-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.1) 0%, transparent 60%);
+  }
+  .ceremony-game-emoji {
+    font-size: 52px;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 20px rgba(201,168,76,0.5));
+    animation: float-emoji 3s ease-in-out infinite;
+  }
+  @keyframes float-emoji {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .ceremony-game-name {
+    font-size: 24px;
+    letter-spacing: 3px;
+    color: var(--gold2);
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(201,168,76,0.4);
+  }
+  .ceremony-ai-text {
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+  .ceremony-game-desc {
+    font-family: -apple-system, sans-serif;
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    position: relative;
+    z-index: 1;
+  }
+  .ceremony-mechanics {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .ceremony-mechanic {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: left;
+  }
+  .mechanic-icon { font-size: 14px; }
+  .btn-welcome {
+    width: 100%;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    color: #0a0008;
+    border: none;
+    border-radius: 3px;
+    padding: 15px;
+    font-family: -apple-system, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(201,168,76,0.35);
+    transition: all 0.2s;
+  }
+  .btn-welcome:active { transform: scale(0.98); }
+  .sparkles {
+    position: absolute;
+    pointer-events: none;
+    z-index: 6;
+  }
+  .sparkle {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: var(--gold2);
+    border-radius: 50%;
+    animation: sparkle-rise 2s ease-out forwards;
+    opacity: 0;
+  }
+  @keyframes sparkle-rise {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-120px) scale(0); }
+  }
+
+  /* ===== MISC SHARED ===== */
+  .section-pad { padding: 14px 20px 0; }
+  .mt-8 { margin-top: 8px; }
+  .mb-16 { margin-bottom: 16px; }
+
+  /* Separator */
+  .sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 14px 20px;
+  }
+
+  /* Stars bg */
+  .stars-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .star-particle {
+    position: absolute;
+    width: 1px; height: 1px;
+    background: var(--gold);
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle var(--d) ease-in-out infinite;
+    animation-delay: var(--delay);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; }
+    50% { opacity: var(--op); }
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(201,168,76,0.15);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-family: -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--gold2);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Stars background -->
+  <div class="stars-bg" id="starsBg"></div>
+
+  <!-- ============ SCREEN 1: LOBBY ============ -->
+  <div class="screen active" id="screen1">
+    <div class="deco-top"></div>
+
+    <!-- Header -->
+    <div class="lobby-header">
+      <span class="lobby-emoji">🎭</span>
+      <div class="title-main">VOODOO CLUB</div>
+      <div class="deco-top-bar">
+        <div class="deco-line"></div>
+        <div class="deco-diamond"></div>
+        <div class="deco-ornament">Est. 2025</div>
+        <div class="deco-diamond"></div>
+        <div class="deco-line"></div>
+      </div>
+      <div class="member-badge">
+        <div class="member-dot"></div>
+        <span class="member-text">Учасник #04892 &nbsp;·&nbsp; Gold Member</span>
+      </div>
+    </div>
+
+    <!-- Scrollable body -->
+    <div class="screen-body">
+      <!-- Tonight label -->
+      <div class="tonight-label">
+        <div class="label-gold">◆ &nbsp;Сьогодні вночі</div>
+      </div>
+
+      <!-- Featured card -->
+      <div class="featured-card deco-corner-box" style="margin: 0 16px;">
+        <div class="featured-top">
+          <div class="featured-emoji">🕵️</div>
+          <div class="featured-live">
+            <div class="live-dot"></div>
+            <span class="live-text">Зараз</span>
+          </div>
+        </div>
+        <div class="featured-name">WORD MAFIA</div>
+        <div class="featured-desc">
+          Один з гравців — шпигун. Він не знає секретне слово. Знайди зрадника серед слів.
+        </div>
+        <div class="featured-stats">
+          <div class="feat-stat">
+            <span class="feat-stat-num">247</span>
+            <span class="feat-stat-lbl">онлайн</span>
+          </div>
+          <div class="feat-stat">
+            <span class="feat-stat-num">4.8★</span>
+            <span class="feat-stat-lbl">рейтинг</span>
+          </div>
+          <div class="feat-stat">
+            <span class="feat-stat-num">12хв</span>
+            <span class="feat-stat-lbl">середня гра</span>
+          </div>
+        </div>
+        <button class="btn-play" onclick="showToast('Гра запускається...')">УВІЙТИ ДО ГРИ</button>
+      </div>
+
+      <!-- Next game countdown -->
+      <div class="next-game-bar">
+        <span class="next-game-text">Наступна гра відкривається о 22:00</span>
+        <span class="countdown" id="countdown">04:23:17</span>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Activity feed -->
+      <div class="activity-section">
+        <div class="label-gold" style="margin-bottom:10px;">◆ &nbsp;Активність клубу</div>
+        <div class="activity-item">
+          <div class="activity-avatar">М</div>
+          <div class="activity-text">
+            <span class="activity-name">Марія</span> зіграла Word Mafia — виграла 3 раунди
+          </div>
+          <div class="activity-time">3хв тому</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-avatar">О</div>
+          <div class="activity-text">
+            <span class="activity-name">Олег</span> вивчив 12 нових слів у Taboo Night
+          </div>
+          <div class="activity-time">11хв тому</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-avatar">🏆</div>
+          <div class="activity-text">
+            <span class="activity-name">Клуб</span> досяг 10,000 слів цього місяця
+          </div>
+          <div class="activity-time">1год тому</div>
+        </div>
+        <div class="activity-item">
+          <div class="activity-avatar">К</div>
+          <div class="activity-text">
+            <span class="activity-name">Катерина</span> проголосувала за нову гру
+          </div>
+          <div class="activity-time">2год тому</div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Week schedule -->
+      <div class="week-section">
+        <div class="week-section-label">
+          <div class="label-gold">◆ &nbsp;Програма тижня</div>
+        </div>
+        <div class="week-scroll">
+          <div class="week-day past">
+            <div class="week-day-name">Пн</div>
+            <span class="week-day-emoji">🃏</span>
+            <div class="week-day-num">17</div>
+          </div>
+          <div class="week-day past">
+            <div class="week-day-name">Вт</div>
+            <span class="week-day-emoji">🧩</span>
+            <div class="week-day-num">18</div>
+          </div>
+          <div class="week-day past">
+            <div class="week-day-name">Ср</div>
+            <span class="week-day-emoji">🎯</span>
+            <div class="week-day-num">19</div>
+          </div>
+          <div class="week-day past">
+            <div class="week-day-name">Чт</div>
+            <span class="week-day-emoji">🎲</span>
+            <div class="week-day-num">20</div>
+          </div>
+          <div class="week-day past">
+            <div class="week-day-name">Пт</div>
+            <span class="week-day-emoji">🎪</span>
+            <div class="week-day-num">21</div>
+          </div>
+          <div class="week-day today">
+            <div class="week-day-name">Сб</div>
+            <span class="week-day-emoji">🕵️</span>
+            <div class="week-day-num">22</div>
+          </div>
+          <div class="week-day">
+            <div class="week-day-name">Нд</div>
+            <span class="week-day-emoji">🔒</span>
+            <div class="week-day-num">23</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:20px;"></div>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="switchTab(0)">
+        <span class="nav-icon">🎭</span>
+        <span class="nav-label">Клуб</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(1)">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Ігри</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(2)">
+        <span class="nav-icon">🗳️</span>
+        <span class="nav-label">Голосування</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(3)">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Прем'єра</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============ SCREEN 2: GAMES ============ -->
+  <div class="screen" id="screen2">
+    <div class="deco-top"></div>
+
+    <div class="screen2-header">
+      <div class="screen2-header-inner">
+        <div class="title-section">Програма клубу</div>
+        <div class="subtitle mt-8">25 ексклюзивних ігор · Щодня нова</div>
+      </div>
+      <div class="filter-row" id="filterRow">
+        <button class="pill active" onclick="setFilter(this)">Всі</button>
+        <button class="pill" onclick="setFilter(this)">Соціальні</button>
+        <button class="pill" onclick="setFilter(this)">Пазли</button>
+        <button class="pill" onclick="setFilter(this)">Екшн</button>
+        <button class="pill" onclick="setFilter(this)">VIP</button>
+      </div>
+    </div>
+
+    <div class="screen-body">
+      <div class="game-list">
+
+        <!-- Featured tonight -->
+        <div class="game-card featured-game" onclick="showToast('Відкриття Word Mafia...')">
+          <div class="game-emoji">🕵️</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Word Mafia</span>
+              <span class="badge badge-classic">Класик</span>
+            </div>
+            <div class="game-desc">Шпигун ховається серед асоціацій. Знайди його до фіналу.</div>
+            <div class="game-meta">
+              <span class="game-plays">3,240 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★★</span>
+                <span class="rating-val">4.8</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" onclick="showToast('Taboo Night запускається...')">
+          <div class="game-emoji">🚫</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Taboo Night</span>
+              <span class="badge badge-classic">Класик</span>
+            </div>
+            <div class="game-desc">Поясни слово, не використовуючи заборонені підказки.</div>
+            <div class="game-meta">
+              <span class="game-plays">2,180 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★★</span>
+                <span class="rating-val">4.7</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" onclick="showToast('Crossword Duel запускається...')">
+          <div class="game-emoji">🧩</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Crossword Duel</span>
+              <span class="badge badge-new">Новинка</span>
+            </div>
+            <div class="game-desc">Хрестослів проти годинника. Два гравці, одна сітка.</div>
+            <div class="game-meta">
+              <span class="game-plays">641 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★</span>
+                <span class="rating-val">4.3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" onclick="showToast('Phantom Words запускається...')">
+          <div class="game-emoji">👻</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Phantom Words</span>
+              <span class="badge badge-new">Новинка</span>
+            </div>
+            <div class="game-desc">Ланцюжок асоціацій. Кожне слово — крок у невідоме.</div>
+            <div class="game-meta">
+              <span class="game-plays">892 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★</span>
+                <span class="rating-val">4.5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger card -->
+        <div class="game-card danger-game" onclick="showToast('Голосування відкрито...')">
+          <div class="game-emoji">🃏</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Bluff Cards</span>
+              <span class="badge badge-danger">⚠️ На виліт</span>
+            </div>
+            <div class="game-desc">Картки-блеф. Переконай інших — або вибувай.</div>
+            <div class="game-meta">
+              <span class="game-plays">289 ігор</span>
+              <div class="game-rating">
+                <span class="star" style="color:#804060;">★★★</span>
+                <span class="rating-val">3.1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-card" onclick="showToast('Word Auction запускається...')">
+          <div class="game-emoji">🏛️</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Word Auction</span>
+              <span class="badge badge-classic">Класик</span>
+            </div>
+            <div class="game-desc">Аукціон слів. Торгуйся за найкращі асоціації.</div>
+            <div class="game-meta">
+              <span class="game-plays">1,520 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★</span>
+                <span class="rating-val">4.6</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIP card -->
+        <div class="game-card vip-game" onclick="showToast('Тільки для VIP членів клубу')">
+          <div class="game-emoji">🔮</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Oracle Chamber</span>
+              <span class="badge badge-vip">🔒 VIP</span>
+            </div>
+            <div class="game-desc">Таємна гра. Доступна лише обраним членам клубу.</div>
+            <div class="game-meta">
+              <span class="game-plays" style="color:var(--vip2);">Тільки VIP</span>
+            </div>
+          </div>
+          <div class="lock-overlay">
+            <span class="lock-icon">🔒</span>
+          </div>
+        </div>
+
+        <div class="game-card" onclick="showToast('Story Duel запускається...')">
+          <div class="game-emoji">📖</div>
+          <div class="game-info">
+            <div class="game-header-row">
+              <span class="game-name">Story Duel</span>
+              <span class="badge badge-classic">Класик</span>
+            </div>
+            <div class="game-desc">Створи розповідь разом. Кожен додає одне слово.</div>
+            <div class="game-meta">
+              <span class="game-plays">1,870 ігор</span>
+              <div class="game-rating">
+                <span class="star">★★★★★</span>
+                <span class="rating-val">4.9</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div style="height:12px;"></div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab(0)">
+        <span class="nav-icon">🎭</span>
+        <span class="nav-label">Клуб</span>
+      </button>
+      <button class="nav-btn active" onclick="switchTab(1)">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Ігри</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(2)">
+        <span class="nav-icon">🗳️</span>
+        <span class="nav-label">Голосування</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(3)">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Прем'єра</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============ SCREEN 3: VOTING ============ -->
+  <div class="screen" id="screen3">
+    <div class="deco-top"></div>
+
+    <div class="voting-header voting-bg">
+      <div class="title-section" style="color:#c04060; letter-spacing:4px;">Нічне Голосування</div>
+      <div class="voting-ornament">
+        <div class="ornament-line"></div>
+        <div class="ornament-center">⚔️</div>
+        <div class="ornament-line right"></div>
+      </div>
+      <div class="voting-subtitle">Члени клубу вирішують</div>
+      <div class="voting-deadline">
+        <span>🕛</span>
+        Голосування закривається о <strong>00:00</strong> &nbsp;—&nbsp; залишилось <span id="vote-countdown">05:42:08</span>
+      </div>
+    </div>
+
+    <div class="screen-body">
+      <div class="drama-text">
+        ⚠️ &nbsp;Програні ігри назавжди покидають клуб.<br>Переможець залишається ще на тиждень.
+      </div>
+
+      <!-- Vote card 1 -->
+      <div class="vote-card">
+        <div class="vote-card-top">
+          <div class="vote-emoji">🃏</div>
+          <div class="vote-name">Bluff Cards</div>
+          <div class="vote-rank">Рейтинг #23</div>
+        </div>
+        <div class="vote-desc">
+          Картки-блеф на вибування. Грали 289 разів — найнижчий рейтинг цього тижня.
+        </div>
+        <div class="vote-bar-container">
+          <div class="vote-bar-label">
+            <span class="vote-bar-pct">👍 31%</span>
+            <span class="vote-bar-pct">69% 👎</span>
+          </div>
+          <div class="vote-bar">
+            <div class="vote-bar-up" style="width:31%;"></div>
+            <div class="vote-bar-down" style="width:69%;"></div>
+          </div>
+        </div>
+        <button class="btn-vote" id="voteBtn1" onclick="castVote(1)">ВАШ ГОЛОС</button>
+      </div>
+
+      <!-- Vote card 2 -->
+      <div class="vote-card">
+        <div class="vote-card-top">
+          <div class="vote-emoji">🎯</div>
+          <div class="vote-name">Rapid Fire</div>
+          <div class="vote-rank">Рейтинг #24</div>
+        </div>
+        <div class="vote-desc">
+          Гра на швидкість з переліком слів. 212 ігор. Учасники вважають її надто легкою.
+        </div>
+        <div class="vote-bar-container">
+          <div class="vote-bar-label">
+            <span class="vote-bar-pct">👍 44%</span>
+            <span class="vote-bar-pct">56% 👎</span>
+          </div>
+          <div class="vote-bar">
+            <div class="vote-bar-up" style="width:44%;"></div>
+            <div class="vote-bar-down" style="width:56%;"></div>
+          </div>
+        </div>
+        <button class="btn-vote" id="voteBtn2" onclick="castVote(2)">ВАШ ГОЛОС</button>
+      </div>
+
+      <!-- Vote card 3 -->
+      <div class="vote-card">
+        <div class="vote-card-top">
+          <div class="vote-emoji">🎪</div>
+          <div class="vote-name">Circus Words</div>
+          <div class="vote-rank">Рейтинг #25</div>
+        </div>
+        <div class="vote-desc">
+          Хаотична гра з жонглюванням словами. 178 ігор. Заплутана механіка.
+        </div>
+        <div class="vote-bar-container">
+          <div class="vote-bar-label">
+            <span class="vote-bar-pct">👍 22%</span>
+            <span class="vote-bar-pct">78% 👎</span>
+          </div>
+          <div class="vote-bar">
+            <div class="vote-bar-up" style="width:22%;"></div>
+            <div class="vote-bar-down" style="width:78%;"></div>
+          </div>
+        </div>
+        <button class="btn-vote" id="voteBtn3" onclick="castVote(3)">ВАШ ГОЛОС</button>
+      </div>
+
+      <div style="height:16px;"></div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab(0)">
+        <span class="nav-icon">🎭</span>
+        <span class="nav-label">Клуб</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(1)">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Ігри</span>
+      </button>
+      <button class="nav-btn active" onclick="switchTab(2)">
+        <span class="nav-icon">🗳️</span>
+        <span class="nav-label">Голосування</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(3)">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Прем'єра</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============ SCREEN 4: NEW GAME CEREMONY ============ -->
+  <div class="screen ceremony-screen" id="screen4">
+    <div class="deco-top"></div>
+
+    <!-- Curtain swag -->
+    <div class="curtain-swag">
+      <div class="curtain-gold-bar"></div>
+    </div>
+
+    <!-- Curtain -->
+    <div class="curtain-container" id="curtainContainer">
+      <div class="curtain-left" id="curtainLeft"></div>
+      <div class="curtain-right" id="curtainRight"></div>
+    </div>
+
+    <!-- Sparkles container -->
+    <div class="sparkles" id="sparkles"></div>
+
+    <!-- Ceremony content -->
+    <div class="screen-body">
+      <div class="ceremony-content" id="ceremonyContent">
+        <div class="ceremony-announce">Клуб вітає нового гостя</div>
+        <div class="ceremony-title">ЗУСТРІЧАЙТЕ:<br>MIRROR WORDS</div>
+
+        <div class="ceremony-card">
+          <span class="ceremony-game-emoji">🪞</span>
+          <div class="ceremony-game-name">Mirror Words</div>
+          <div class="ceremony-ai-text">VOODOO AI обрав унікальну механіку зі 148 можливих варіантів</div>
+          <div class="ceremony-game-desc">
+            Гравці описують одне слово з двох протилежних точок зору. Знайди спільне між "вогонь" і "лід".
+          </div>
+          <div class="ceremony-mechanics">
+            <div class="ceremony-mechanic">
+              <span class="mechanic-icon">⚡</span>
+              <span>Реальний час · до 8 гравців</span>
+            </div>
+            <div class="ceremony-mechanic">
+              <span class="mechanic-icon">🧠</span>
+              <span>Рівень: середній — складний</span>
+            </div>
+            <div class="ceremony-mechanic">
+              <span class="mechanic-icon">⏱️</span>
+              <span>10–15 хвилин на партію</span>
+            </div>
+            <div class="ceremony-mechanic">
+              <span class="mechanic-icon">🏆</span>
+              <span>+50 XP за першу гру сьогодні</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-welcome" onclick="switchTab(0); showToast('Ласкаво просимо до Mirror Words!')">
+          ЛАСКАВО ПРОСИМО ДО ГРИ →
+        </button>
+
+        <div style="height:8px;"></div>
+      </div>
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn" onclick="switchTab(0)">
+        <span class="nav-icon">🎭</span>
+        <span class="nav-label">Клуб</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(1)">
+        <span class="nav-icon">🎮</span>
+        <span class="nav-label">Ігри</span>
+      </button>
+      <button class="nav-btn" onclick="switchTab(2)">
+        <span class="nav-icon">🗳️</span>
+        <span class="nav-label">Голосування</span>
+      </button>
+      <button class="nav-btn active" onclick="switchTab(3)">
+        <span class="nav-icon">✨</span>
+        <span class="nav-label">Прем'єра</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  // ===== STAR PARTICLES =====
+  (function() {
+    const bg = document.getElementById('starsBg');
+    for (let i = 0; i < 40; i++) {
+      const s = document.createElement('div');
+      s.className = 'star-particle';
+      s.style.cssText = `
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 100}%;
+        --d: ${2 + Math.random() * 4}s;
+        --delay: ${Math.random() * 5}s;
+        --op: ${0.1 + Math.random() * 0.4};
+      `;
+      bg.appendChild(s);
+    }
+  })();
+
+  // ===== NAVIGATION =====
+  const screens = ['screen1','screen2','screen3','screen4'];
+  let currentScreen = 0;
+
+  function switchTab(idx) {
+    document.getElementById(screens[currentScreen]).classList.remove('active');
+    document.getElementById(screens[idx]).classList.add('active');
+    currentScreen = idx;
+
+    // Update all navs
+    document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+      btn.classList.remove('active');
+    });
+    document.querySelectorAll('.bottom-nav').forEach(nav => {
+      nav.querySelectorAll('.nav-btn')[idx].classList.add('active');
+    });
+
+    // Trigger curtain on ceremony screen
+    if (idx === 3) {
+      triggerCurtain();
+    }
+  }
+
+  // ===== TOAST =====
+  let toastTimeout;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ===== FILTER PILLS =====
+  function setFilter(el) {
+    document.querySelectorAll('#filterRow .pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+    showToast('Фільтр: ' + el.textContent);
+  }
+
+  // ===== COUNTDOWN TIMER =====
+  function updateCountdown() {
+    const now = new Date();
+    const target = new Date();
+    target.setHours(22, 0, 0, 0);
+    if (now >= target) target.setDate(target.getDate() + 1);
+    const diff = Math.max(0, Math.floor((target - now) / 1000));
+    const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const s = String(diff % 60).padStart(2, '0');
+    const el = document.getElementById('countdown');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Vote countdown (midnight)
+  function updateVoteCountdown() {
+    const now = new Date();
+    const target = new Date();
+    target.setHours(24, 0, 0, 0);
+    const diff = Math.max(0, Math.floor((target - now) / 1000));
+    const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const s = String(diff % 60).padStart(2, '0');
+    const el = document.getElementById('vote-countdown');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  updateVoteCountdown();
+  setInterval(updateVoteCountdown, 1000);
+
+  // ===== VOTING =====
+  const voted = {};
+  function castVote(n) {
+    if (voted[n]) return;
+    voted[n] = true;
+    const btn = document.getElementById('voteBtn' + n);
+    btn.textContent = '✓ ПРОГОЛОСОВАНО';
+    btn.classList.add('voted');
+    showToast('Ваш голос прийнято · Дякуємо');
+  }
+
+  // ===== CURTAIN ANIMATION =====
+  let curtainOpened = false;
+  function triggerCurtain() {
+    if (curtainOpened) return;
+    curtainOpened = true;
+
+    const container = document.getElementById('curtainContainer');
+    const content = document.getElementById('ceremonyContent');
+
+    setTimeout(() => {
+      container.classList.add('curtain-open');
+      content.classList.add('revealed');
+      spawnSparkles();
+    }, 400);
+  }
+
+  function spawnSparkles() {
+    const container = document.getElementById('sparkles');
+    const colors = ['#e8c96e','#f5e098','#c9a84c','#fff8dc','#ffd700'];
+    for (let i = 0; i < 20; i++) {
+      setTimeout(() => {
+        const s = document.createElement('div');
+        s.className = 'sparkle';
+        s.style.cssText = `
+          left: ${10 + Math.random() * 80}%;
+          top: ${30 + Math.random() * 50}%;
+          background: ${colors[Math.floor(Math.random() * colors.length)]};
+          width: ${2 + Math.random() * 5}px;
+          height: ${2 + Math.random() * 5}px;
+          animation-duration: ${1.2 + Math.random() * 1.2}s;
+          animation-delay: 0s;
+        `;
+        container.appendChild(s);
+        setTimeout(() => s.remove(), 2500);
+      }, i * 80);
+    }
+  }
+
+  // Reset curtain when leaving screen 4
+  const originalSwitch = switchTab;
+  window.switchTab = function(idx) {
+    if (currentScreen === 3 && idx !== 3) {
+      curtainOpened = false;
+      const container = document.getElementById('curtainContainer');
+      const content = document.getElementById('ceremonyContent');
+      container.classList.remove('curtain-open');
+      content.classList.remove('revealed');
+    }
+    originalSwitch(idx);
+  };
+</script>
+</body>
+</html>

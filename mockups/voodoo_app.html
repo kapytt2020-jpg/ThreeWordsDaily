@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Voodoo English — New App</title>
+<style>
+:root {
+  --bg: #08080f;
+  --surface: #12121f;
+  --surface2: #1a1a2e;
+  --border: #252540;
+  --purple: #8b5cf6;
+  --pink: #ec4899;
+  --cyan: #06b6d4;
+  --gold: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #f1f5f9;
+  --muted: #64748b;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body {
+  background:#000;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  padding:20px;
+}
+
+/* ── PHONE SHELL ── */
+.phone {
+  width:390px;
+  min-height:844px;
+  background:var(--bg);
+  border-radius:44px;
+  overflow:hidden;
+  border:1.5px solid #2a2a4a;
+  box-shadow:0 0 0 8px #111,0 40px 120px rgba(139,92,246,0.25),0 0 80px rgba(236,72,153,0.1);
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+.status { display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#555;flex-shrink:0; }
+
+/* ── SCREENS ── */
+.screen { display:none;flex:1;flex-direction:column;overflow:hidden; }
+.screen.active { display:flex; }
+
+/* ══ INTRO / ONBOARDING ════════════════════════════════════════════ */
+#s-intro {
+  background:radial-gradient(ellipse at 30% 20%,rgba(139,92,246,0.3),transparent 50%),
+             radial-gradient(ellipse at 80% 80%,rgba(236,72,153,0.25),transparent 50%),
+             var(--bg);
+  align-items:center;
+  justify-content:center;
+  padding:30px 24px;
+  text-align:center;
+  gap:0;
+}
+.logo-ring {
+  width:120px;height:120px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  font-size:56px;
+  box-shadow:0 0 60px rgba(139,92,246,0.6),0 0 120px rgba(236,72,153,0.3);
+  animation:logoPulse 2s ease-in-out infinite;
+  margin-bottom:20px;
+}
+@keyframes logoPulse {
+  0%,100%{box-shadow:0 0 60px rgba(139,92,246,0.6),0 0 120px rgba(236,72,153,0.3);}
+  50%{box-shadow:0 0 80px rgba(139,92,246,0.9),0 0 160px rgba(236,72,153,0.5);}
+}
+.intro-title { font-size:36px;font-weight:900;background:linear-gradient(135deg,#fff,#a78bfa,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px; }
+.intro-sub { font-size:14px;color:#94a3b8;line-height:1.6;margin-bottom:32px; }
+.intro-btn {
+  width:100%;padding:18px;
+  background:linear-gradient(135deg,var(--purple),var(--pink));
+  border:none;border-radius:20px;color:#fff;font-size:18px;font-weight:800;cursor:pointer;
+  box-shadow:0 8px 32px rgba(139,92,246,0.5);
+  animation:btnGlow 2s ease-in-out infinite;
+}
+@keyframes btnGlow {
+  0%,100%{box-shadow:0 8px 32px rgba(139,92,246,0.5);}
+  50%{box-shadow:0 8px 48px rgba(236,72,153,0.7);}
+}
+.intro-features { display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;width:100%; }
+.feature-pill { background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:12px;text-align:center;font-size:12px;color:#94a3b8; }
+.feature-pill .icon { font-size:24px;display:block;margin-bottom:4px; }
+
+/* ══ PET SELECT ════════════════════════════════════════════════════ */
+#s-petselect {
+  padding:20px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.2),transparent 60%),var(--bg);
+}
+.petsel-title { text-align:center;font-size:24px;font-weight:800;margin-bottom:4px; }
+.petsel-sub { text-align:center;font-size:13px;color:#94a3b8;margin-bottom:20px; }
+.pets-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px; }
+.pet-option {
+  background:var(--surface2);
+  border:2px solid var(--border);
+  border-radius:20px;padding:16px 8px;
+  text-align:center;cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+}
+.pet-option:hover { border-color:var(--purple);transform:translateY(-2px); }
+.pet-option.selected {
+  border-color:var(--purple);
+  background:rgba(139,92,246,0.15);
+  box-shadow:0 0 24px rgba(139,92,246,0.4);
+}
+.pet-option .emoji { font-size:40px;display:block;margin-bottom:6px; }
+.pet-option .pet-name { font-size:12px;font-weight:700;color:#e2e8f0; }
+.pet-option .pet-class { font-size:10px;color:var(--muted);margin-top:2px; }
+.pet-option .tag { position:absolute;top:6px;right:6px;font-size:9px;background:rgba(16,185,129,0.2);color:#34d399;border-radius:6px;padding:2px 6px; }
+.name-row { display:flex;gap:10px;margin-bottom:20px; }
+.name-input {
+  flex:1;background:var(--surface2);border:1px solid var(--border);
+  border-radius:14px;padding:14px;color:#fff;font-size:15px;font-weight:600;
+  outline:none;
+}
+.name-input:focus { border-color:var(--purple); }
+.confirm-btn {
+  width:100%;padding:16px;background:linear-gradient(135deg,var(--purple),var(--pink));
+  border:none;border-radius:18px;color:#fff;font-size:16px;font-weight:800;cursor:pointer;
+  box-shadow:0 4px 24px rgba(139,92,246,0.4);
+}
+
+/* ══ MAIN APP ═══════════════════════════════════════════════════════ */
+#s-app { display:flex;flex-direction:column;flex:1;overflow:hidden; }
+.app-inner { flex:1;overflow-y:auto;padding-bottom:80px; }
+
+/* Top bar */
+.topbar {
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 20px 8px;flex-shrink:0;
+}
+.topbar-pills { display:flex;gap:8px; }
+.pill {
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:100px;padding:6px 14px;font-size:13px;font-weight:700;
+  display:flex;align-items:center;gap:4px;
+}
+.topbar-name { font-size:14px;font-weight:800;color:#e2e8f0; }
+
+/* Tab bar */
+.tabbar {
+  display:flex;background:rgba(8,8,15,0.95);
+  border-top:1px solid var(--border);padding:8px 0 22px;flex-shrink:0;
+  position:absolute;bottom:0;left:0;right:0;
+}
+.tab { flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px; }
+.tab .ti { font-size:22px; }
+.tab .tl { font-size:10px;color:var(--muted);font-weight:500; }
+.tab.on .tl { color:var(--purple); }
+.tab.on .ti { filter:drop-shadow(0 0 8px var(--purple)); }
+
+/* Tab content panels */
+.tabpanel { display:none; }
+.tabpanel.on { display:block; }
+
+/* ── HOME tab ── */
+.pet-stage {
+  margin:8px 16px 12px;
+  background:linear-gradient(160deg,#1a1030,#0d0d20);
+  border:1px solid #252040;
+  border-radius:24px;overflow:hidden;
+  position:relative;height:220px;
+}
+.stage-bg {
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 120%,rgba(139,92,246,0.12),transparent 60%);
+}
+.stage-stars { position:absolute;inset:0;overflow:hidden; }
+.star { position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d,2s) ease-in-out infinite; }
+@keyframes twinkle { 0%,100%{opacity:0.2;transform:scale(1);} 50%{opacity:0.8;transform:scale(1.4);} }
+.pet-display {
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  font-size:90px;cursor:pointer;
+  animation:petFloat 3s ease-in-out infinite;
+  filter:drop-shadow(0 8px 24px rgba(139,92,246,0.4));
+}
+@keyframes petFloat { 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-12px);} }
+.pet-bubble {
+  position:absolute;top:16px;left:50%;transform:translateX(-50%);
+  background:rgba(10,8,25,0.85);
+  border:1px solid rgba(139,92,246,0.4);border-radius:12px;
+  padding:8px 14px;font-size:12px;color:#c4b5fd;white-space:nowrap;
+  backdrop-filter:blur(8px);
+}
+.pet-name-display { position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:#a78bfa; }
+.pet-mood { position:absolute;top:16px;right:16px;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);border-radius:100px;padding:4px 10px;font-size:11px;color:#34d399; }
+
+/* Need bars */
+.needs { display:flex;gap:8px;padding:0 16px 12px; }
+.need { flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 8px;text-align:center; }
+.need .ni { font-size:18px; }
+.need .nb { height:3px;border-radius:100px;background:var(--border);margin:6px 0 2px; }
+.need .nf { height:3px;border-radius:100px;transition:width 0.4s; }
+.need .nl { font-size:9px;color:var(--muted); }
+
+/* Daily challenge */
+.challenge {
+  margin:0 16px 12px;
+  background:linear-gradient(135deg,rgba(139,92,246,0.2),rgba(6,182,212,0.1));
+  border:1px solid rgba(139,92,246,0.35);border-radius:18px;padding:14px 16px;
+}
+.ch-title { font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:4px; }
+.ch-sub { font-size:11px;color:#94a3b8;margin-bottom:10px; }
+.ch-progress { background:rgba(0,0,0,0.3);border-radius:100px;height:6px;margin-bottom:10px; }
+.ch-bar { height:6px;border-radius:100px;background:linear-gradient(90deg,var(--purple),var(--cyan));width:40%;transition:width 0.5s; }
+.ch-btn {
+  width:100%;padding:10px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--purple),var(--cyan));
+  color:#fff;font-weight:700;font-size:13px;cursor:pointer;
+}
+
+/* Quick stats */
+.qs-row { display:flex;gap:8px;padding:0 16px 12px; }
+.qs { flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center; }
+.qs .qi { font-size:18px; }
+.qs .qv { font-size:20px;font-weight:800;margin:2px 0; }
+.qs .ql { font-size:9px;color:var(--muted); }
+
+/* Weekly bars */
+.week-wrap { padding:0 16px 12px; }
+.week-label { font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px; }
+.week-bars { display:flex;gap:4px;align-items:flex-end;height:50px; }
+.wb { flex:1;border-radius:4px 4px 0 0;min-height:4px;transition:height 0.5s; }
+
+/* ── GAMES tab ── */
+.games-header { padding:16px 20px 8px; }
+.games-title { font-size:22px;font-weight:800; }
+.games-sub { font-size:12px;color:var(--muted);margin-top:2px; }
+.games-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 12px; }
+.game-card {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:16px 14px;cursor:pointer;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.game-card:hover { transform:translateY(-2px);border-color:rgba(139,92,246,0.5); }
+.game-card::before { content:'';position:absolute;inset:0;opacity:0.06;transition:opacity 0.2s; }
+.game-card:hover::before { opacity:0.12; }
+.gc-icon { font-size:36px;margin-bottom:8px; }
+.gc-name { font-size:14px;font-weight:800;margin-bottom:4px; }
+.gc-desc { font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:10px; }
+.gc-badge { display:inline-block;border-radius:100px;padding:3px 10px;font-size:10px;font-weight:700; }
+.gc-play { display:block;text-align:center;padding:8px;border-radius:10px;font-size:12px;font-weight:700;border:none;color:#fff;cursor:pointer;margin-top:8px;width:100%; }
+
+/* ── GAME PLAY OVERLAYS ── */
+.game-overlay {
+  display:none;position:absolute;inset:0;z-index:100;
+  background:var(--bg);flex-direction:column;
+}
+.game-overlay.open { display:flex; }
+.game-header {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.game-header .gh-title { font-size:16px;font-weight:800; }
+.back-btn { background:none;border:1px solid var(--border);border-radius:10px;padding:6px 14px;color:#fff;cursor:pointer;font-size:13px; }
+.game-body { flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto; }
+
+/* WORD DUEL game */
+.duel-word { font-size:36px;font-weight:900;text-align:center;margin-bottom:6px;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.duel-ipa { font-size:14px;color:var(--purple);text-align:center;margin-bottom:24px;font-style:italic; }
+.duel-choices { display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:20px; }
+.dc-btn {
+  padding:16px 12px;border-radius:16px;border:2px solid var(--border);
+  background:var(--surface);color:#e2e8f0;font-size:14px;font-weight:700;cursor:pointer;
+  transition:all 0.15s;text-align:center;
+}
+.dc-btn:hover { border-color:var(--purple);background:rgba(139,92,246,0.1); }
+.dc-btn.correct { border-color:var(--green);background:rgba(16,185,129,0.15);color:#34d399; }
+.dc-btn.wrong { border-color:var(--red);background:rgba(239,68,68,0.1);color:#f87171; }
+.duel-timer { width:100%;height:6px;background:var(--border);border-radius:100px;margin-bottom:16px;overflow:hidden; }
+.dt-fill { height:6px;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:100px;transition:width 0.1s linear; }
+.duel-score { font-size:13px;color:var(--muted);text-align:center;margin-bottom:8px; }
+.pet-react { font-size:60px;text-align:center;margin-bottom:8px;transition:transform 0.2s; }
+.pet-say { font-size:12px;color:#a78bfa;text-align:center;min-height:20px; }
+
+/* MEMORY game */
+.memo-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%; }
+.memo-card {
+  aspect-ratio:1;border-radius:12px;cursor:pointer;
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;text-align:center;padding:4px;
+  transition:all 0.3s;color:transparent;user-select:none;
+  position:relative;overflow:hidden;
+}
+.memo-card.flipped { background:linear-gradient(135deg,rgba(139,92,246,0.3),rgba(6,182,212,0.2));border-color:var(--purple);color:#e2e8f0; }
+.memo-card.matched { background:rgba(16,185,129,0.2);border-color:var(--green);color:#34d399;animation:matchPop 0.3s ease; }
+@keyframes matchPop { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
+.memo-back { position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px; }
+.memo-card.flipped .memo-back,
+.memo-card.matched .memo-back { display:none; }
+
+/* SPEED RUSH game */
+.rush-card {
+  width:100%;background:linear-gradient(135deg,var(--surface),var(--surface2));
+  border:2px solid var(--border);border-radius:24px;padding:24px;text-align:center;
+  margin-bottom:16px;
+}
+.rush-word { font-size:34px;font-weight:900;background:linear-gradient(135deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.rush-ipa { font-size:13px;color:var(--purple);margin-top:4px;font-style:italic; }
+.rush-btns { display:flex;gap:12px;width:100%; }
+.rush-btn {
+  flex:1;padding:18px;border-radius:18px;border:none;font-size:15px;font-weight:800;cursor:pointer;
+  transition:transform 0.1s;
+}
+.rush-btn:active { transform:scale(0.95); }
+.rush-no { background:linear-gradient(135deg,#991b1b,var(--red));color:#fff; }
+.rush-yes { background:linear-gradient(135deg,#065f46,var(--green));color:#fff; }
+.rush-timer { font-size:28px;font-weight:900;color:var(--cyan);text-align:center;margin-bottom:4px; }
+.rush-count { font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px; }
+
+/* BUILD WORD game */
+.build-hint { font-size:14px;color:#94a3b8;text-align:center;margin-bottom:16px; }
+.build-translation { font-size:28px;font-weight:800;text-align:center;margin-bottom:20px;color:#e2e8f0; }
+.build-target {
+  display:flex;gap:8px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;min-height:52px;
+  background:rgba(139,92,246,0.05);border:1px dashed rgba(139,92,246,0.3);border-radius:14px;padding:10px;
+}
+.build-slot { width:40px;height:40px;background:rgba(139,92,246,0.15);border:2px solid rgba(139,92,246,0.4);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#c4b5fd; }
+.build-empty { border-color:rgba(139,92,246,0.2);background:transparent; }
+.build-letters { display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px; }
+.bl-tile {
+  width:44px;height:44px;background:var(--surface2);border:2px solid var(--border);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;cursor:pointer;transition:all 0.1s;
+}
+.bl-tile:hover { border-color:var(--purple);background:rgba(139,92,246,0.2); }
+.bl-tile.used { opacity:0.2;cursor:default; }
+.build-clear { padding:10px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer; }
+
+/* Result overlay */
+.result-box {
+  display:none;position:absolute;inset:0;z-index:200;
+  background:rgba(8,8,15,0.92);backdrop-filter:blur(8px);
+  flex-direction:column;align-items:center;justify-content:center;padding:30px;
+  text-align:center;
+}
+.result-box.show { display:flex; }
+.result-emoji { font-size:80px;margin-bottom:12px;animation:resultPop 0.5s cubic-bezier(.175,.885,.32,1.275); }
+@keyframes resultPop { from{transform:scale(0);opacity:0;} to{transform:scale(1);opacity:1;} }
+.result-title { font-size:28px;font-weight:900;margin-bottom:8px; }
+.result-sub { font-size:14px;color:#94a3b8;margin-bottom:24px;line-height:1.5; }
+.result-xp { font-size:20px;font-weight:800;color:var(--gold);margin-bottom:20px; }
+.result-btn { padding:14px 32px;border-radius:16px;border:none;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:15px;font-weight:800;cursor:pointer; }
+
+/* ── PET tab ── */
+.pet-room {
+  margin:12px 16px;
+  background:linear-gradient(160deg,#0d0820,#0a1520,#080f0d);
+  border:1px solid #1e2d45;border-radius:24px;
+  height:260px;position:relative;overflow:hidden;
+}
+.pr-sky { position:absolute;top:0;left:0;right:0;height:100px;background:linear-gradient(180deg,rgba(139,92,246,0.08),transparent); }
+.pr-floor { position:absolute;bottom:0;left:0;right:0;height:70px;background:linear-gradient(180deg,transparent,rgba(16,185,129,0.06));border-top:1px solid rgba(16,185,129,0.1); }
+.pr-window { position:absolute;top:18px;right:20px;width:54px;height:44px;background:linear-gradient(135deg,rgba(96,165,250,0.2),rgba(37,99,235,0.1));border:2px solid rgba(96,165,250,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px; }
+.pr-item { position:absolute;font-size:28px; }
+.pr-pet { position:absolute;bottom:68px;left:50%;transform:translateX(-50%);font-size:80px;cursor:pointer;animation:petFloat 3.5s ease-in-out infinite; }
+.pr-speech { position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(10,8,25,0.85);border:1px solid rgba(139,92,246,0.35);border-radius:12px;padding:7px 12px;font-size:11px;color:#a78bfa;white-space:nowrap; }
+.pet-care-row { display:flex;gap:8px;padding:0 16px 12px; }
+.care-btn {
+  flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:12px 6px;text-align:center;cursor:pointer;transition:all 0.2s;
+}
+.care-btn:hover { border-color:var(--purple);background:rgba(139,92,246,0.1); }
+.care-btn .ci { font-size:22px;margin-bottom:4px; }
+.care-btn .cl { font-size:10px;color:var(--muted); }
+.evolution-banner {
+  margin:0 16px 12px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.1));
+  border:1px solid rgba(245,158,11,0.3);border-radius:16px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.ev-icon { font-size:32px; }
+.ev-text .ev-title { font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:2px; }
+.ev-text .ev-sub { font-size:11px;color:#94a3b8; }
+.ev-prog { height:4px;background:var(--border);border-radius:100px;margin-top:6px; }
+.ev-fill { height:4px;background:linear-gradient(90deg,var(--gold),var(--pink));border-radius:100px;width:62%; }
+.decor-section { padding:0 16px 12px; }
+.decor-label { font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px; }
+.decor-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
+.decor-item { background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;position:relative; }
+.decor-item.owned { border-color:rgba(139,92,246,0.4);background:rgba(139,92,246,0.08); }
+.decor-item .di { font-size:22px;margin-bottom:4px; }
+.decor-item .dn { font-size:9px;color:#94a3b8; }
+.decor-item .dp { font-size:9px;color:var(--gold);font-weight:700; }
+.decor-item .owned-dot { position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--green);border-radius:50%; }
+
+/* Shared helpers */
+.section-lbl { font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 16px; }
+.xp-bar-wrap { background:var(--surface2);border-radius:100px;overflow:hidden; }
+.xp-bar { border-radius:100px;transition:width 0.5s; }
+
+/* Notification pop */
+.notif {
+  position:absolute;top:80px;left:50%;transform:translateX(-50%) scale(0.8);
+  background:rgba(16,185,129,0.9);border-radius:12px;padding:8px 16px;
+  font-size:13px;font-weight:700;color:#fff;white-space:nowrap;
+  opacity:0;transition:all 0.3s;z-index:50;pointer-events:none;
+}
+.notif.show { opacity:1;transform:translateX(-50%) scale(1); }
+
+/* Welcome overlay */
+.welcome-overlay {
+  display:none;position:absolute;inset:0;z-index:150;
+  background:linear-gradient(160deg,#1a0830,#080c1a,#08100a);
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:30px;text-align:center;
+}
+.welcome-overlay.show { display:flex; }
+.wo-pet { font-size:100px;animation:petFloat 2s ease-in-out infinite;margin-bottom:16px;filter:drop-shadow(0 8px 30px rgba(139,92,246,0.5)); }
+.wo-title { font-size:24px;font-weight:900;margin-bottom:8px; }
+.wo-name { font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+.wo-msg { font-size:14px;color:#94a3b8;margin:12px 0 24px;line-height:1.6; }
+.wo-btn { padding:16px 40px;border-radius:18px;border:none;background:linear-gradient(135deg,var(--purple),var(--pink));color:#fff;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 8px 32px rgba(139,92,246,0.4); }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- ══ INTRO ════════════════════════════════════════════════════════ -->
+  <div class="screen active" id="s-intro">
+    <div class="logo-ring">🪄</div>
+    <div class="intro-title">Voodoo</div>
+    <div class="intro-sub">Вчи англійську граючи.<br>Твій пет росте разом з тобою.</div>
+    <div class="intro-features">
+      <div class="feature-pill"><span class="icon">🎮</span>5 ігор без обмежень</div>
+      <div class="feature-pill"><span class="icon">🐾</span>Пет одразу</div>
+      <div class="feature-pill"><span class="icon">🔥</span>Серії та XP</div>
+      <div class="feature-pill"><span class="icon">🏆</span>Реальний прогрес</div>
+    </div>
+    <button class="intro-btn" onclick="showPetSelect()">🐾 Вибрати пета і почати</button>
+  </div>
+
+  <!-- ══ PET SELECT ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-petselect" style="overflow-y:auto;padding-bottom:20px;">
+    <div style="padding-top:10px">
+      <div class="petsel-title">Вибери супутника 🐾</div>
+      <div class="petsel-sub">Всі безкоштовно — просто обери хто тобі до душі</div>
+      <div class="pets-grid" id="pets-grid">
+        <div class="pet-option" data-pet="🦊" data-class="Темний маг" onclick="selectPet(this)">
+          <span class="emoji">🦊</span>
+          <div class="pet-name">Лис</div>
+          <div class="pet-class">Темний маг</div>
+        </div>
+        <div class="pet-option" data-pet="🐺" data-class="Воїн Ночі" onclick="selectPet(this)">
+          <span class="emoji">🐺</span>
+          <div class="pet-name">Вовк</div>
+          <div class="pet-class">Воїн Ночі</div>
+        </div>
+        <div class="pet-option" data-pet="🐲" data-class="Лицар Дракон" onclick="selectPet(this)">
+          <span class="emoji">🐲</span>
+          <div class="pet-name">Дракон</div>
+          <div class="pet-class">Лицар</div>
+          <span class="tag">🔥 Рідкий</span>
+        </div>
+        <div class="pet-option" data-pet="🦋" data-class="Арт Муза" onclick="selectPet(this)">
+          <span class="emoji">🦋</span>
+          <div class="pet-name">Метелик</div>
+          <div class="pet-class">Арт Муза</div>
+        </div>
+        <div class="pet-option" data-pet="🐱" data-class="Стелс Агент" onclick="selectPet(this)">
+          <span class="emoji">🐱</span>
+          <div class="pet-name">Кіт</div>
+          <div class="pet-class">Стелс Агент</div>
+        </div>
+        <div class="pet-option" data-pet="🦅" data-class="Вільний Дух" onclick="selectPet(this)">
+          <span class="emoji">🦅</span>
+          <div class="pet-name">Орел</div>
+          <div class="pet-class">Вільний Дух</div>
+          <span class="tag">⚡ Швидкий</span>
+        </div>
+      </div>
+      <div style="padding:0 20px;margin-bottom:12px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Як назвеш свого пета?</div>
+        <div class="name-row">
+          <input class="name-input" id="pet-name-input" placeholder="Наприклад: Кікра" maxlength="20">
+        </div>
+      </div>
+      <div style="padding:0 20px;">
+        <button class="confirm-btn" onclick="confirmPet()">🚀 Почати пригоду!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN APP ══════════════════════════════════════════════════ -->
+  <div class="screen" id="s-app">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-name" id="tb-name">Привіт 👋</div>
+      <div class="topbar-pills">
+        <div class="pill">⭐ <span id="tb-xp">0</span></div>
+        <div class="pill">🔥 <span id="tb-streak">1</span></div>
+      </div>
+    </div>
+
+    <div class="app-inner" id="app-inner">
+      <!-- HOME tab -->
+      <div class="tabpanel on" id="tp-home">
+        <!-- Pet stage -->
+        <div class="pet-stage">
+          <div class="stage-bg"></div>
+          <div class="stage-stars" id="stage-stars"></div>
+          <div class="pet-mood">😊 Щасливий</div>
+          <div class="pet-display" id="pet-display" onclick="petTap()">🦊</div>
+          <div class="pet-bubble" id="pet-bubble">Вчи зі мною! 📖</div>
+          <div class="pet-name-display" id="pet-name-disp">Кікра · Рівень 1</div>
+        </div>
+
+        <!-- Needs -->
+        <div class="needs">
+          <div class="need">
+            <div class="ni">📚</div>
+            <div class="nb"><div class="nf" id="n-learn" style="width:65%;background:#8b5cf6"></div></div>
+            <div class="nl">Знання</div>
+          </div>
+          <div class="need">
+            <div class="ni">❤️</div>
+            <div class="nb"><div class="nf" id="n-happy" style="width:80%;background:#ec4899"></div></div>
+            <div class="nl">Щастя</div>
+          </div>
+          <div class="need">
+            <div class="ni">⚡</div>
+            <div class="nb"><div class="nf" id="n-energy" style="width:50%;background:#f59e0b"></div></div>
+            <div class="nl">Енергія</div>
+          </div>
+          <div class="need">
+            <div class="ni">✨</div>
+            <div class="nb"><div class="nf" id="n-magic" style="width:90%;background:#06b6d4"></div></div>
+            <div class="nl">Магія</div>
+          </div>
+        </div>
+
+        <!-- Daily challenge -->
+        <div class="challenge">
+          <div class="ch-title">⚡ Виклик дня</div>
+          <div class="ch-sub">Зіграй 3 ігри щоб підняти настрій пету</div>
+          <div class="ch-progress"><div class="ch-bar" id="ch-bar" style="width:33%"></div></div>
+          <button class="ch-btn" onclick="switchTab('games')">🎮 Ігри зараз →</button>
+        </div>
+
+        <!-- Stats row -->
+        <div class="qs-row">
+          <div class="qs">
+            <div class="qi">📚</div>
+            <div class="qv" id="stat-words" style="color:#a78bfa">0</div>
+            <div class="ql">Слів</div>
+          </div>
+          <div class="qs">
+            <div class="qi">🔥</div>
+            <div class="qv" id="stat-streak" style="color:#f87171">1</div>
+            <div class="ql">Стрік</div>
+          </div>
+          <div class="qs">
+            <div class="qi">⭐</div>
+            <div class="qv" id="stat-xp" style="color:#fbbf24">0</div>
+            <div class="ql">XP</div>
+          </div>
+          <div class="qs">
+            <div class="qi">🏆</div>
+            <div class="qv" style="color:#34d399">—</div>
+            <div class="ql">Ліга</div>
+          </div>
+        </div>
+
+        <!-- Week bars -->
+        <div class="week-wrap">
+          <div class="week-label">Активність тижня</div>
+          <div class="week-bars">
+            <div class="wb" style="height:60%;background:rgba(139,92,246,0.5)"></div>
+            <div class="wb" style="height:80%;background:rgba(139,92,246,0.65)"></div>
+            <div class="wb" style="height:40%;background:rgba(139,92,246,0.4)"></div>
+            <div class="wb" style="height:90%;background:rgba(139,92,246,0.8)"></div>
+            <div class="wb" style="height:55%;background:rgba(139,92,246,0.5)"></div>
+            <div class="wb" style="height:100%;background:linear-gradient(180deg,#8b5cf6,#ec4899);box-shadow:0 0 12px rgba(139,92,246,0.5)"></div>
+            <div class="wb" style="height:10%;background:rgba(139,92,246,0.2)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAMES tab -->
+      <div class="tabpanel" id="tp-games">
+        <div class="games-header">
+          <div class="games-title">🎮 Ігри</div>
+          <div class="games-sub">Всі ігри відкриті · Зароблюй XP граючи</div>
+        </div>
+
+        <!-- XP bar -->
+        <div style="padding:0 16px 12px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
+            <span>Рівень 1 · Beginner</span><span id="xp-label">0 / 200 XP</span>
+          </div>
+          <div class="xp-bar-wrap" style="height:6px;">
+            <div class="xp-bar" id="xp-fill" style="height:6px;width:0%;background:linear-gradient(90deg,#8b5cf6,#06b6d4)"></div>
+          </div>
+        </div>
+
+        <div class="games-grid">
+          <!-- Word Duel -->
+          <div class="game-card" style="background:linear-gradient(135deg,#1a0830,#120820);">
+            <div class="gc-icon">⚔️</div>
+            <div class="gc-name">Word Duel</div>
+            <div class="gc-desc">Переклади слово до того як час вийде</div>
+            <div class="gc-badge" style="background:rgba(139,92,246,0.2);color:#c4b5fd">⭐ +10-30 XP</div>
+            <button class="gc-play" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)" onclick="openGame('duel')">▶ Грати</button>
+          </div>
+          <!-- Memory -->
+          <div class="game-card" style="background:linear-gradient(135deg,#0a1a30,#081525);">
+            <div class="gc-icon">🧠</div>
+            <div class="gc-name">Пам'ять</div>
+            <div class="gc-desc">Знайди пари слово + переклад</div>
+            <div class="gc-badge" style="background:rgba(6,182,212,0.2);color:#67e8f9">🧠 +25 XP</div>
+            <button class="gc-play" style="background:linear-gradient(135deg,#0e7490,#0891b2)" onclick="openGame('memory')">▶ Грати</button>
+          </div>
+          <!-- Speed Rush -->
+          <div class="game-card" style="background:linear-gradient(135deg,#1a1000,#1a0808);">
+            <div class="gc-icon">⚡</div>
+            <div class="gc-name">Speed Rush</div>
+            <div class="gc-desc">30 секунд — знаєш чи ні?</div>
+            <div class="gc-badge" style="background:rgba(245,158,11,0.2);color:#fcd34d">⚡ +1 XP/слово</div>
+            <button class="gc-play" style="background:linear-gradient(135deg,#b45309,#d97706)" onclick="openGame('speed')">▶ Грати</button>
+          </div>
+          <!-- Build Word -->
+          <div class="game-card" style="background:linear-gradient(135deg,#0a1a0f,#081508);">
+            <div class="gc-icon">🔤</div>
+            <div class="gc-name">Склади слово</div>
+            <div class="gc-desc">Постав букви у правильний порядок</div>
+            <div class="gc-badge" style="background:rgba(16,185,129,0.2);color:#6ee7b7">🔤 +15 XP</div>
+            <button class="gc-play" style="background:linear-gradient(135deg,#065f46,#059669)" onclick="openGame('build')">▶ Грати</button>
+          </div>
+        </div>
+
+        <!-- Daily bonus -->
+        <div style="margin:0 16px 16px;background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(239,68,68,0.1));border:1px solid rgba(245,158,11,0.3);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+          <div style="font-size:32px">🎁</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:#fbbf24">Щоденна нагорода</div>
+            <div style="font-size:11px;color:#94a3b8">День 1 · Зіграй будь-яку гру</div>
+          </div>
+          <button style="background:var(--gold);border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;" onclick="giveXP(50,'🎁 +50 XP!')">Взяти</button>
+        </div>
+      </div>
+
+      <!-- PET tab -->
+      <div class="tabpanel" id="tp-pet">
+        <!-- Room -->
+        <div class="pet-room">
+          <div class="pr-sky"></div>
+          <div class="pr-window">🌙</div>
+          <div class="pr-item" style="left:18px;top:55px">📚</div>
+          <div class="pr-item" style="right:20px;bottom:68px">🌿</div>
+          <div class="pr-item" style="left:50%;top:12px;transform:translateX(-50%);font-size:20px">💡</div>
+          <div class="pr-floor"></div>
+          <div class="pr-pet" id="room-pet" onclick="petRoomTap()">🦊</div>
+          <div class="pr-speech" id="room-speech">Навчай мене! 📖</div>
+        </div>
+
+        <!-- Care buttons -->
+        <div class="pet-care-row">
+          <div class="care-btn" onclick="careAction('feed','🍎','❤️ +10',10)">
+            <div class="ci">🍎</div><div class="cl">Годувати</div>
+          </div>
+          <div class="care-btn" onclick="careAction('play','🎾','⚡ +15',15)">
+            <div class="ci">🎾</div><div class="cl">Грати</div>
+          </div>
+          <div class="care-btn" onclick="careAction('study','📖','📚 +20',20)">
+            <div class="ci">📖</div><div class="cl">Вчити</div>
+          </div>
+          <div class="care-btn" onclick="careAction('sleep','😴','✨ +10',10)">
+            <div class="ci">😴</div><div class="cl">Спати</div>
+          </div>
+        </div>
+
+        <!-- Evolution -->
+        <div class="evolution-banner">
+          <div class="ev-icon">🌟</div>
+          <div class="ev-text">
+            <div class="ev-title">До еволюції: 38 XP</div>
+            <div class="ev-sub">Набери 200 XP щоб пет виріс</div>
+            <div class="ev-prog"><div class="ev-fill" id="ev-fill"></div></div>
+          </div>
+        </div>
+
+        <!-- Room decor (all unlockable, none hard-locked) -->
+        <div class="decor-section">
+          <div class="decor-label">Декор кімнати</div>
+          <div class="decor-grid">
+            <div class="decor-item owned" onclick="decorTap(this,'Крісло')">
+              <div class="owned-dot"></div>
+              <div class="di">🪑</div>
+              <div class="dn">Крісло</div>
+              <div class="dp">✓ Є</div>
+            </div>
+            <div class="decor-item owned" onclick="decorTap(this,'Полиця')">
+              <div class="owned-dot"></div>
+              <div class="di">📚</div>
+              <div class="dn">Полиця</div>
+              <div class="dp">✓ Є</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Комп\'ютер',200)">
+              <div class="di">🖥️</div>
+              <div class="dn">Комп'ютер</div>
+              <div class="dp">200 ⭐</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Акваріум',350)">
+              <div class="di">🐟</div>
+              <div class="dn">Акваріум</div>
+              <div class="dp">350 ⭐</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Музика',500)">
+              <div class="di">🎵</div>
+              <div class="dn">Музика</div>
+              <div class="dp">500 ⭐</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Сад',600)">
+              <div class="di">🌸</div>
+              <div class="dn">Сад</div>
+              <div class="dp">600 ⭐</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Трофей',800)">
+              <div class="di">🏆</div>
+              <div class="dn">Трофей</div>
+              <div class="dp">800 ⭐</div>
+            </div>
+            <div class="decor-item" onclick="decorBuy(this,'Зірки',1000)">
+              <div class="di">🌟</div>
+              <div class="dn">Зірки</div>
+              <div class="dp">1000 ⭐</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /app-inner -->
+
+    <!-- Tab bar -->
+    <div class="tabbar">
+      <div class="tab on" onclick="switchTab('home')" id="tab-home">
+        <div class="ti">🏠</div><div class="tl">Дім</div>
+      </div>
+      <div class="tab" onclick="switchTab('games')" id="tab-games">
+        <div class="ti">🎮</div><div class="tl">Ігри</div>
+      </div>
+      <div class="tab" onclick="switchTab('pet')" id="tab-pet">
+        <div class="ti">🐾</div><div class="tl">Пет</div>
+      </div>
+    </div>
+
+    <!-- Welcome overlay -->
+    <div class="welcome-overlay" id="welcome-overlay">
+      <div class="wo-pet" id="wo-pet">🦊</div>
+      <div class="wo-title">Познайомся —</div>
+      <div class="wo-name" id="wo-name">Кікра!</div>
+      <div class="wo-msg" id="wo-msg">Твій новий супутник у вивченні англійської 🪄<br>Він буде рости разом з тобою!</div>
+      <button class="wo-btn" onclick="closeWelcome()">Починаємо! 🚀</button>
+    </div>
+
+    <!-- Notification -->
+    <div class="notif" id="notif"></div>
+  </div><!-- /s-app -->
+
+  <!-- ══ GAME OVERLAYS ═════════════════════════════════════════════ -->
+
+  <!-- WORD DUEL -->
+  <div class="game-overlay" id="game-duel">
+    <div class="game-header">
+      <button class="back-btn" onclick="closeGame('duel')">← Назад</button>
+      <div class="gh-title">⚔️ Word Duel</div>
+      <div id="duel-score-top" style="font-size:13px;color:var(--gold);font-weight:700">0 очок</div>
+    </div>
+    <div class="game-body">
+      <div class="pet-react" id="duel-pet">🦊</div>
+      <div class="pet-say" id="duel-pet-say">Перекладай!</div>
+      <div class="duel-score">Раунд <span id="duel-round">1</span> / 5</div>
+      <div class="duel-timer"><div class="dt-fill" id="duel-timer-fill" style="width:100%"></div></div>
+      <div class="duel-word" id="duel-word">Loading...</div>
+      <div class="duel-ipa" id="duel-ipa">/lōding/</div>
+      <div class="duel-choices" id="duel-choices"></div>
+    </div>
+    <div class="result-box" id="duel-result">
+      <div class="result-emoji" id="dr-emoji">🏆</div>
+      <div class="result-title" id="dr-title">Відмінно!</div>
+      <div class="result-sub" id="dr-sub">5 з 5 правильно!</div>
+      <div class="result-xp" id="dr-xp">+50 XP</div>
+      <button class="result-btn" onclick="restartGame('duel')">🔄 Ще раз</button>
+    </div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="game-overlay" id="game-memory">
+    <div class="game-header">
+      <button class="back-btn" onclick="closeGame('memory')">← Назад</button>
+      <div class="gh-title">🧠 Пам'ять</div>
+      <div id="memo-moves" style="font-size:13px;color:var(--muted)">0 ходів</div>
+    </div>
+    <div class="game-body">
+      <div class="memo-grid" id="memo-grid"></div>
+    </div>
+    <div class="result-box" id="memo-result">
+      <div class="result-emoji">🧠</div>
+      <div class="result-title">Геній!</div>
+      <div class="result-sub" id="mr-sub">Знайшов всі пари!</div>
+      <div class="result-xp">+25 XP</div>
+      <button class="result-btn" onclick="restartGame('memory')">🔄 Ще раз</button>
+    </div>
+  </div>
+
+  <!-- SPEED RUSH -->
+  <div class="game-overlay" id="game-speed">
+    <div class="game-header">
+      <button class="back-btn" onclick="closeGame('speed')">← Назад</button>
+      <div class="gh-title">⚡ Speed Rush</div>
+      <div id="rush-score-top" style="font-size:13px;color:var(--gold);font-weight:700">0</div>
+    </div>
+    <div class="game-body">
+      <div class="rush-timer" id="rush-timer">30</div>
+      <div class="rush-count">Знаю: <span id="rush-know">0</span> · Не знаю: <span id="rush-dontknow">0</span></div>
+      <div class="rush-card">
+        <div class="rush-word" id="rush-word">resilient</div>
+        <div class="rush-ipa" id="rush-ipa">/rɪˈzɪliənt/</div>
+      </div>
+      <div class="rush-btns">
+        <button class="rush-btn rush-no" onclick="rushAnswer(false)">✗ Не знаю</button>
+        <button class="rush-btn rush-yes" onclick="rushAnswer(true)">✓ Знаю</button>
+      </div>
+    </div>
+    <div class="result-box" id="speed-result">
+      <div class="result-emoji" id="sr-emoji">⚡</div>
+      <div class="result-title" id="sr-title">Швидкий!</div>
+      <div class="result-sub" id="sr-sub">Знаєш 8 слів з 15!</div>
+      <div class="result-xp" id="sr-xp">+8 XP</div>
+      <button class="result-btn" onclick="restartGame('speed')">🔄 Ще раз</button>
+    </div>
+  </div>
+
+  <!-- BUILD WORD -->
+  <div class="game-overlay" id="game-build">
+    <div class="game-header">
+      <button class="back-btn" onclick="closeGame('build')">← Назад</button>
+      <div class="gh-title">🔤 Склади слово</div>
+      <div id="build-score-top" style="font-size:13px;color:var(--gold);font-weight:700">0 / 5</div>
+    </div>
+    <div class="game-body">
+      <div class="build-hint">Переклад:</div>
+      <div class="build-translation" id="build-translation">resilient</div>
+      <div class="build-target" id="build-target"></div>
+      <div class="build-letters" id="build-letters"></div>
+      <button class="build-clear" onclick="buildClear()">✕ Очистити</button>
+    </div>
+    <div class="result-box" id="build-result">
+      <div class="result-emoji" id="br-emoji">🔤</div>
+      <div class="result-title" id="br-title">Молодець!</div>
+      <div class="result-sub" id="br-sub">5 з 5 слів!</div>
+      <div class="result-xp" id="br-xp">+15 XP</div>
+      <button class="result-btn" onclick="restartGame('build')">🔄 Ще раз</button>
+    </div>
+  </div>
+
+</div><!-- /phone -->
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const state = {
+  pet: '🦊', petName: 'Кікра', petClass: 'Темний маг',
+  xp: 0, streak: 1, words: 0, gamesPlayed: 0,
+};
+
+// ─── VOCABULARY ───────────────────────────────────────────────────────────────
+const vocab = [
+  {en:'Resilient',  ua:'Стійкий',    ipa:'/rɪˈzɪliənt/'},
+  {en:'Ambitious',  ua:'Амбітний',   ipa:'/æmˈbɪʃəs/'},
+  {en:'Grateful',   ua:'Вдячний',    ipa:'/ˈɡreɪtfəl/'},
+  {en:'Brilliant',  ua:'Блискучий',  ipa:'/ˈbrɪliənt/'},
+  {en:'Curious',    ua:'Цікавий',    ipa:'/ˈkjʊəriəs/'},
+  {en:'Peaceful',   ua:'Спокійний',  ipa:'/ˈpiːsfəl/'},
+  {en:'Confident',  ua:'Впевнений',  ipa:'/ˈkɒnfɪdənt/'},
+  {en:'Creative',   ua:'Творчий',    ipa:'/kriˈeɪtɪv/'},
+  {en:'Generous',   ua:'Щедрий',     ipa:'/ˈdʒenərəs/'},
+  {en:'Energetic',  ua:'Енергійний', ipa:'/ˌenəˈdʒetɪk/'},
+  {en:'Honest',     ua:'Чесний',     ipa:'/ˈɒnɪst/'},
+  {en:'Talented',   ua:'Талановитий',ipa:'/ˈtæləntɪd/'},
+];
+
+const petSays = [
+  'Вчи зі мною! 📖','Ти молодець! 💜','Ще одну гру? 🎮',
+  'Я пишаюсь тобою!','Вперед! ⚡','Ти крутий! 🌟',
+];
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function notify(msg){
+  const n=document.getElementById('notif');
+  n.textContent=msg; n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),1800);
+}
+
+function giveXP(amount, msg=''){
+  state.xp += amount;
+  state.words = Math.floor(state.xp / 5);
+  updateUI();
+  if(msg) notify(msg);
+}
+
+function updateUI(){
+  document.getElementById('tb-xp').textContent = state.xp;
+  document.getElementById('tb-streak').textContent = state.streak;
+  document.getElementById('stat-xp').textContent = state.xp;
+  document.getElementById('stat-streak').textContent = state.streak;
+  document.getElementById('stat-words').textContent = state.words;
+  document.getElementById('xp-label').textContent = `${state.xp} / 200 XP`;
+  document.getElementById('xp-fill').style.width = Math.min(state.xp/2, 100)+'%';
+  // Evolution
+  const evPct = Math.min((state.xp/200)*100, 100);
+  document.getElementById('ev-fill').style.width = evPct+'%';
+}
+
+// ─── INTRO / PET SELECT ───────────────────────────────────────────────────────
+function showPetSelect(){
+  document.getElementById('s-intro').classList.remove('active');
+  document.getElementById('s-petselect').classList.add('active');
+}
+
+let selectedPetEl = null;
+function selectPet(el){
+  document.querySelectorAll('.pet-option').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedPetEl = el;
+  state.pet = el.dataset.pet;
+  state.petClass = el.dataset.class;
+  // Auto-suggest name based on pet
+  const names = {'🦊':'Кікра','🐺':'Волк','🐲':'Зоро','🦋':'Мотря','🐱':'Мурко','🦅':'Орій'};
+  const ni = document.getElementById('pet-name-input');
+  if(!ni.value) ni.value = names[state.pet] || '';
+}
+// Auto-select first
+selectPet(document.querySelector('.pet-option'));
+
+function confirmPet(){
+  const nameVal = document.getElementById('pet-name-input').value.trim();
+  state.petName = nameVal || 'Кікра';
+  document.getElementById('s-petselect').classList.remove('active');
+  document.getElementById('s-app').classList.add('active');
+  initApp();
+}
+
+function initApp(){
+  document.getElementById('pet-display').textContent = state.pet;
+  document.getElementById('room-pet').textContent = state.pet;
+  document.getElementById('duel-pet').textContent = state.pet;
+  document.getElementById('wo-pet').textContent = state.pet;
+  document.getElementById('wo-name').textContent = state.petName + '!';
+  document.getElementById('pet-name-disp').textContent = state.petName + ' · Рівень 1';
+  document.getElementById('tb-name').textContent = 'Привіт 👋';
+  createStars();
+  updateUI();
+  setTimeout(()=>document.getElementById('welcome-overlay').classList.add('show'), 400);
+}
+
+function closeWelcome(){
+  document.getElementById('welcome-overlay').classList.remove('show');
+}
+
+// ─── STARS ────────────────────────────────────────────────────────────────────
+function createStars(){
+  const c = document.getElementById('stage-stars');
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    s.style.cssText=`width:${rand(1,3)}px;height:${rand(1,3)}px;left:${rand(0,100)}%;top:${rand(0,70)}%;--d:${rand(15,35)/10}s;animation-delay:${rand(0,30)/10}s`;
+    c.appendChild(s);
+  }
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────────
+function switchTab(name){
+  ['home','games','pet'].forEach(t=>{
+    document.getElementById('tp-'+t).classList.toggle('on',t===name);
+    document.getElementById('tab-'+t).classList.toggle('on',t===name);
+  });
+  document.getElementById('app-inner').scrollTop=0;
+}
+
+// ─── PET INTERACTIONS ─────────────────────────────────────────────────────────
+function petTap(){
+  const el=document.getElementById('pet-display');
+  el.style.transform='translateX(-50%) scale(1.3)';
+  setTimeout(()=>el.style.transform='',200);
+  document.getElementById('pet-bubble').textContent=petSays[rand(0,petSays.length-1)];
+  giveXP(2,'🐾 +2 XP');
+}
+
+function petRoomTap(){
+  const el=document.getElementById('room-pet');
+  el.style.transform='translateX(-50%) scale(1.25) rotate(10deg)';
+  setTimeout(()=>el.style.transform='',300);
+  document.getElementById('room-speech').textContent=petSays[rand(0,petSays.length-1)];
+}
+
+function careAction(type, icon, label, amount){
+  const msgs={
+    feed:['Дякую за їжу! 🍎','Смачно! 😋','Ще? 🙏'],
+    play:['Ура! Граємо! 🎾','Весело! 😄','Ще раз! 🎉'],
+    study:['Вчуся! 📖','Так цікаво! 🌟','Ще! 💪'],
+    sleep:['Zzz... 😴','Спасибі 🌙','Добраніч 💤'],
+  };
+  const el=document.getElementById('room-pet');
+  el.style.filter='drop-shadow(0 0 20px rgba(139,92,246,0.9))';
+  setTimeout(()=>el.style.filter='',500);
+  const arr=msgs[type];
+  document.getElementById('room-speech').textContent=arr[rand(0,arr.length-1)];
+  giveXP(amount, label);
+}
+
+function decorTap(el, name){
+  if(el.classList.contains('owned')) notify(`✅ ${name} вже є!`);
+}
+function decorBuy(el, name, cost){
+  if(state.xp >= cost){
+    state.xp -= cost;
+    el.classList.add('owned');
+    el.innerHTML=`<div class="owned-dot"></div><div class="di">${el.querySelector('.di').textContent}</div><div class="dn">${name}</div><div class="dp">✓ Є</div>`;
+    updateUI();
+    notify(`🏠 ${name} встановлено!`);
+  } else {
+    notify(`❌ Потрібно ${cost} ⭐ (є ${state.xp})`);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// GAMES ENGINE
+// ═══════════════════════════════════════════════
+function openGame(name){
+  document.getElementById('game-'+name).classList.add('open');
+  if(name==='duel') initDuel();
+  if(name==='memory') initMemory();
+  if(name==='speed') initSpeed();
+  if(name==='build') initBuild();
+}
+function closeGame(name){
+  document.getElementById('game-'+name).classList.remove('open');
+  clearInterval(window._timer);
+}
+function restartGame(name){
+  document.getElementById(name==='duel'?'duel-result':name==='memory'?'memo-result':name==='speed'?'speed-result':'build-result').classList.remove('show');
+  if(name==='duel') initDuel();
+  if(name==='memory') initMemory();
+  if(name==='speed') initSpeed();
+  if(name==='build') initBuild();
+}
+
+// ── WORD DUEL ──────────────────────────────────────────────────────────────────
+let duelState = {};
+function initDuel(){
+  duelState = { round:0, score:0, total:5, words: shuffle(vocab).slice(0,5) };
+  document.getElementById('duel-result').classList.remove('show');
+  nextDuelRound();
+}
+function nextDuelRound(){
+  if(duelState.round >= duelState.total){ endDuel(); return; }
+  const w = duelState.words[duelState.round];
+  document.getElementById('duel-word').textContent = w.en;
+  document.getElementById('duel-ipa').textContent = w.ipa;
+  document.getElementById('duel-round').textContent = duelState.round+1;
+  document.getElementById('duel-score-top').textContent = duelState.score+' очок';
+  document.getElementById('duel-pet-say').textContent = 'Перекладай!';
+  // Choices
+  const wrong = shuffle(vocab.filter(v=>v.ua!==w.ua)).slice(0,3).map(v=>v.ua);
+  const choices = shuffle([w.ua,...wrong]);
+  const cont = document.getElementById('duel-choices');
+  cont.innerHTML='';
+  choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='dc-btn'; btn.textContent=c;
+    btn.onclick=()=>duelAnswer(btn, c, w.ua);
+    cont.appendChild(btn);
+  });
+  // Timer
+  clearInterval(window._timer);
+  let t=100;
+  document.getElementById('duel-timer-fill').style.width='100%';
+  window._timer=setInterval(()=>{
+    t-=1.2;
+    document.getElementById('duel-timer-fill').style.width=Math.max(0,t)+'%';
+    if(t<=0){ clearInterval(window._timer); duelAnswer(null,'','',true); }
+  },100);
+}
+function duelAnswer(btn, chosen, correct, timeout=false){
+  clearInterval(window._timer);
+  document.querySelectorAll('.dc-btn').forEach(b=>b.onclick=null);
+  if(timeout){
+    document.getElementById('duel-pet-say').textContent='Час вийшов! ⏰';
+    document.querySelectorAll('.dc-btn').forEach(b=>{ if(b.textContent===correct) b.classList.add('correct'); });
+  } else if(chosen===correct){
+    btn.classList.add('correct');
+    duelState.score += 10;
+    document.getElementById('duel-pet-say').textContent='Правильно! 🎉';
+    document.getElementById('duel-pet').style.transform='scale(1.3)';
+    setTimeout(()=>document.getElementById('duel-pet').style.transform='',300);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.dc-btn').forEach(b=>{ if(b.textContent===correct) b.classList.add('correct'); });
+    document.getElementById('duel-pet-say').textContent='Не та відповідь 😢';
+  }
+  duelState.round++;
+  setTimeout(nextDuelRound, 1200);
+}
+function endDuel(){
+  const s=duelState.score, t=duelState.total*10;
+  const xp=Math.round(s*3);
+  giveXP(xp);
+  state.gamesPlayed++;
+  document.getElementById('dr-emoji').textContent = s>=40?'🏆':s>=20?'⭐':'💪';
+  document.getElementById('dr-title').textContent = s>=40?'Геній!':s>=20?'Добре!':'Тренуйся!';
+  document.getElementById('dr-sub').textContent = `Правильно: ${s/10} з ${duelState.total}`;
+  document.getElementById('dr-xp').textContent = `+${xp} XP`;
+  document.getElementById('duel-result').classList.add('show');
+}
+
+// ── MEMORY ─────────────────────────────────────────────────────────────────────
+let memoState = {};
+function initMemory(){
+  const words = shuffle(vocab).slice(0,4);
+  const pairs = [];
+  words.forEach(w=>{ pairs.push({id:w.en,text:w.en,type:'en'}); pairs.push({id:w.en,text:w.ua,type:'ua'}); });
+  const cards = shuffle(pairs);
+  memoState = { cards, flipped:[], matched:new Set(), moves:0 };
+  document.getElementById('memo-result').classList.remove('show');
+  document.getElementById('memo-moves').textContent='0 ходів';
+  const grid=document.getElementById('memo-grid');
+  grid.innerHTML='';
+  cards.forEach((c,i)=>{
+    const el=document.createElement('div');
+    el.className='memo-card';
+    el.dataset.idx=i;
+    el.innerHTML=`<div class="memo-back">❓</div>${c.text}`;
+    el.onclick=()=>memoFlip(el,i);
+    grid.appendChild(el);
+  });
+}
+function memoFlip(el,idx){
+  if(memoState.flipped.length>=2) return;
+  if(memoState.matched.has(idx)) return;
+  if(memoState.flipped.includes(idx)) return;
+  el.classList.add('flipped');
+  memoState.flipped.push(idx);
+  if(memoState.flipped.length===2){
+    memoState.moves++;
+    document.getElementById('memo-moves').textContent=memoState.moves+' ходів';
+    const [a,b]=memoState.flipped;
+    const ca=memoState.cards[a], cb=memoState.cards[b];
+    if(ca.id===cb.id && ca.type!==cb.type){
+      setTimeout(()=>{
+        document.querySelectorAll(`.memo-card[data-idx="${a}"],.memo-card[data-idx="${b}"]`).forEach(e=>e.classList.add('matched'));
+        memoState.matched.add(a); memoState.matched.add(b);
+        memoState.flipped=[];
+        if(memoState.matched.size===memoState.cards.length){
+          setTimeout(()=>{ giveXP(25,'🧠 +25 XP'); document.getElementById('mr-sub').textContent=`${memoState.moves} ходів · Відмінно!`; document.getElementById('memo-result').classList.add('show'); },300);
+        }
+      },400);
+    } else {
+      setTimeout(()=>{ document.querySelectorAll(`.memo-card[data-idx="${a}"],.memo-card[data-idx="${b}"]`).forEach(e=>e.classList.remove('flipped')); memoState.flipped=[]; },900);
+    }
+  }
+}
+
+// ── SPEED RUSH ─────────────────────────────────────────────────────────────────
+let rushState = {};
+function initSpeed(){
+  rushState = { timeLeft:30, know:0, dontknow:0, words: shuffle([...vocab,...vocab]) };
+  document.getElementById('speed-result').classList.remove('show');
+  document.getElementById('rush-know').textContent=0;
+  document.getElementById('rush-dontknow').textContent=0;
+  rushNextWord();
+  clearInterval(window._timer);
+  window._timer=setInterval(()=>{
+    rushState.timeLeft--;
+    document.getElementById('rush-timer').textContent=rushState.timeLeft;
+    document.getElementById('rush-timer').style.color=rushState.timeLeft<=10?'var(--red)':'var(--cyan)';
+    if(rushState.timeLeft<=0){ clearInterval(window._timer); endSpeed(); }
+  },1000);
+}
+function rushNextWord(){
+  const w=rushState.words[rushState.know+rushState.dontknow] || vocab[0];
+  document.getElementById('rush-word').textContent=w.en;
+  document.getElementById('rush-ipa').textContent=w.ipa;
+  document.getElementById('rush-score-top').textContent=(rushState.know)+' ✓';
+}
+function rushAnswer(knows){
+  if(knows) rushState.know++; else rushState.dontknow++;
+  document.getElementById('rush-know').textContent=rushState.know;
+  document.getElementById('rush-dontknow').textContent=rushState.dontknow;
+  rushNextWord();
+}
+function endSpeed(){
+  giveXP(rushState.know,'⚡ +'+rushState.know+' XP');
+  state.gamesPlayed++;
+  document.getElementById('sr-emoji').textContent=rushState.know>=10?'⚡':rushState.know>=5?'🌟':'💪';
+  document.getElementById('sr-title').textContent=rushState.know>=10?'Блискавка!':rushState.know>=5?'Швидкий!':'Практикуйся!';
+  document.getElementById('sr-sub').textContent=`Знаєш ${rushState.know} слів з ${rushState.know+rushState.dontknow}`;
+  document.getElementById('sr-xp').textContent=`+${rushState.know} XP`;
+  document.getElementById('speed-result').classList.add('show');
+}
+
+// ── BUILD WORD ─────────────────────────────────────────────────────────────────
+let buildState = {};
+function initBuild(){
+  buildState = { round:0, total:5, score:0, words: shuffle(vocab).slice(0,5), current:[], answer:[] };
+  document.getElementById('build-result').classList.remove('show');
+  nextBuildRound();
+}
+function nextBuildRound(){
+  if(buildState.round>=buildState.total){ endBuild(); return; }
+  const w=buildState.words[buildState.round];
+  document.getElementById('build-translation').textContent=w.ua;
+  document.getElementById('build-score-top').textContent=`${buildState.round}/${buildState.total}`;
+  buildState.current=[];
+  buildState.answer=w.en.toUpperCase().split('');
+  const letters=shuffle([...buildState.answer]);
+  // Extra decoys (if word short, add some)
+  while(letters.length<6){ letters.push('AEIOU'[rand(0,4)]); }
+  buildState.shuffled=letters;
+  renderBuildLetters();
+  renderBuildTarget();
+}
+function renderBuildLetters(){
+  const c=document.getElementById('build-letters');
+  c.innerHTML='';
+  buildState.shuffled.forEach((l,i)=>{
+    const t=document.createElement('div');
+    t.className='bl-tile'+(buildState.current.includes(i)?' used':'');
+    t.textContent=l;
+    t.dataset.idx=i;
+    t.onclick=()=>buildPickLetter(i,l,t);
+    c.appendChild(t);
+  });
+}
+function renderBuildTarget(){
+  const c=document.getElementById('build-target');
+  c.innerHTML='';
+  buildState.current.forEach((idx,pos)=>{
+    const s=document.createElement('div');
+    s.className='build-slot';
+    s.textContent=buildState.shuffled[idx];
+    s.onclick=()=>buildRemoveLetter(pos);
+    c.appendChild(s);
+  });
+  // Empty slots
+  for(let i=buildState.current.length;i<buildState.answer.length;i++){
+    const s=document.createElement('div');
+    s.className='build-slot build-empty';
+    c.appendChild(s);
+  }
+}
+function buildPickLetter(idx,letter,el){
+  if(buildState.current.includes(idx)) return;
+  buildState.current.push(idx);
+  renderBuildLetters();
+  renderBuildTarget();
+  // Check
+  if(buildState.current.length===buildState.answer.length){
+    const formed=buildState.current.map(i=>buildState.shuffled[i]).join('');
+    const correct=buildState.answer.join('');
+    if(formed===correct){
+      notify('✅ Правильно!');
+      buildState.score++;
+      buildState.round++;
+      setTimeout(nextBuildRound,800);
+    } else {
+      // Flash red then clear
+      document.getElementById('build-target').style.borderColor='var(--red)';
+      setTimeout(()=>{ document.getElementById('build-target').style.borderColor=''; buildState.current=[]; renderBuildLetters(); renderBuildTarget(); },600);
+    }
+  }
+}
+function buildRemoveLetter(pos){
+  buildState.current.splice(pos,1);
+  renderBuildLetters();
+  renderBuildTarget();
+}
+function buildClear(){ buildState.current=[]; renderBuildLetters(); renderBuildTarget(); }
+function endBuild(){
+  const xp=buildState.score*15;
+  giveXP(xp,'🔤 +'+xp+' XP');
+  state.gamesPlayed++;
+  document.getElementById('br-emoji').textContent=buildState.score>=4?'🔤':'💪';
+  document.getElementById('br-title').textContent=buildState.score>=4?'Словниковий бог!':'Тренуйся!';
+  document.getElementById('br-sub').textContent=`${buildState.score} з ${buildState.total} слів!`;
+  document.getElementById('br-xp').textContent=`+${xp} XP`;
+  document.getElementById('build-result').classList.add('show');
+}
+</script>
+</body>
+</html>

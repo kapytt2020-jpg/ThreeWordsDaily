@@ -147,8 +147,8 @@ async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         file = await ctx.bot.get_file(voice.file_id)
         with tempfile.NamedTemporaryFile(suffix=".ogg", delete=False) as tmp:
-            await file.download_to_path(tmp.name)
             tmp_path = tmp.name
+        await file.download_to_drive(tmp_path)
 
         with open(tmp_path, "rb") as f:
             transcript = await ai.audio.transcriptions.create(
@@ -197,4 +197,15 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import time
+    from telegram.error import Conflict
+    for attempt in range(5):
+        try:
+            asyncio.run(main())
+            break
+        except Conflict:
+            wait = 15 * (attempt + 1)
+            log.warning("Conflict error — another instance running? Retrying in %ds (attempt %d/5)", wait, attempt + 1)
+            time.sleep(wait)
+    else:
+        log.error("Could not start after 5 attempts — Conflict persists")

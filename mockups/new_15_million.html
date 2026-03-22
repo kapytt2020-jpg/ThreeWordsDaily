@@ -1,0 +1,1602 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HOT SEAT — Who Wants a Million Coins?</title>
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #050a1f;
+    --navy2:      #0a1535;
+    --navy3:      #0f1e4a;
+    --blue-glow:  #1a3a8a;
+    --gold:       #ffd700;
+    --gold2:      #ffaa00;
+    --gold-glow:  rgba(255,215,0,0.35);
+    --green:      #00e676;
+    --green-glow: rgba(0,230,118,0.35);
+    --red:        #ff1744;
+    --red-glow:   rgba(255,23,68,0.35);
+    --yellow:     #ffeb3b;
+    --yellow-glow:rgba(255,235,59,0.35);
+    --text:       #e8eaf6;
+    --text-dim:   #7986cb;
+    --border:     rgba(100,130,255,0.3);
+    --font-main:  'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--navy);
+    color: var(--text);
+    font-family: var(--font-main);
+    overflow: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    transition: opacity 0.4s ease;
+  }
+  .screen.hidden { opacity: 0; pointer-events: none; }
+
+  /* ── STARFIELD BACKGROUND ── */
+  .starfield {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: twinkle var(--d, 3s) ease-in-out infinite alternate;
+  }
+  @keyframes twinkle {
+    from { opacity: var(--min-op, 0.2); transform: scale(1); }
+    to   { opacity: var(--max-op, 0.9); transform: scale(1.3); }
+  }
+
+  /* ══════════════════════════════════════
+     INTRO SCREEN
+  ══════════════════════════════════════ */
+  #intro {
+    justify-content: center;
+    z-index: 10;
+    background: radial-gradient(ellipse at center, #0d1b4b 0%, #050a1f 70%);
+  }
+  .intro-inner {
+    text-align: center;
+    padding: 32px 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .show-logo {
+    display: inline-block;
+    position: relative;
+    margin-bottom: 24px;
+  }
+  .logo-title {
+    font-size: clamp(38px, 10vw, 62px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ffd700, #ff8c00, #ffd700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shine 2.5s linear infinite;
+    text-shadow: none;
+    filter: drop-shadow(0 0 18px rgba(255,165,0,0.6));
+  }
+  @keyframes shine {
+    from { background-position: 0% center; }
+    to   { background-position: 200% center; }
+  }
+  .logo-sub {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .intro-tagline {
+    font-size: 17px;
+    color: #aab4e8;
+    margin-bottom: 36px;
+    line-height: 1.5;
+  }
+  .intro-tagline strong { color: var(--gold); }
+
+  .million-badge {
+    display: inline-block;
+    font-size: clamp(22px, 6vw, 32px);
+    font-weight: 900;
+    padding: 10px 28px;
+    border: 3px solid var(--gold);
+    border-radius: 40px;
+    color: var(--gold);
+    margin-bottom: 36px;
+    animation: pulse-badge 1.5s ease-in-out infinite alternate;
+    text-shadow: 0 0 20px var(--gold);
+    box-shadow: 0 0 24px var(--gold-glow), inset 0 0 24px rgba(255,215,0,0.05);
+  }
+  @keyframes pulse-badge {
+    from { box-shadow: 0 0 20px var(--gold-glow), inset 0 0 20px rgba(255,215,0,0.05); }
+    to   { box-shadow: 0 0 40px var(--gold-glow), inset 0 0 30px rgba(255,215,0,0.12); }
+  }
+
+  .btn-start {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    padding: 18px 0;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 6px 30px rgba(255,165,0,0.5);
+    transition: transform 0.15s, box-shadow 0.15s;
+    margin: 0 auto;
+  }
+  .btn-start:active { transform: scale(0.96); box-shadow: 0 3px 15px rgba(255,165,0,0.4); }
+
+  /* ══════════════════════════════════════
+     GAME SCREEN
+  ══════════════════════════════════════ */
+  #game {
+    z-index: 10;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, #0d1b4b 0%, #050a1f 100%);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* TOP BAR */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 6px;
+    position: relative;
+    z-index: 2;
+  }
+  .btn-ladder-toggle {
+    background: rgba(255,215,0,0.12);
+    border: 1.5px solid rgba(255,215,0,0.4);
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+  }
+  .current-prize-display {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 12px var(--gold-glow);
+    letter-spacing: 1px;
+  }
+  .question-counter {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+
+  /* MAIN GAME AREA */
+  .game-main {
+    display: flex;
+    flex-direction: column;
+    padding: 0 14px;
+    gap: 10px;
+    overflow: hidden;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* SPOTLIGHT */
+  .spotlight {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,140,255,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    animation: spotlight-pulse 4s ease-in-out infinite alternate;
+  }
+  @keyframes spotlight-pulse {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
+  }
+
+  /* HOST MESSAGE */
+  .host-wrap {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 54px;
+  }
+  .host-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a3a8a, #3f51b5);
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(255,215,0,0.3);
+  }
+  .host-bubble {
+    background: rgba(26,58,138,0.4);
+    border: 1px solid var(--border);
+    border-radius: 0 14px 14px 14px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #c5cae9;
+    line-height: 1.5;
+    font-style: italic;
+    flex: 1;
+    min-height: 38px;
+    position: relative;
+  }
+  .host-bubble::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 8px;
+    border: 4px solid transparent;
+    border-right-color: rgba(26,58,138,0.4);
+  }
+  .cursor-blink {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--gold);
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.7s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* QUESTION BOX */
+  .question-box {
+    background: linear-gradient(135deg, rgba(26,58,138,0.5), rgba(15,30,74,0.7));
+    border: 2px solid rgba(100,140,255,0.4);
+    border-radius: 16px;
+    padding: 16px 18px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 0 30px rgba(50,80,200,0.15), inset 0 0 30px rgba(50,80,200,0.05);
+  }
+  .question-word {
+    font-size: clamp(28px, 8vw, 40px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #fff 0%, #aab4e8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .question-prompt {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* LIFELINES */
+  .lifelines {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+  }
+  .lifeline-btn {
+    flex: 1;
+    max-width: 100px;
+    padding: 8px 6px;
+    background: rgba(10,21,53,0.8);
+    border: 1.5px solid rgba(100,130,255,0.4);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .lifeline-btn .ll-icon { font-size: 18px; }
+  .lifeline-btn .ll-label { font-size: 10px; letter-spacing: 0.5px; }
+  .lifeline-btn:active:not(.used) {
+    transform: scale(0.95);
+    background: rgba(26,58,138,0.5);
+  }
+  .lifeline-btn.used {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: rgba(100,130,255,0.15);
+  }
+  .lifeline-btn:not(.used):hover {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px var(--gold-glow);
+  }
+
+  /* ANSWER GRID */
+  .answers-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .answer-btn {
+    position: relative;
+    padding: 12px 10px;
+    background: rgba(10,21,53,0.8);
+    border: 2px solid rgba(100,130,255,0.35);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.35;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+  }
+  .answer-btn .letter {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--blue-glow);
+    border: 1.5px solid rgba(100,130,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 800;
+    flex-shrink: 0;
+    color: #aab4e8;
+    transition: all 0.2s;
+  }
+  .answer-btn .ans-text { font-size: 13px; }
+  .answer-btn:active:not(.disabled):not(.selected) {
+    transform: scale(0.97);
+  }
+  .answer-btn.disabled { pointer-events: none; opacity: 0.25; }
+  .answer-btn.hidden-answer { opacity: 0; pointer-events: none; }
+
+  /* SELECTED state — yellow */
+  .answer-btn.selected {
+    border-color: var(--yellow);
+    background: rgba(255,235,59,0.12);
+    box-shadow: 0 0 20px var(--yellow-glow);
+  }
+  .answer-btn.selected .letter {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--navy);
+  }
+
+  /* CORRECT state — green */
+  .answer-btn.correct {
+    border-color: var(--green);
+    background: rgba(0,230,118,0.12);
+    box-shadow: 0 0 24px var(--green-glow);
+    animation: flash-correct 0.5s ease;
+  }
+  .answer-btn.correct .letter {
+    background: var(--green);
+    border-color: var(--green);
+    color: var(--navy);
+  }
+  @keyframes flash-correct {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+
+  /* WRONG state — red */
+  .answer-btn.wrong {
+    border-color: var(--red);
+    background: rgba(255,23,68,0.12);
+    box-shadow: 0 0 24px var(--red-glow);
+    animation: shake 0.4s ease;
+  }
+  .answer-btn.wrong .letter {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  /* BOTTOM BAR */
+  .bottom-bar {
+    padding: 8px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
+  .btn-confirm {
+    width: 100%;
+    padding: 15px 0;
+    background: linear-gradient(135deg, #1a56db, #3a7bd5);
+    border: 2px solid rgba(100,160,255,0.5);
+    border-radius: 40px;
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(26,86,219,0.4);
+    transition: all 0.2s;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .btn-confirm.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .btn-confirm.active:active { transform: scale(0.97); }
+
+  .btn-walkaway {
+    width: 100%;
+    padding: 11px 0;
+    background: transparent;
+    border: 1.5px solid rgba(255,215,0,0.35);
+    border-radius: 40px;
+    color: var(--gold);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-walkaway:active { transform: scale(0.97); background: rgba(255,215,0,0.08); }
+
+  /* ══════════════════════════════════════
+     PRIZE LADDER OVERLAY
+  ══════════════════════════════════════ */
+  #ladder-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,10,31,0.92);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0;
+    padding: 20px;
+    transition: opacity 0.3s;
+  }
+  #ladder-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .ladder-title {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .ladder-list {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+  }
+  .ladder-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(100,130,255,0.15);
+    background: rgba(10,21,53,0.5);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-dim);
+    transition: all 0.3s;
+  }
+  .ladder-item .lq { font-size: 12px; }
+  .ladder-item.current {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.1);
+    color: var(--gold);
+    font-weight: 900;
+    box-shadow: 0 0 18px var(--gold-glow);
+    transform: scale(1.04);
+  }
+  .ladder-item.won {
+    border-color: rgba(0,230,118,0.4);
+    background: rgba(0,230,118,0.06);
+    color: var(--green);
+  }
+  .ladder-item .lp { font-weight: 800; }
+  .btn-close-ladder {
+    margin-top: 20px;
+    padding: 12px 36px;
+    background: rgba(26,58,138,0.5);
+    border: 1.5px solid var(--border);
+    border-radius: 30px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════════════
+     PHONE FRIEND OVERLAY
+  ══════════════════════════════════════ */
+  #phone-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,10,31,0.94);
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    transition: opacity 0.3s;
+  }
+  #phone-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .phone-card {
+    background: linear-gradient(135deg, #0d1b4b, #1a3a8a);
+    border: 2px solid rgba(100,140,255,0.5);
+    border-radius: 20px;
+    padding: 28px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(26,86,219,0.3);
+  }
+  .phone-icon { font-size: 40px; margin-bottom: 12px; animation: ring 0.6s ease-in-out 3; }
+  @keyframes ring {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+  }
+  .phone-friend-name {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .phone-says {
+    font-size: 17px;
+    color: var(--text);
+    line-height: 1.6;
+    margin: 16px 0 24px;
+    font-style: italic;
+  }
+  .phone-says strong { color: var(--gold); font-style: normal; }
+  .btn-phone-close {
+    padding: 12px 36px;
+    background: linear-gradient(135deg, #1a56db, #3a7bd5);
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════════════
+     WALK AWAY CONFIRM OVERLAY
+  ══════════════════════════════════════ */
+  #walkaway-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,10,31,0.94);
+    z-index: 55;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    transition: opacity 0.3s;
+  }
+  #walkaway-overlay.hidden { opacity: 0; pointer-events: none; }
+  .walkaway-card {
+    background: linear-gradient(135deg, #0d1b4b, #1a3a8a);
+    border: 2px solid rgba(255,215,0,0.4);
+    border-radius: 20px;
+    padding: 32px 24px;
+    max-width: 340px;
+    width: 100%;
+    text-align: center;
+  }
+  .walkaway-emoji { font-size: 48px; margin-bottom: 12px; }
+  .walkaway-q { font-size: 19px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .walkaway-amount {
+    font-size: clamp(30px, 8vw, 42px);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px var(--gold-glow);
+    margin-bottom: 8px;
+  }
+  .walkaway-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 28px; }
+  .walkaway-btns { display: flex; gap: 12px; }
+  .btn-wa-yes {
+    flex: 1;
+    padding: 14px 0;
+    background: linear-gradient(135deg, var(--gold), var(--gold2));
+    border: none;
+    border-radius: 30px;
+    color: var(--navy);
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .btn-wa-no {
+    flex: 1;
+    padding: 14px 0;
+    background: transparent;
+    border: 1.5px solid rgba(100,130,255,0.4);
+    border-radius: 30px;
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* ══════════════════════════════════════
+     END SCREENS (WIN / LOSE / WALKAWAY)
+  ══════════════════════════════════════ */
+  #end {
+    z-index: 20;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #0d1b4b 0%, #050a1f 70%);
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .end-inner { position: relative; z-index: 1; width: 100%; max-width: 380px; }
+  .end-icon { font-size: 72px; margin-bottom: 16px; animation: pop-in 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+  @keyframes pop-in {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+  }
+  .end-title {
+    font-size: clamp(28px, 8vw, 40px);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+  .end-title.gold { color: var(--gold); text-shadow: 0 0 30px var(--gold-glow); }
+  .end-title.red  { color: var(--red);  text-shadow: 0 0 20px var(--red-glow); }
+  .end-title.blue { color: #7986cb; }
+
+  .end-prize {
+    font-size: clamp(36px, 10vw, 56px);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 40px var(--gold-glow);
+    margin: 12px 0;
+  }
+  .end-msg {
+    font-size: 16px;
+    color: #aab4e8;
+    line-height: 1.6;
+    margin-bottom: 28px;
+  }
+  .end-correct-reveal {
+    background: rgba(0,230,118,0.1);
+    border: 1.5px solid rgba(0,230,118,0.4);
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    font-size: 15px;
+    color: var(--green);
+  }
+  .end-correct-reveal strong { font-size: 18px; display: block; margin-top: 4px; }
+
+  .btn-play-again {
+    display: block;
+    width: 100%;
+    padding: 18px 0;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    border: none;
+    border-radius: 50px;
+    color: var(--navy);
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 6px 24px rgba(255,165,0,0.4);
+    margin-bottom: 12px;
+  }
+  .btn-play-again:active { transform: scale(0.97); }
+
+  /* ══════════════════════════════════════
+     CONFETTI / COIN RAIN
+  ══════════════════════════════════════ */
+  #confetti-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    top: -20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    animation: fall var(--fall-dur, 2.5s) var(--fall-delay, 0s) linear forwards;
+  }
+  .confetti-piece.coin {
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold-glow);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--navy);
+    font-weight: 900;
+    width: 18px;
+    height: 18px;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+    80%  { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(720deg) scale(0.6); opacity: 0; }
+  }
+
+  /* ══════════════════════════════════════
+     EPIC WIN CELEBRATION
+  ══════════════════════════════════════ */
+  #epic-win {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 24px;
+    background: radial-gradient(ellipse at center, #1a0060 0%, #050a1f 60%);
+  }
+  #epic-win.hidden { opacity: 0; pointer-events: none; }
+
+  .epic-rays {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, rgba(255,215,0,0.15), transparent);
+    transform-origin: 0% 50%;
+    animation: rotate-ray 8s linear infinite;
+  }
+  @keyframes rotate-ray { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .epic-crown { font-size: 80px; animation: crown-pop 0.6s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s both; }
+  @keyframes crown-pop {
+    from { transform: scale(0) rotate(-20deg); opacity: 0; }
+    to   { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  .epic-title {
+    font-size: clamp(32px, 9vw, 52px);
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ffd700, #fff, #ffd700);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shine 2s linear infinite, epic-slide-up 0.5s ease 0.5s both;
+    margin: 16px 0 8px;
+  }
+  @keyframes epic-slide-up {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .epic-amount {
+    font-size: clamp(42px, 12vw, 70px);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(255,215,0,0.8);
+    animation: epic-slide-up 0.5s ease 0.7s both, pulse-prize 1.5s ease-in-out 1.5s infinite alternate;
+    margin-bottom: 16px;
+  }
+  @keyframes pulse-prize {
+    from { text-shadow: 0 0 40px rgba(255,215,0,0.6); }
+    to   { text-shadow: 0 0 80px rgba(255,215,0,1); }
+  }
+  .epic-sub {
+    font-size: 17px;
+    color: #c5cae9;
+    animation: epic-slide-up 0.5s ease 0.9s both;
+    margin-bottom: 36px;
+    line-height: 1.6;
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE TWEAKS
+  ══════════════════════════════════════ */
+  @media (max-height: 680px) {
+    .host-wrap { min-height: 44px; }
+    .host-bubble { font-size: 12px; padding: 6px 10px; }
+    .question-box { padding: 12px 14px; }
+    .question-word { font-size: 26px; }
+    .answer-btn { min-height: 48px; padding: 10px 8px; font-size: 13px; }
+    .lifeline-btn { padding: 6px 4px; }
+    .btn-confirm { padding: 13px 0; font-size: 14px; }
+    .btn-walkaway { padding: 9px 0; font-size: 13px; }
+    .top-bar { padding: 6px 14px 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STARFIELD -->
+<div class="starfield" id="starfield"></div>
+
+<!-- CONFETTI LAYER -->
+<div id="confetti-layer"></div>
+
+<!-- ══════════════ INTRO SCREEN ══════════════ -->
+<div class="screen" id="intro">
+  <div class="intro-inner">
+    <div class="show-logo">
+      <div class="logo-title">HOT SEAT</div>
+      <div class="logo-sub">Who Wants a Million Coins?</div>
+    </div>
+    <p class="intro-tagline">
+      Англійські слова. Реальний адреналін.<br>
+      <strong>10 питань. 1 мільйон монет.</strong>
+    </p>
+    <div class="million-badge">🪙 1,000,000 COINS</div>
+    <button class="btn-start" onclick="startGame()">ПОЧАТИ ГРУ</button>
+  </div>
+</div>
+
+<!-- ══════════════ GAME SCREEN ══════════════ -->
+<div class="screen hidden" id="game">
+  <div class="spotlight"></div>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <button class="btn-ladder-toggle" onclick="toggleLadder()">🏆 Призи</button>
+    <div class="current-prize-display" id="current-prize-display">0 🪙</div>
+    <div class="question-counter" id="q-counter">1 / 10</div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="game-main">
+    <!-- HOST -->
+    <div class="host-wrap">
+      <div class="host-avatar">🎭</div>
+      <div class="host-bubble" id="host-bubble"><span id="host-text"></span><span class="cursor-blink" id="host-cursor"></span></div>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="question-box">
+      <div class="question-word" id="q-word">—</div>
+      <div class="question-prompt">Що означає це слово?</div>
+    </div>
+
+    <!-- LIFELINES -->
+    <div class="lifelines">
+      <button class="lifeline-btn" id="ll-5050" onclick="useLifeline('5050')">
+        <span class="ll-icon">50/50</span>
+        <span class="ll-label">Відсіяти</span>
+      </button>
+      <button class="lifeline-btn" id="ll-phone" onclick="useLifeline('phone')">
+        <span class="ll-icon">📞</span>
+        <span class="ll-label">Друг</span>
+      </button>
+      <button class="lifeline-btn" id="ll-skip" onclick="useLifeline('skip')">
+        <span class="ll-icon">⏭</span>
+        <span class="ll-label">Пропустити</span>
+      </button>
+    </div>
+
+    <!-- ANSWERS -->
+    <div class="answers-grid" id="answers-grid">
+      <button class="answer-btn" id="ans-0" onclick="selectAnswer(0)">
+        <span class="letter">A</span><span class="ans-text"></span>
+      </button>
+      <button class="answer-btn" id="ans-1" onclick="selectAnswer(1)">
+        <span class="letter">B</span><span class="ans-text"></span>
+      </button>
+      <button class="answer-btn" id="ans-2" onclick="selectAnswer(2)">
+        <span class="letter">C</span><span class="ans-text"></span>
+      </button>
+      <button class="answer-btn" id="ans-3" onclick="selectAnswer(3)">
+        <span class="letter">D</span><span class="ans-text"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <button class="btn-confirm" id="btn-confirm" onclick="confirmAnswer()">ПІДТВЕРДИТИ ВІДПОВІДЬ</button>
+    <button class="btn-walkaway" id="btn-walkaway" onclick="promptWalkAway()">ЗАБРАТИ ГРОШІ 🚪</button>
+  </div>
+</div>
+
+<!-- ══════════════ PRIZE LADDER OVERLAY ══════════════ -->
+<div id="ladder-overlay" class="hidden">
+  <div class="ladder-title">ТАБЛИЦЯ ПРИЗІВ</div>
+  <div class="ladder-list" id="ladder-list"></div>
+  <button class="btn-close-ladder" onclick="toggleLadder()">Закрити</button>
+</div>
+
+<!-- ══════════════ PHONE FRIEND OVERLAY ══════════════ -->
+<div id="phone-overlay" class="hidden">
+  <div class="phone-card">
+    <div class="phone-icon">📞</div>
+    <div class="phone-friend-name">Дзвінок другу</div>
+    <div class="phone-says" id="phone-says-text"></div>
+    <button class="btn-phone-close" onclick="closePhone()">Зрозуміло!</button>
+  </div>
+</div>
+
+<!-- ══════════════ WALK AWAY OVERLAY ══════════════ -->
+<div id="walkaway-overlay" class="hidden">
+  <div class="walkaway-card">
+    <div class="walkaway-emoji">🚪</div>
+    <div class="walkaway-q">Ти впевнений?</div>
+    <div class="walkaway-amount" id="wa-amount">0 🪙</div>
+    <div class="walkaway-sub">Ти забереш ці монети та залишиш гру.</div>
+    <div class="walkaway-btns">
+      <button class="btn-wa-yes" onclick="doWalkAway()">Забрати!</button>
+      <button class="btn-wa-no" onclick="cancelWalkAway()">Назад</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ END SCREEN ══════════════ -->
+<div class="screen hidden" id="end">
+  <div class="end-inner">
+    <div class="end-icon" id="end-icon">😔</div>
+    <div class="end-title" id="end-title">ГРА ЗАКІНЧЕНА</div>
+    <div class="end-prize" id="end-prize">0 🪙</div>
+    <div class="end-msg" id="end-msg"></div>
+    <div class="end-correct-reveal hidden" id="end-correct-reveal">
+      Правильна відповідь:<strong id="end-correct-word"></strong>
+    </div>
+    <button class="btn-play-again" onclick="restartGame()">ГРАТИ ЗНО ВУ</button>
+  </div>
+</div>
+
+<!-- ══════════════ EPIC WIN SCREEN ══════════════ -->
+<div class="screen hidden" id="epic-win">
+  <div class="epic-rays" id="epic-rays"></div>
+  <div class="epic-crown">👑</div>
+  <div class="epic-title">МІЛЬЙОНЕР!</div>
+  <div class="epic-amount">1,000,000 🪙</div>
+  <div class="epic-sub">
+    Ти відповів на всі 10 питань!<br>
+    Твій словниковий запас — <strong style="color:var(--gold)">на вищому рівні!</strong>
+  </div>
+  <button class="btn-play-again" onclick="restartGame()">ГРАТИ ЗНОВУ</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const QUESTIONS = [
+  {
+    word: "HAPPY",
+    correct: "щасливий",
+    options: ["щасливий", "сумний", "злий", "голодний"],
+    prize: 50,
+    clue: "Ця людина посміхається і радіє. Щось протилежне до 'sad'.",
+  },
+  {
+    word: "FRIEND",
+    correct: "друг",
+    options: ["ворог", "друг", "брат", "вчитель"],
+    prize: 100,
+    clue: "Це людина, яка тебе підтримує. Не ворог і не родич.",
+  },
+  {
+    word: "JOURNEY",
+    correct: "подорож",
+    options: ["зупинка", "подорож", "відпочинок", "поїзд"],
+    prize: 250,
+    clue: "Коли ти їдеш кудись далеко — це воно. Схоже на 'travel'.",
+  },
+  {
+    word: "BRAVE",
+    correct: "сміливий",
+    options: ["боягузливий", "сміливий", "мудрий", "добрий"],
+    prize: 500,
+    clue: "Такий герой не боїться небезпеки. Протилежне — 'cowardly'.",
+  },
+  {
+    word: "ANCIENT",
+    correct: "давній",
+    options: ["сучасний", "давній", "швидкий", "тихий"],
+    prize: 1000,
+    clue: "Єгипетські піраміди — 'ancient'. Дуже-дуже старий.",
+  },
+  {
+    word: "TRIUMPH",
+    correct: "тріумф",
+    options: ["поразка", "мир", "тріумф", "зусилля"],
+    prize: 2500,
+    clue: "Переможець відчуває це після перемоги. Схоже звучить в обох мовах.",
+  },
+  {
+    word: "ELOQUENT",
+    correct: "красномовний",
+    options: ["мовчазний", "красномовний", "грубий", "повільний"],
+    prize: 5000,
+    clue: "Великий оратор, чиї слова переконують усіх — він 'eloquent'.",
+  },
+  {
+    word: "RESILIENT",
+    correct: "стійкий",
+    options: ["крихкий", "гнучкий", "стійкий", "слабкий"],
+    prize: 10000,
+    clue: "Після удару це дерево не ламається — воно 'resilient'. Витримує все.",
+  },
+  {
+    word: "EPHEMERAL",
+    correct: "ефемерний",
+    options: ["вічний", "ефемерний", "реальний", "постійний"],
+    prize: 50000,
+    clue: "Метелик живе лише день — його краса 'ephemeral'. Короткочасний.",
+  },
+  {
+    word: "PERSPICACIOUS",
+    correct: "проникливий",
+    options: ["наївний", "тупий", "проникливий", "нечесний"],
+    prize: 1000000,
+    clue: "Детектив, який бачить приховане з першого погляду — він 'perspicacious'.",
+  },
+];
+
+const PRIZE_LABELS = QUESTIONS.map(q => formatCoins(q.prize));
+
+const HOST_CORRECT = [
+  "Чудово! Ти знаєш своє діло.",
+  "Правильно! Я вражений.",
+  "Геніально! Далі!",
+  "Так! Ти впевнений у собі!",
+  "Браво! Але попереду ще складніше...",
+];
+const HOST_HARD = [
+  "Увага... це вже серйозно.",
+  "Мільйон ближче ніж ти думаєш...",
+  "Обережно. Тут легко помилитися.",
+  "Ще один крок до величі...",
+];
+const HOST_INTRO = "Ласкаво просимо на HOT SEAT! Сьогодні хтось виграє мільйон...";
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let state = {
+  qIndex: 0,
+  selectedIdx: null,
+  answered: false,
+  locked: false,       // after confirm pressed
+  bankedCoins: 0,
+  lifelines: { '5050': false, phone: false, skip: false },
+  hiddenOptions: [],   // indices hidden by 50/50
+};
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function formatCoins(n) {
+  return n.toLocaleString('uk-UA') + ' 🪙';
+}
+
+function $(id) { return document.getElementById(id); }
+function showScreen(id) {
+  ['intro','game','end','epic-win'].forEach(s => {
+    const el = $(s);
+    if (el) { if (s === id) el.classList.remove('hidden'); else el.classList.add('hidden'); }
+  });
+}
+
+// ═══════════════════════════════════════════
+// STARFIELD
+// ═══════════════════════════════════════════
+function buildStarfield() {
+  const sf = $('starfield');
+  for (let i = 0; i < 120; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    const x = Math.random() * 100;
+    const y = Math.random() * 100;
+    const d = (Math.random() * 3 + 2).toFixed(1) + 's';
+    const delay = (Math.random() * 3).toFixed(1) + 's';
+    const minOp = (Math.random() * 0.2 + 0.05).toFixed(2);
+    const maxOp = (Math.random() * 0.5 + 0.4).toFixed(2);
+    s.style.cssText = `width:${size}px;height:${size}px;left:${x}%;top:${y}%;
+      --d:${d};--min-op:${minOp};--max-op:${maxOp};animation-delay:${delay}`;
+    sf.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════════
+// HOST TYPING EFFECT
+// ═══════════════════════════════════════════
+let typingTimer = null;
+function typeHostMessage(msg, cb) {
+  const el = $('host-text');
+  const cursor = $('host-cursor');
+  if (typingTimer) clearTimeout(typingTimer);
+  cursor.style.display = 'inline-block';
+  el.textContent = '';
+  let i = 0;
+  function type() {
+    if (i <= msg.length) {
+      el.textContent = msg.slice(0, i);
+      i++;
+      typingTimer = setTimeout(type, 28);
+    } else {
+      cursor.style.display = 'none';
+      if (cb) cb();
+    }
+  }
+  type();
+}
+
+// ═══════════════════════════════════════════
+// PRIZE LADDER
+// ═══════════════════════════════════════════
+function buildLadder() {
+  const list = $('ladder-list');
+  list.innerHTML = '';
+  QUESTIONS.forEach((q, i) => {
+    const item = document.createElement('div');
+    item.className = 'ladder-item' + (i === state.qIndex ? ' current' : '') + (i < state.qIndex ? ' won' : '');
+    item.id = `ladder-${i}`;
+    item.innerHTML = `<span class="lq">Q${i+1}</span><span class="lp">${formatCoins(q.prize)}</span>`;
+    list.appendChild(item);
+  });
+}
+
+function updateLadderHighlight() {
+  QUESTIONS.forEach((_, i) => {
+    const item = $(`ladder-${i}`);
+    if (!item) return;
+    item.className = 'ladder-item' +
+      (i === state.qIndex ? ' current' : '') +
+      (i < state.qIndex ? ' won' : '');
+  });
+}
+
+function toggleLadder() {
+  const ov = $('ladder-overlay');
+  if (ov.classList.contains('hidden')) {
+    buildLadder();
+    ov.classList.remove('hidden');
+  } else {
+    ov.classList.add('hidden');
+  }
+}
+
+// ═══════════════════════════════════════════
+// LOAD QUESTION
+// ═══════════════════════════════════════════
+function loadQuestion() {
+  const q = QUESTIONS[state.qIndex];
+  state.selectedIdx = null;
+  state.answered = false;
+  state.locked = false;
+  state.hiddenOptions = [];
+
+  // Counter & prize
+  $('q-counter').textContent = `${state.qIndex + 1} / 10`;
+  $('current-prize-display').textContent = state.bankedCoins > 0
+    ? formatCoins(state.bankedCoins)
+    : state.qIndex > 0 ? formatCoins(QUESTIONS[state.qIndex - 1].prize) : '0 🪙';
+
+  // Word
+  $('q-word').textContent = q.word;
+
+  // Answers — shuffle display order
+  const shuffled = shuffleArray([...q.options]);
+  q._shuffled = shuffled;
+  for (let i = 0; i < 4; i++) {
+    const btn = $(`ans-${i}`);
+    btn.className = 'answer-btn';
+    btn.style.opacity = '';
+    btn.querySelector('.ans-text').textContent = shuffled[i];
+  }
+
+  // Confirm
+  const confirmBtn = $('btn-confirm');
+  confirmBtn.classList.remove('active');
+
+  // Lifeline buttons
+  ['5050','phone','skip'].forEach(ll => {
+    $(`ll-${ll}`).classList.toggle('used', state.lifelines[ll]);
+  });
+
+  // Host message
+  let msg;
+  if (state.qIndex === 0) {
+    msg = HOST_INTRO;
+  } else if (state.qIndex >= 5) {
+    msg = HOST_HARD[Math.min(state.qIndex - 5, HOST_HARD.length - 1)];
+  } else {
+    msg = HOST_CORRECT[Math.floor(Math.random() * HOST_CORRECT.length)];
+  }
+  typeHostMessage(msg);
+
+  updateLadderHighlight();
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════
+// ANSWER SELECTION
+// ═══════════════════════════════════════════
+function selectAnswer(idx) {
+  if (state.answered || state.locked) return;
+  if (state.hiddenOptions.includes(idx)) return;
+
+  state.selectedIdx = idx;
+  for (let i = 0; i < 4; i++) {
+    const btn = $(`ans-${i}`);
+    if (i === idx) btn.classList.add('selected');
+    else btn.classList.remove('selected');
+  }
+
+  $('btn-confirm').classList.add('active');
+
+  // Dramatic host hesitation
+  const phrases = [
+    "Це твій остаточний вибір?",
+    "Цікаво... ти впевнений?",
+    "Хм... добре подумай.",
+    "Гарний вибір... АБО НІ?",
+  ];
+  setTimeout(() => {
+    typeHostMessage(phrases[Math.floor(Math.random() * phrases.length)]);
+  }, 300);
+}
+
+// ═══════════════════════════════════════════
+// CONFIRM ANSWER
+// ═══════════════════════════════════════════
+function confirmAnswer() {
+  if (state.selectedIdx === null || state.answered) return;
+  state.answered = true;
+  state.locked = true;
+  $('btn-confirm').classList.remove('active');
+
+  const q = QUESTIONS[state.qIndex];
+  const chosenOption = q._shuffled[state.selectedIdx];
+  const isCorrect = chosenOption === q.correct;
+
+  // Disable all answers during reveal
+  for (let i = 0; i < 4; i++) {
+    $(`ans-${i}`).style.pointerEvents = 'none';
+  }
+
+  // Dramatic pause before reveal
+  setTimeout(() => {
+    if (isCorrect) {
+      $(`ans-${state.selectedIdx}`).classList.remove('selected');
+      $(`ans-${state.selectedIdx}`).classList.add('correct');
+      onCorrect();
+    } else {
+      $(`ans-${state.selectedIdx}`).classList.remove('selected');
+      $(`ans-${state.selectedIdx}`).classList.add('wrong');
+
+      // Reveal correct answer after short delay
+      setTimeout(() => {
+        const corrIdx = q._shuffled.indexOf(q.correct);
+        $(`ans-${corrIdx}`).classList.add('correct');
+        onWrong(q.correct);
+      }, 700);
+    }
+  }, 600);
+}
+
+// ═══════════════════════════════════════════
+// CORRECT
+// ═══════════════════════════════════════════
+function onCorrect() {
+  const q = QUESTIONS[state.qIndex];
+  state.bankedCoins = q.prize;
+
+  // Update prize display
+  $('current-prize-display').textContent = formatCoins(q.prize);
+
+  // Confetti for Q5+
+  if (state.qIndex >= 4) {
+    spawnConfetti(state.qIndex >= 8 ? 80 : 40);
+  }
+
+  // Host message
+  setTimeout(() => {
+    if (state.qIndex === 9) {
+      // MILLION!
+      typeHostMessage("НЕЙМОВІРНО! Ти виграв МІЛЬЙОН МОНЕТ! 👑", () => {
+        setTimeout(() => showEpicWin(), 800);
+      });
+    } else {
+      const msgs = [
+        "Чудово! Ти знаєш своє діло.",
+        "Правильно! Я вражений!",
+        "Геніально! Рухаємось далі!",
+        "Так! Ти впевнений у собі!",
+      ];
+      typeHostMessage(msgs[Math.floor(Math.random() * msgs.length)], () => {
+        setTimeout(() => {
+          state.qIndex++;
+          loadQuestion();
+        }, 900);
+      });
+    }
+  }, 500);
+}
+
+// ═══════════════════════════════════════════
+// WRONG
+// ═══════════════════════════════════════════
+function onWrong(correctAnswer) {
+  setTimeout(() => {
+    typeHostMessage(`Ох... шкода. Правильна відповідь була "${correctAnswer}".`, () => {
+      setTimeout(() => showEndScreen('lose', correctAnswer), 1200);
+    });
+  }, 400);
+}
+
+// ═══════════════════════════════════════════
+// LIFELINES
+// ═══════════════════════════════════════════
+function useLifeline(ll) {
+  if (state.lifelines[ll] || state.answered) return;
+  state.lifelines[ll] = true;
+  $(`ll-${ll}`).classList.add('used');
+
+  const q = QUESTIONS[state.qIndex];
+
+  if (ll === '5050') {
+    // Remove 2 wrong answers
+    const wrongIndices = [];
+    for (let i = 0; i < 4; i++) {
+      if (q._shuffled[i] !== q.correct) wrongIndices.push(i);
+    }
+    // Shuffle wrong indices, pick 2
+    for (let i = wrongIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [wrongIndices[i], wrongIndices[j]] = [wrongIndices[j], wrongIndices[i]];
+    }
+    const toHide = wrongIndices.slice(0, 2);
+    state.hiddenOptions = toHide;
+    toHide.forEach(idx => {
+      const btn = $(`ans-${idx}`);
+      btn.classList.add('hidden-answer');
+    });
+    typeHostMessage("50/50! Дві неправильні відповіді прибрано.");
+    // Deselect if selected answer was hidden
+    if (toHide.includes(state.selectedIdx)) {
+      state.selectedIdx = null;
+      $('btn-confirm').classList.remove('active');
+    }
+  }
+
+  else if (ll === 'phone') {
+    $('phone-says-text').innerHTML = `"Слухай, я думаю... ${q.clue}"`;
+    $('phone-overlay').classList.remove('hidden');
+    typeHostMessage("Дзвінок другу! Послухай уважно...");
+  }
+
+  else if (ll === 'skip') {
+    // Skip = lose current prize progress but safe (move to next question, no earnings for this one)
+    typeHostMessage("Пропуск! Переходимо до наступного питання...", () => {
+      setTimeout(() => {
+        if (state.qIndex >= 9) {
+          showEndScreen('walkaway');
+        } else {
+          state.qIndex++;
+          loadQuestion();
+        }
+      }, 800);
+    });
+  }
+}
+
+function closePhone() {
+  $('phone-overlay').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════
+// WALK AWAY
+// ═══════════════════════════════════════════
+function promptWalkAway() {
+  $('wa-amount').textContent = formatCoins(state.bankedCoins);
+  $('walkaway-overlay').classList.remove('hidden');
+}
+function cancelWalkAway() {
+  $('walkaway-overlay').classList.add('hidden');
+}
+function doWalkAway() {
+  $('walkaway-overlay').classList.add('hidden');
+  showEndScreen('walkaway');
+}
+
+// ═══════════════════════════════════════════
+// END SCREENS
+// ═══════════════════════════════════════════
+function showEndScreen(type, correctAnswer) {
+  const icon = $('end-icon');
+  const title = $('end-title');
+  const prize = $('end-prize');
+  const msg = $('end-msg');
+  const reveal = $('end-correct-reveal');
+
+  reveal.classList.add('hidden');
+  title.className = 'end-title';
+
+  if (type === 'lose') {
+    icon.textContent = '💔';
+    title.textContent = 'НЕВІРНА ВІДПОВІДЬ';
+    title.classList.add('red');
+    prize.textContent = '0 🪙';
+    msg.innerHTML = `Ти дістався до питання <strong>${state.qIndex + 1}</strong> з 10.<br>На жаль, ти втрачаєш все. Спробуй ще раз!`;
+    if (correctAnswer) {
+      reveal.classList.remove('hidden');
+      $('end-correct-word').textContent = correctAnswer;
+    }
+    spawnConfetti(0); // no confetti for loss
+  } else if (type === 'walkaway') {
+    icon.textContent = '🚶';
+    title.textContent = 'ТИ ЗАБРАВ ГРОШІ!';
+    title.classList.add('gold');
+    prize.textContent = formatCoins(state.bankedCoins);
+    msg.innerHTML = `Ти йдеш з <strong style="color:var(--gold)">${formatCoins(state.bankedCoins)}</strong>.<br>Сміливий вибір! Може, наступного разу ризикнеш більше?`;
+    if (state.bankedCoins > 0) spawnConfetti(20);
+  }
+
+  showScreen('end');
+}
+
+function showEpicWin() {
+  buildEpicRays();
+  spawnConfetti(120);
+  showScreen('epic-win');
+}
+
+function buildEpicRays() {
+  const raysDiv = $('epic-rays');
+  raysDiv.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const ray = document.createElement('div');
+    ray.className = 'ray';
+    ray.style.animationDelay = (i * 0.67).toFixed(2) + 's';
+    ray.style.animationDuration = (6 + i % 4).toFixed(0) + 's';
+    raysDiv.appendChild(ray);
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFETTI
+// ═══════════════════════════════════════════
+function spawnConfetti(count) {
+  const layer = $('confetti-layer');
+  const colors = ['#ffd700','#ff8c00','#ff1744','#00e676','#2196f3','#e040fb','#fff'];
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    const isCoin = Math.random() < 0.3;
+    p.className = 'confetti-piece' + (isCoin ? ' coin' : '');
+    if (!isCoin) {
+      p.style.background = colors[Math.floor(Math.random() * colors.length)];
+      p.style.borderRadius = Math.random() < 0.5 ? '50%' : '2px';
+      p.style.width = (Math.random() * 10 + 6) + 'px';
+      p.style.height = (Math.random() * 10 + 6) + 'px';
+    } else {
+      p.textContent = '🪙';
+      p.style.background = 'transparent';
+      p.style.border = 'none';
+      p.style.boxShadow = 'none';
+      p.style.fontSize = '20px';
+    }
+    const x = Math.random() * 100;
+    const dur = (Math.random() * 2 + 1.5).toFixed(1) + 's';
+    const delay = (Math.random() * 1.5).toFixed(2) + 's';
+    p.style.left = x + '%';
+    p.style.setProperty('--fall-dur', dur);
+    p.style.setProperty('--fall-delay', delay);
+    layer.appendChild(p);
+    // Remove after animation
+    setTimeout(() => p.remove(), (parseFloat(dur) + parseFloat(delay)) * 1000 + 200);
+  }
+}
+
+// ═══════════════════════════════════════════
+// GAME FLOW
+// ═══════════════════════════════════════════
+function startGame() {
+  state = {
+    qIndex: 0,
+    selectedIdx: null,
+    answered: false,
+    locked: false,
+    bankedCoins: 0,
+    lifelines: { '5050': false, phone: false, skip: false },
+    hiddenOptions: [],
+  };
+  showScreen('game');
+  setTimeout(loadQuestion, 100);
+}
+
+function restartGame() {
+  showScreen('intro');
+  $('confetti-layer').innerHTML = '';
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+buildStarfield();
+</script>
+</body>
+</html>

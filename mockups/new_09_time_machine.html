@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · Time Machine — Вчи через реальну історію</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#1a0a00;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:Georgia,serif}
+.phone{width:390px;min-height:844px;background:#0f0800;border-radius:44px;overflow:hidden;border:1.5px solid #3d2000;box-shadow:0 0 60px rgba(245,158,11,0.2),0 40px 120px rgba(0,0,0,0.8);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#5a3a00;font-family:'Segoe UI',sans-serif}
+
+/* ERA HEADER */
+.era-header{position:relative;overflow:hidden;height:180px;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 18px;background:linear-gradient(180deg,#1a0800 0%,#0f0500 100%)}
+.era-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(245,158,11,0.15),transparent 60%)}
+.era-silhouette{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:90px;opacity:0.15;filter:blur(1px);user-select:none}
+.era-badge{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:100px;padding:4px 12px;font-size:10px;color:#fbbf24;font-weight:700;font-family:'Segoe UI',sans-serif;letter-spacing:1px;text-transform:uppercase;display:inline-block;margin-bottom:8px}
+.era-title{font-size:22px;font-weight:700;color:#fde68a;line-height:1.2;margin-bottom:4px}
+.era-sub{font-size:12px;color:#92400e;font-family:'Segoe UI',sans-serif}
+.era-next-btn{position:absolute;top:14px;right:14px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:6px 12px;font-size:11px;color:#fbbf24;cursor:pointer;font-family:'Segoe UI',sans-serif}
+
+/* STORY PASSAGE */
+.story-card{margin:10px 14px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.15);border-radius:18px;padding:14px 16px}
+.sc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sc-label{font-size:10px;color:#78350f;font-family:'Segoe UI',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.sc-words{display:flex;gap:4px}
+.sc-w{background:rgba(245,158,11,0.2);border-radius:6px;padding:2px 7px;font-size:10px;color:#fbbf24;font-weight:700;font-family:'Segoe UI',sans-serif}
+.passage{font-size:14px;color:#fde68a;line-height:1.9;font-style:italic}
+.passage .hw{color:#f59e0b;font-style:normal;font-weight:700;cursor:pointer;border-bottom:1px dashed rgba(245,158,11,0.5);position:relative}
+.hw-tooltip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1a0800;border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:6px 10px;font-size:11px;color:#fbbf24;white-space:nowrap;z-index:10;font-style:normal;font-family:'Segoe UI',sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
+.hw:hover .hw-tooltip,.hw:focus .hw-tooltip{display:block}
+.passage-attr{font-size:10px;color:#78350f;margin-top:8px;font-family:'Segoe UI',sans-serif;font-style:normal}
+
+/* WORD LESSON */
+.word-lesson{margin:0 14px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wl-card{background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:14px;padding:12px;cursor:pointer;transition:all 0.2s}
+.wl-card:hover{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.1)}
+.wl-card.learned{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.12)}
+.wl-en{font-size:16px;font-weight:700;color:#fde68a;margin-bottom:2px}
+.wl-ipa{font-size:10px;color:#f59e0b;margin-bottom:4px;font-family:'Segoe UI',sans-serif}
+.wl-ua{font-size:11px;color:#92400e;font-family:'Segoe UI',sans-serif}
+.wl-xp{font-size:10px;color:#f59e0b;font-weight:700;margin-top:4px;font-family:'Segoe UI',sans-serif}
+
+/* ERA MAP */
+.era-map{margin:0 14px 10px;background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:16px;padding:12px 14px}
+.em-label{font-size:10px;color:#78350f;font-family:'Segoe UI',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.em-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.em-era{flex-shrink:0;text-align:center;width:70px;cursor:pointer}
+.em-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 auto 4px;transition:all 0.2s}
+.em-era.done .em-dot{background:rgba(245,158,11,0.2);border:2px solid rgba(245,158,11,0.5)}
+.em-era.active .em-dot{background:rgba(245,158,11,0.3);border:2px solid #f59e0b;box-shadow:0 0 16px rgba(245,158,11,0.4)}
+.em-era.locked .em-dot{background:rgba(255,255,255,0.03);border:2px dashed rgba(255,255,255,0.1);filter:grayscale(1);opacity:0.4}
+.em-name{font-size:9px;color:#78350f;font-family:'Segoe UI',sans-serif}
+
+/* QUIZ */
+.quiz-wrap{margin:0 14px 10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:16px;padding:12px 14px}
+.quiz-q{font-size:12px;color:#fde68a;font-style:italic;margin-bottom:8px;line-height:1.5}
+.quiz-opts{display:flex;flex-direction:column;gap:6px}
+.qopt{background:rgba(0,0,0,0.3);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:8px 12px;font-size:12px;color:#d97706;cursor:pointer;font-family:'Segoe UI',sans-serif;transition:all 0.15s}
+.qopt:hover{border-color:#f59e0b;color:#fbbf24}
+.qopt.correct{border-color:#22c55e;color:#4ade80;background:rgba(34,197,94,0.1)}
+.qopt.wrong{border-color:#ef4444;color:#f87171;background:rgba(239,68,68,0.1)}
+
+/* TAB */
+.tabbar{display:flex;background:rgba(15,8,0,0.97);border-top:1px solid rgba(245,158,11,0.1);padding:8px 0 22px;flex-shrink:0;margin-top:auto;font-family:'Segoe UI',sans-serif}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#3d2000;font-weight:500}
+.tab.on .tl{color:#f59e0b}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- ERA HEADER -->
+  <div class="era-header" id="eraHdr">
+    <div class="era-bg"></div>
+    <div class="era-silhouette" id="eraSil">🗽</div>
+    <button class="era-next-btn" onclick="nextEra()">Наступна епоха →</button>
+    <div class="era-badge" id="eraBadge">📅 1920-ті · Нью-Йорк</div>
+    <div class="era-title" id="eraTitle">Ревуючі двадцяті</div>
+    <div class="era-sub" id="eraSub">New York, USA · Заборона алкоголю · Джаз</div>
+  </div>
+
+  <!-- STORY PASSAGE -->
+  <div class="story-card">
+    <div class="sc-header">
+      <div class="sc-label">📜 Реальний документ · 1924</div>
+      <div class="sc-words">
+        <div class="sc-w">resilient</div>
+        <div class="sc-w">ambitious</div>
+      </div>
+    </div>
+    <div class="passage">
+      "The city is <span class="hw" tabindex="0">resilient<div class="hw-tooltip">стійкий · /rɪˈzɪliənt/<br>← тисни щоб вивчити</div></span>, alive with the <span class="hw" tabindex="0">ambitious<div class="hw-tooltip">амбітний · /æmˈbɪʃəs/<br>← тисни щоб вивчити</div></span> dreams of a million souls. Every night the jazz plays — <span class="hw" tabindex="0">relentless<div class="hw-tooltip">невпинний · /rɪˈlentləs/<br>← тисни щоб вивчити</div></span> and free..."
+    </div>
+    <div class="passage-attr">— Щоденник журналіста, Нью-Йорк, 1924</div>
+  </div>
+
+  <!-- WORDS TO LEARN -->
+  <div class="word-lesson">
+    <div class="wl-card learned" onclick="learnWord(this,'Resilient','Стійкий')">
+      <div class="wl-en">Resilient</div>
+      <div class="wl-ipa">/rɪˈzɪliənt/</div>
+      <div class="wl-ua">Стійкий ✓</div>
+      <div class="wl-xp">✅ Вивчено · +20 XP</div>
+    </div>
+    <div class="wl-card" onclick="learnWord(this,'Ambitious','Амбітний')">
+      <div class="wl-en">Ambitious</div>
+      <div class="wl-ipa">/æmˈbɪʃəs/</div>
+      <div class="wl-ua">Амбітний</div>
+      <div class="wl-xp">Тап щоб вивчити +20 XP</div>
+    </div>
+    <div class="wl-card" onclick="learnWord(this,'Relentless','Невпинний')">
+      <div class="wl-en">Relentless</div>
+      <div class="wl-ipa">/rɪˈlentləs/</div>
+      <div class="wl-ua">Невпинний</div>
+      <div class="wl-xp">Тап щоб вивчити +20 XP</div>
+    </div>
+    <div class="wl-card" onclick="learnWord(this,'Vibrant','Яскравий')">
+      <div class="wl-en">Vibrant</div>
+      <div class="wl-ipa">/ˈvaɪbrənt/</div>
+      <div class="wl-ua">Яскравий</div>
+      <div class="wl-xp">Тап щоб вивчити +20 XP</div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="quiz-wrap">
+    <div class="quiz-q">"The jazz musicians were <b>relentless</b> in their pursuit of perfection." Що означає "relentless"?</div>
+    <div class="quiz-opts">
+      <div class="qopt" onclick="qAns(this,false)">Ліниві</div>
+      <div class="qopt" onclick="qAns(this,false)">Спокійні</div>
+      <div class="qopt" onclick="qAns(this,true)">Невпинні</div>
+    </div>
+  </div>
+
+  <!-- ERA MAP -->
+  <div class="era-map">
+    <div class="em-label">Твоя подорож в часі</div>
+    <div class="em-row">
+      <div class="em-era done" onclick="alert('Єгипет пройдено! 45 слів вивчено')">
+        <div class="em-dot">🏛️</div>
+        <div class="em-name">Єгипет 3000BC</div>
+      </div>
+      <div class="em-era done" onclick="alert('Рим пройдено! 38 слів')">
+        <div class="em-dot">⚔️</div>
+        <div class="em-name">Рим 100AD</div>
+      </div>
+      <div class="em-era active">
+        <div class="em-dot">🗽</div>
+        <div class="em-name">NY 1920s ←</div>
+      </div>
+      <div class="em-era locked">
+        <div class="em-dot">🚀</div>
+        <div class="em-name">Apollo 1969</div>
+      </div>
+      <div class="em-era locked">
+        <div class="em-dot">💻</div>
+        <div class="em-name">Silicon 1995</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab"><div class="ti">🏠</div><div class="tl">Головна</div></div>
+    <div class="tab on"><div class="ti">⏳</div><div class="tl">Машина часу</div></div>
+    <div class="tab"><div class="ti">📚</div><div class="tl">Слова</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#0f0800;border:1px solid #3d2000;border-radius:14px;padding:14px 18px;max-width:265px;font-size:12px;color:#78350f;line-height:1.7;box-shadow:0 4px 20px rgba(245,158,11,0.1)">
+  <strong style="color:#fbbf24">09 · Time Machine ⏳ (ОРИГІНАЛЬНО)</strong><br><br>
+  <strong style="color:#fde68a">Концепт:</strong> Вчи слова через реальну історію<br>
+  <strong style="color:#fde68a">Контекст:</strong> Слова у реальних документах/текстах<br>
+  <strong style="color:#fde68a">Мотивація:</strong> "Хочу потрапити у наступну епоху"<br>
+  <strong style="color:#fde68a">Унікальність:</strong> Перший у world history + language<br>
+  <strong style="color:#fde68a">Retention:</strong> Нові епохи = новий контент назавжди<br><br>
+  <a href="new_index.html" style="color:#f59e0b">← Всі мокапи</a>
+</div>
+
+<script>
+const eras=[
+  {sil:'🗽',badge:'📅 1920-ті · Нью-Йорк',title:'Ревуючі двадцяті',sub:'New York, USA · Заборона алкоголю · Джаз'},
+  {sil:'🚀',badge:'📅 1969 · Аполлон',title:'Людина на Місяці',sub:'Houston, Texas · NASA · Космічна гонка'},
+  {sil:'🏛️',badge:'📅 44BC · Рим',title:'Падіння Республіки',sub:'Rome, Italy · Цезар · Сенат'},
+];
+let eraIdx=0;
+function nextEra(){
+  eraIdx=(eraIdx+1)%eras.length;
+  const e=eras[eraIdx];
+  document.getElementById('eraSil').textContent=e.sil;
+  document.getElementById('eraBadge').textContent=e.badge;
+  document.getElementById('eraTitle').textContent=e.title;
+  document.getElementById('eraSub').textContent=e.sub;
+  document.getElementById('eraHdr').style.filter='brightness(0.5)';
+  setTimeout(()=>document.getElementById('eraHdr').style.cssText+=';filter:brightness(1);transition:filter 0.5s',100);
+}
+
+function learnWord(el,word,ua){
+  if(el.classList.contains('learned')) return;
+  el.classList.add('learned');
+  el.querySelector('.wl-ua').textContent=ua+' ✓';
+  el.querySelector('.wl-xp').textContent='✅ Вивчено · +20 XP';
+}
+
+let qDone=false;
+function qAns(el,correct){
+  if(qDone) return; qDone=true;
+  document.querySelectorAll('.qopt').forEach(o=>o.onclick=null);
+  if(correct){ el.classList.add('correct'); setTimeout(()=>alert('✅ Правильно! +15 XP\nNevпинний — relentless'),300); }
+  else{ el.classList.add('wrong'); document.querySelectorAll('.qopt').forEach(o=>{if(o.textContent==='Невпинні')o.classList.add('correct')}); }
+}
+</script>
+</body>
+</html>

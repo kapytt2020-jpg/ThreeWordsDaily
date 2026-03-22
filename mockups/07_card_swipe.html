@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 07 — Card Swipe</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #000d0d; }
+.phone { background: #001a1a; border-color: #003333; }
+
+.swipe-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+/* Top bar */
+.swipe-top {
+  padding: 8px 20px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.swipe-counter { font-size: 13px; font-weight: 800; color: #2dd4bf; }
+.swipe-title { font-size: 11px; color: #0d7377; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.settings-btn { font-size: 18px; cursor: pointer; opacity: 0.6; }
+
+/* Session stats */
+.session-stats {
+  display: flex;
+  gap: 6px;
+  padding: 0 20px 8px;
+}
+.stat-pill {
+  flex: 1;
+  border-radius: 100px;
+  padding: 5px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.stat-pill.done { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); color: #34d399; }
+.stat-pill.review { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: #fbbf24; }
+.stat-pill.remaining { background: rgba(20,184,166,0.12); border: 1px solid rgba(20,184,166,0.25); color: #2dd4bf; }
+
+/* Card Stack Area */
+.card-stack-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  position: relative;
+}
+
+/* Swipe hint indicators */
+.swipe-hint-left {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.swipe-hint-right {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.hint-arrow { font-size: 16px; }
+.hint-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; writing-mode: vertical-rl; text-orientation: mixed; }
+.hint-label.no { color: rgba(239,68,68,0.4); }
+.hint-label.yes { color: rgba(16,185,129,0.4); }
+
+/* Card stack wrapper */
+.card-stack {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 320px;
+}
+
+/* Background cards (depth effect) */
+.word-card-bg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  border-radius: 24px;
+  height: 320px;
+}
+.card-bg-3 {
+  background: #002222;
+  border: 1px solid #003333;
+  width: 88%;
+  top: 12px;
+  left: 6%;
+  z-index: 1;
+  transform: rotate(-2deg);
+  opacity: 0.5;
+}
+.card-bg-2 {
+  background: #002a2a;
+  border: 1px solid #004444;
+  width: 94%;
+  top: 6px;
+  left: 3%;
+  z-index: 2;
+  transform: rotate(1deg);
+  opacity: 0.7;
+}
+
+/* Main card */
+.word-card-main {
+  position: absolute;
+  width: 100%;
+  top: 0;
+  z-index: 3;
+  background: linear-gradient(145deg, #003333 0%, #001f2e 50%, #002233 100%);
+  border: 1px solid #0d7377;
+  border-radius: 24px;
+  padding: 24px 22px 20px;
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(20,184,166,0.1),
+    inset 0 1px 0 rgba(20,184,166,0.15);
+  cursor: grab;
+  transition: transform 0.15s ease;
+  user-select: none;
+}
+.word-card-main:active { cursor: grabbing; }
+
+/* Card glow overlay */
+.word-card-main::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(20,184,166,0.08), transparent 70%);
+  border-radius: 24px 24px 0 0;
+  pointer-events: none;
+}
+
+.card-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.card-type-badge { background: rgba(20,184,166,0.15); border: 1px solid rgba(20,184,166,0.3); color: #2dd4bf; border-radius: 100px; padding: 3px 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+.card-pet-reaction { font-size: 28px; animation: petReact 3s ease-in-out infinite; }
+@keyframes petReact { 0%,100%{transform:rotate(-5deg) scale(1)} 50%{transform:rotate(5deg) scale(1.1)} }
+
+.card-word-en {
+  font-size: 42px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #fff, #a5f3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.card-ipa { font-size: 14px; color: #0d7377; font-style: italic; margin-bottom: 8px; }
+.card-ua { font-size: 20px; color: #94a3b8; font-weight: 600; margin-bottom: 14px; }
+
+.card-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(20,184,166,0.3), transparent); margin-bottom: 12px; }
+
+.card-example { font-size: 12px; color: #64748b; line-height: 1.5; font-style: italic; flex: 1; }
+.card-example strong { color: #2dd4bf; font-style: normal; }
+
+.card-listen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: rgba(20,184,166,0.15);
+  border: 1px solid rgba(20,184,166,0.35);
+  color: #2dd4bf;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: auto;
+  transition: background 0.2s;
+}
+.card-listen-btn:active { background: rgba(20,184,166,0.25); }
+
+/* Action buttons */
+.swipe-actions {
+  display: flex;
+  gap: 16px;
+  padding: 14px 20px 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.action-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.action-btn::before {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+.action-btn.no {
+  background: linear-gradient(135deg, #7f1d1d, #dc2626);
+  box-shadow: 0 8px 24px rgba(220,38,38,0.4), 0 0 0 4px rgba(220,38,38,0.1);
+  color: #fff;
+}
+.action-btn.no::before { color: #f87171; }
+.action-btn.yes {
+  background: linear-gradient(135deg, #064e3b, #10b981);
+  box-shadow: 0 8px 24px rgba(16,185,129,0.4), 0 0 0 4px rgba(16,185,129,0.1);
+  color: #fff;
+}
+.action-btn.yes::before { color: #34d399; }
+.action-btn:active { transform: scale(0.92); }
+
+.action-btn.no:active { box-shadow: 0 4px 12px rgba(220,38,38,0.5), 0 0 0 8px rgba(220,38,38,0.15); }
+.action-btn.yes:active { box-shadow: 0 4px 12px rgba(16,185,129,0.5), 0 0 0 8px rgba(16,185,129,0.15); }
+
+/* Progress bar at bottom of card area */
+.session-progress {
+  padding: 0 20px 8px;
+}
+.session-progress-label { display: flex; justify-content: space-between; font-size: 10px; color: #0d7377; margin-bottom: 5px; }
+.session-bar-wrap { height: 4px; background: #002222; border-radius: 100px; overflow: hidden; }
+.session-bar-fill { height: 100%; width: 40%; background: linear-gradient(90deg, #0d7377, #14b8a6, #2dd4bf); border-radius: 100px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#001212; color:#0d7377;">
+    <span>9:41</span>
+    <span style="color:#2dd4bf">🃏 Card Session</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="swipe-screen">
+    <!-- Top Bar -->
+    <div class="swipe-top">
+      <div class="swipe-counter" style="font-size:16px; color:#2dd4bf;">12 / 30</div>
+      <div class="swipe-title">Swipe Cards</div>
+      <div class="settings-btn">⚙️</div>
+    </div>
+
+    <!-- Session Stats -->
+    <div class="session-stats">
+      <div class="stat-pill done">✅ 12 done</div>
+      <div class="stat-pill review">🔄 6 review</div>
+      <div class="stat-pill remaining">📚 12 left</div>
+    </div>
+
+    <!-- Card Stack -->
+    <div class="card-stack-area">
+      <!-- Swipe hints -->
+      <div class="swipe-hint-left">
+        <div class="hint-arrow" style="color:rgba(239,68,68,0.35)">←</div>
+        <div class="hint-label no">НЕ ЗНАЮ</div>
+      </div>
+      <div class="swipe-hint-right">
+        <div class="hint-arrow" style="color:rgba(16,185,129,0.35)">→</div>
+        <div class="hint-label yes">ЗНАЮ!</div>
+      </div>
+
+      <div class="card-stack">
+        <!-- Background depth cards -->
+        <div class="word-card-bg card-bg-3"></div>
+        <div class="word-card-bg card-bg-2"></div>
+
+        <!-- Main Card -->
+        <div class="word-card-main">
+          <div class="card-top-row">
+            <div class="card-type-badge">ADJECTIVE</div>
+            <div class="card-pet-reaction">🦊</div>
+          </div>
+
+          <div class="card-word-en">Resilient</div>
+          <div class="card-ipa">/rɪˈzɪliənt/</div>
+          <div class="card-ua">стійкий, витривалий</div>
+
+          <div class="card-divider"></div>
+
+          <div class="card-example">
+            <strong>"She is incredibly resilient"</strong><br>
+            Вона неймовірно стійка.
+          </div>
+
+          <button class="card-listen-btn" onclick="this.innerHTML='⏸️ Playing...'">
+            🔊 Listen to pronunciation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="swipe-actions">
+      <button class="action-btn no" data-label="❌ Не знаю" onclick="this.style.transform='scale(0.88) rotate(-8deg)'">
+        ❌
+      </button>
+      <button class="action-btn yes" data-label="✅ Знаю!" onclick="this.style.transform='scale(0.88) rotate(8deg)'">
+        ✅
+      </button>
+    </div>
+
+    <!-- Session Progress -->
+    <div class="session-progress">
+      <div class="session-progress-label">
+        <span>Session progress</span>
+        <span>40% complete</span>
+      </div>
+      <div class="session-bar-wrap">
+        <div class="session-bar-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="background:rgba(0,12,12,0.97); border-color:#003333;">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Home</div></div>
+    <div class="tab active"><div class="icon">🃏</div><div class="label" style="color:#14b8a6">Cards</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label">Pet</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Rank</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Profile</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#001a1a;border:1px solid #003333;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#0d7377;line-height:1.6;">
+  <strong style="color:#2dd4bf">🃏 Mockup 07 — Card Swipe</strong><br><br>
+  <strong style="color:#a5f3fc">For:</strong> Users who want speed and volume<br>
+  <strong style="color:#a5f3fc">Retention:</strong> Addictive swipe loop, quick wins<br>
+  <strong style="color:#a5f3fc">Audio:</strong> Listen button on every card<br>
+  <strong style="color:#a5f3fc">Risk:</strong> May encourage skipping over learning<br><br>
+  <a href="index.html" style="color:#2dd4bf">← All Mockups</a>
+</div>
+</body>
+</html>

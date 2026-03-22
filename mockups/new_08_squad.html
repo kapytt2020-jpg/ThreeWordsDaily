@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · Squad Academy — Навчайся з командою</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#f8f9fa;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#fff;border-radius:44px;overflow:hidden;border:1.5px solid #e5e7eb;box-shadow:0 40px 120px rgba(0,0,0,0.12);display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#9ca3af}
+
+/* HEADER */
+.sq-header{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 18px 16px;color:#fff;position:relative;overflow:hidden}
+.sq-h-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(255,255,255,0.1),transparent)}
+.sq-h-row{display:flex;align-items:center;justify-content:space-between;position:relative}
+.squad-name{font-size:18px;font-weight:800}
+.squad-sub{font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px}
+.sq-rank{background:rgba(255,255,255,0.15);border-radius:100px;padding:6px 14px;font-size:13px;font-weight:700}
+.sq-h-stats{display:flex;gap:12px;margin-top:12px;position:relative}
+.shs{text-align:center;background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 14px;flex:1}
+.shs-val{font-size:20px;font-weight:900;color:#fff}
+.shs-lbl{font-size:10px;color:rgba(255,255,255,0.6);margin-top:1px}
+
+/* SQUAD MEMBERS */
+.members-wrap{padding:14px 16px 10px}
+.section-lbl{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;justify-content:space-between}
+.section-lbl a{font-size:11px;color:#4f46e5;text-decoration:none}
+.member-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.member-row:last-child{border:none}
+.m-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;flex-shrink:0}
+.m-online{position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;border:2px solid #fff}
+.m-info{flex:1}
+.m-name{font-size:13px;font-weight:700;color:#1f2937;margin-bottom:2px}
+.m-status{font-size:11px;color:#9ca3af}
+.m-xp{text-align:right}
+.m-xp-val{font-size:14px;font-weight:800;color:#4f46e5}
+.m-xp-lbl{font-size:9px;color:#d1d5db;text-transform:uppercase}
+.m-bar{width:60px;height:3px;background:#f3f4f6;border-radius:100px;margin-top:3px}
+.m-bar-fill{height:3px;border-radius:100px;background:linear-gradient(90deg,#4f46e5,#7c3aed)}
+
+/* SQUAD CHALLENGE */
+.sq-challenge{margin:0 16px 12px;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:18px;padding:14px 16px}
+.sqc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.sqc-title{font-size:14px;font-weight:800;color:#14532d}
+.sqc-timer{background:#16a34a;border-radius:100px;padding:3px 10px;font-size:11px;color:#fff;font-weight:700}
+.sqc-desc{font-size:12px;color:#166534;margin-bottom:10px;line-height:1.5}
+.sqc-progress{margin-bottom:8px}
+.sqcp-row{display:flex;justify-content:space-between;font-size:11px;color:#166534;margin-bottom:4px}
+.sqcp-bar{height:8px;background:#bbf7d0;border-radius:100px;overflow:hidden}
+.sqcp-fill{height:8px;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:100px;width:68%;transition:width 0.5s}
+.sqc-reward{display:flex;align-items:center;gap:8px;background:rgba(22,163,74,0.1);border-radius:10px;padding:8px 10px}
+.sqcr-icon{font-size:22px}
+.sqcr-text{font-size:12px;color:#14532d;font-weight:700}
+
+/* WEEKLY QUESTS */
+.quests-wrap{padding:0 16px 12px}
+.quest-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:14px;margin-bottom:6px;border:1px solid #f3f4f6;background:#fafafa;cursor:pointer;transition:all 0.2s}
+.quest-item:hover{border-color:#c4b5fd;background:#faf5ff}
+.quest-item.done{background:#f0fdf4;border-color:#bbf7d0}
+.qi-icon{font-size:24px;width:36px;text-align:center;flex-shrink:0}
+.qi-info{flex:1}
+.qi-name{font-size:13px;font-weight:700;color:#1f2937}
+.qi-prog{font-size:11px;color:#9ca3af;margin-top:1px}
+.qi-xp{font-size:13px;font-weight:800;color:#4f46e5}
+.qi-check{font-size:16px;color:#22c55e}
+
+/* INVITE SQUAD */
+.invite-squad{margin:0 16px 12px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.is-text{flex:1;color:#fff}
+.is-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.is-sub{font-size:11px;color:rgba(255,255,255,0.7)}
+.is-btn{background:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;color:#4f46e5;cursor:pointer;white-space:nowrap}
+
+/* TAB */
+.tabbar{display:flex;background:#fff;border-top:1px solid #f3f4f6;padding:8px 0 22px;flex-shrink:0;margin-top:auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#9ca3af;font-weight:500}
+.tab.on .tl{color:#4f46e5}
+.tab.on .ti{filter:drop-shadow(0 0 6px #4f46e5)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- HEADER -->
+  <div class="sq-header">
+    <div class="sq-h-bg"></div>
+    <div class="sq-h-row">
+      <div>
+        <div class="squad-name">⚡ Squad Alpha</div>
+        <div class="squad-sub">5 учасників · Ліга Золота</div>
+      </div>
+      <div class="sq-rank">🏆 #3 у Топі</div>
+    </div>
+    <div class="sq-h-stats">
+      <div class="shs"><div class="shs-val">2,840</div><div class="shs-lbl">XP тижня</div></div>
+      <div class="shs"><div class="shs-val">148</div><div class="shs-lbl">Слів</div></div>
+      <div class="shs"><div class="shs-val">7</div><div class="shs-lbl">Серія</div></div>
+    </div>
+  </div>
+
+  <!-- MEMBERS -->
+  <div class="members-wrap">
+    <div class="section-lbl">Команда <a href="#">Управляти →</a></div>
+
+    <div class="member-row">
+      <div class="m-avatar" style="background:#fef3c7"><div class="m-online" style="background:#22c55e"></div>🦊</div>
+      <div class="m-info">
+        <div class="m-name">Ти (Капітан) 👑</div>
+        <div class="m-status">📖 Вивчає слово зараз</div>
+      </div>
+      <div class="m-xp">
+        <div class="m-xp-val">840</div>
+        <div class="m-xp-lbl">XP</div>
+        <div class="m-bar"><div class="m-bar-fill" style="width:84%"></div></div>
+      </div>
+    </div>
+
+    <div class="member-row">
+      <div class="m-avatar" style="background:#dbeafe"><div class="m-online" style="background:#22c55e"></div>🐺</div>
+      <div class="m-info">
+        <div class="m-name">Оля_Kyiv</div>
+        <div class="m-status">✅ Виконала 3 квести</div>
+      </div>
+      <div class="m-xp">
+        <div class="m-xp-val">720</div>
+        <div class="m-xp-lbl">XP</div>
+        <div class="m-bar"><div class="m-bar-fill" style="width:72%"></div></div>
+      </div>
+    </div>
+
+    <div class="member-row">
+      <div class="m-avatar" style="background:#f3e8ff"><div class="m-online" style="background:#22c55e"></div>🐉</div>
+      <div class="m-info">
+        <div class="m-name">Max_Dnipro</div>
+        <div class="m-status">⚔️ В PvP битві</div>
+      </div>
+      <div class="m-xp">
+        <div class="m-xp-val">680</div>
+        <div class="m-xp-lbl">XP</div>
+        <div class="m-bar"><div class="m-bar-fill" style="width:68%"></div></div>
+      </div>
+    </div>
+
+    <div class="member-row">
+      <div class="m-avatar" style="background:#fce7f3"><div class="m-online" style="background:#f59e0b"></div>🦋</div>
+      <div class="m-info">
+        <div class="m-name">Діана_Lviv</div>
+        <div class="m-status">⏱ 3 год не заходила</div>
+      </div>
+      <div class="m-xp">
+        <div class="m-xp-val">410</div>
+        <div class="m-xp-lbl">XP</div>
+        <div class="m-bar"><div class="m-bar-fill" style="width:41%"></div></div>
+      </div>
+    </div>
+
+    <div class="member-row" style="opacity:0.6">
+      <div class="m-avatar" style="background:#f3f4f6"><div class="m-online" style="background:#ef4444"></div>🐱</div>
+      <div class="m-info">
+        <div class="m-name">Андрій_UA</div>
+        <div class="m-status">💤 Спить 8 год</div>
+      </div>
+      <div class="m-xp">
+        <div class="m-xp-val">190</div>
+        <div class="m-xp-lbl">XP</div>
+        <div class="m-bar"><div class="m-bar-fill" style="width:19%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SQUAD CHALLENGE -->
+  <div class="sq-challenge">
+    <div class="sqc-header">
+      <div class="sqc-title">⚔️ Тижневий виклик</div>
+      <div class="sqc-timer">⏰ 2д 14г</div>
+    </div>
+    <div class="sqc-desc">Усім разом вивчити 200 слів до кінця тижня → Squad отримає 500 XP бонус!</div>
+    <div class="sqc-progress">
+      <div class="sqcp-row"><span>Прогрес команди</span><span>136/200 слів</span></div>
+      <div class="sqcp-bar"><div class="sqcp-fill" id="squadBar"></div></div>
+    </div>
+    <div class="sqc-reward">
+      <div class="sqcr-icon">🎁</div>
+      <div class="sqcr-text">Нагорода: +500 XP кожному + ексклюзивний значок Squad Alpha 🏆</div>
+    </div>
+  </div>
+
+  <!-- QUESTS -->
+  <div class="quests-wrap">
+    <div class="section-lbl">Квести дня</div>
+
+    <div class="quest-item done">
+      <div class="qi-icon">📖</div>
+      <div class="qi-info">
+        <div class="qi-name">Вивчи 5 слів</div>
+        <div class="qi-prog">5/5 ✅</div>
+      </div>
+      <div class="qi-check">✅</div>
+    </div>
+
+    <div class="quest-item" onclick="startQuest(this)">
+      <div class="qi-icon">⚔️</div>
+      <div class="qi-info">
+        <div class="qi-name">Переможи у 2 PvP битвах</div>
+        <div class="qi-prog">1/2 · Ще 1 перемога</div>
+      </div>
+      <div class="qi-xp">+80 XP</div>
+    </div>
+
+    <div class="quest-item" onclick="startQuest(this)">
+      <div class="qi-icon">🤝</div>
+      <div class="qi-info">
+        <div class="qi-name">Допоможи тиммейту вивчити слово</div>
+        <div class="qi-prog">0/1 · Поділись знаннями</div>
+      </div>
+      <div class="qi-xp">+60 XP</div>
+    </div>
+  </div>
+
+  <!-- INVITE -->
+  <div class="invite-squad">
+    <div style="font-size:28px">👥</div>
+    <div class="is-text">
+      <div class="is-title">Запроси ще одного у Squad</div>
+      <div class="is-sub">Більше учасників = більше бонусів</div>
+    </div>
+    <button class="is-btn" onclick="alert('Посилання для запрошення скопійовано!')">Запросити</button>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab"><div class="ti">🏠</div><div class="tl">Головна</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Вчити</div></div>
+    <div class="tab on"><div class="ti">👥</div><div class="tl">Squad</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 18px;max-width:260px;font-size:12px;color:#6b7280;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+  <strong style="color:#4f46e5">08 · Squad Academy — Командне навчання</strong><br><br>
+  <strong>Механіка:</strong> Учишся разом з командою<br>
+  <strong>Соціальне:</strong> Тиск команди = вища retention<br>
+  <strong>Вірусність:</strong> Запроси друзів → буд скваду<br>
+  <strong>Мотивація:</strong> "Команда чекає" = відкриваєш апку<br>
+  <strong>Монетизація:</strong> Squad буст, прем'єр ліга<br><br>
+  <a href="new_index.html" style="color:#4f46e5">← Всі мокапи</a>
+</div>
+
+<script>
+function startQuest(el){
+  el.style.borderColor='#c4b5fd';
+  el.style.background='#faf5ff';
+  alert('⚔️ Квест розпочато!\nОткрий PvP Арену щоб виконати.');
+}
+// Animate squad bar slowly
+let pct=68;
+setInterval(()=>{ pct=Math.min(pct+0.05,68.5); document.getElementById('squadBar').style.width=pct+'%'; },1000);
+</script>
+</body>
+</html>

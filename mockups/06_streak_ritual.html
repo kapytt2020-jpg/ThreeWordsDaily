@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 06 — Streak Ritual</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+body { background: #0d0000; }
+.phone { background: #1a0000; border-color: #3d0000; }
+
+/* Ember radial glow at top */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(239,68,68,0.12) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 50%;
+}
+
+.streak-screen { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 1; }
+
+/* Header */
+.streak-header {
+  padding: 10px 20px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.streak-header-title { font-size: 11px; color: #7f1d1d; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
+  border-radius: 100px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Giant Streak Counter */
+.streak-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 20px 12px;
+  position: relative;
+}
+
+.streak-ring {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, rgba(251,191,36,0.15), transparent 60%),
+              linear-gradient(135deg, #1f0000, #2d0000);
+  border: 3px solid rgba(239,68,68,0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow:
+    0 0 0 6px rgba(239,68,68,0.05),
+    0 0 40px rgba(239,68,68,0.3),
+    0 0 80px rgba(239,68,68,0.1),
+    inset 0 0 30px rgba(239,68,68,0.05);
+  animation: streakPulse 2s ease-in-out infinite;
+}
+@keyframes streakPulse {
+  0%,100% { box-shadow: 0 0 0 6px rgba(239,68,68,0.05), 0 0 40px rgba(239,68,68,0.3), 0 0 80px rgba(239,68,68,0.1), inset 0 0 30px rgba(239,68,68,0.05); }
+  50% { box-shadow: 0 0 0 10px rgba(239,68,68,0.08), 0 0 60px rgba(239,68,68,0.5), 0 0 100px rgba(239,68,68,0.15), inset 0 0 40px rgba(239,68,68,0.08); }
+}
+
+.streak-emoji { font-size: 36px; line-height: 1; margin-bottom: 2px; }
+.streak-number { font-size: 52px; font-weight: 900; color: #fbbf24; line-height: 1; text-shadow: 0 0 30px rgba(251,191,36,0.5); }
+.streak-unit { font-size: 11px; color: #ef4444; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 2px; }
+
+.streak-records {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+}
+.streak-record { text-align: center; }
+.streak-record-num { font-size: 18px; font-weight: 800; color: #f87171; }
+.streak-record-label { font-size: 10px; color: #7f1d1d; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Heatmap */
+.heatmap-section {
+  padding: 0 16px 10px;
+}
+.heatmap-label { font-size: 10px; color: #7f1d1d; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+.heatmap-label span { color: #4b5563; }
+
+.heatmap-days-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: 3px;
+}
+.heatmap-day-label { font-size: 8px; color: #4b5563; text-align: center; text-transform: uppercase; }
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: #1f0000;
+  border: 1px solid rgba(239,68,68,0.08);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.heatmap-cell:active { transform: scale(0.9); }
+.heatmap-cell.h1 { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.15); }
+.heatmap-cell.h2 { background: rgba(239,68,68,0.25); border-color: rgba(239,68,68,0.3); }
+.heatmap-cell.h3 { background: rgba(239,68,68,0.45); border-color: rgba(239,68,68,0.5); }
+.heatmap-cell.h4 { background: rgba(239,68,68,0.7); border-color: rgba(239,68,68,0.7); box-shadow: 0 0 5px rgba(239,68,68,0.3); }
+.heatmap-cell.today {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  border-color: #ef4444;
+  box-shadow: 0 0 10px rgba(239,68,68,0.6);
+  animation: todayPulse 1.5s ease-in-out infinite;
+}
+@keyframes todayPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(239,68,68,0.5); }
+  50% { box-shadow: 0 0 16px rgba(239,68,68,0.8); }
+}
+.heatmap-cell.future { background: #180000; border-color: rgba(239,68,68,0.04); opacity: 0.4; }
+
+/* Today's Ritual */
+.ritual-section {
+  padding: 0 16px 10px;
+}
+.ritual-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.ritual-title { font-size: 13px; font-weight: 800; color: #fca5a5; }
+.ritual-subtitle { font-size: 10px; color: #7f1d1d; }
+
+.ritual-tasks { display: flex; flex-direction: column; gap: 6px; }
+.ritual-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30,0,0,0.8);
+  border: 1px solid rgba(239,68,68,0.15);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.ritual-task.done { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.04); }
+.ritual-task-icon { font-size: 20px; }
+.ritual-task-info { flex: 1; }
+.ritual-task-name { font-size: 13px; font-weight: 700; color: #e2e8f0; }
+.ritual-task.done .ritual-task-name { color: #6b7280; text-decoration: line-through; }
+.ritual-task-desc { font-size: 11px; color: #7f1d1d; margin-top: 1px; }
+.ritual-task.done .ritual-task-desc { color: #10b981; }
+.ritual-status { font-size: 18px; }
+
+/* Streak protection */
+.freeze-section {
+  padding: 0 16px 8px;
+}
+.freeze-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(96,165,250,0.3);
+  background: rgba(37,99,235,0.1);
+  color: #60a5fa;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+.freeze-btn:active { background: rgba(37,99,235,0.2); }
+.freeze-badge { background: rgba(37,99,235,0.2); border: 1px solid rgba(37,99,235,0.4); border-radius: 100px; padding: 2px 8px; font-size: 10px; }
+
+/* Comeback section */
+.comeback-card {
+  margin: 0 16px 10px;
+  background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(30,0,0,0.8));
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.comeback-avatar { font-size: 28px; }
+.comeback-text { flex: 1; font-size: 12px; color: #94a3b8; line-height: 1.5; }
+.comeback-text strong { color: #c084fc; }
+.comeback-btn {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar" style="background:#180000; color:#7f1d1d;">
+    <span>9:41</span>
+    <span>🔥 On Fire!</span>
+    <span>●●●</span>
+  </div>
+
+  <div class="streak-screen">
+    <!-- Header -->
+    <div class="streak-header">
+      <div class="streak-header-title">Your Streak</div>
+      <button class="share-btn">📤 Share</button>
+    </div>
+
+    <!-- Giant Streak Hero -->
+    <div class="streak-hero">
+      <div class="streak-ring">
+        <div class="streak-emoji">🔥</div>
+        <div class="streak-number">7</div>
+        <div class="streak-unit">Days</div>
+      </div>
+      <div class="streak-records">
+        <div class="streak-record">
+          <div class="streak-record-num">14</div>
+          <div class="streak-record-label">Best</div>
+        </div>
+        <div class="streak-record">
+          <div class="streak-record-num">7</div>
+          <div class="streak-record-label">Current</div>
+        </div>
+        <div class="streak-record">
+          <div class="streak-record-num">47</div>
+          <div class="streak-record-label">Total</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap -->
+    <div class="heatmap-section">
+      <div class="heatmap-label">
+        <span>March 2026</span>
+        <span>22 days tracked</span>
+      </div>
+      <div class="heatmap-days-header">
+        <div class="heatmap-day-label">M</div>
+        <div class="heatmap-day-label">T</div>
+        <div class="heatmap-day-label">W</div>
+        <div class="heatmap-day-label">T</div>
+        <div class="heatmap-day-label">F</div>
+        <div class="heatmap-day-label">S</div>
+        <div class="heatmap-day-label">S</div>
+      </div>
+      <div class="heatmap-grid">
+        <!-- Row 1: Feb 24 - Mar 1 -->
+        <div class="heatmap-cell h2"></div>
+        <div class="heatmap-cell h1"></div>
+        <div class="heatmap-cell h3"></div>
+        <div class="heatmap-cell h2"></div>
+        <div class="heatmap-cell h1"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h2"></div>
+        <!-- Row 2 -->
+        <div class="heatmap-cell h3"></div>
+        <div class="heatmap-cell h1"></div>
+        <div class="heatmap-cell"></div>
+        <div class="heatmap-cell h2"></div>
+        <div class="heatmap-cell h3"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h1"></div>
+        <!-- Row 3 -->
+        <div class="heatmap-cell h2"></div>
+        <div class="heatmap-cell h3"></div>
+        <div class="heatmap-cell h1"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h3"></div>
+        <div class="heatmap-cell h2"></div>
+        <div class="heatmap-cell h1"></div>
+        <!-- Row 4 (streak week) -->
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell h4"></div>
+        <div class="heatmap-cell today"></div>
+        <!-- Row 5: future -->
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+        <div class="heatmap-cell future"></div>
+      </div>
+    </div>
+
+    <!-- Today's Ritual -->
+    <div class="ritual-section">
+      <div class="ritual-header">
+        <div class="ritual-title">Today's Ritual</div>
+        <div class="ritual-subtitle">2 / 3 done</div>
+      </div>
+      <div class="ritual-tasks">
+        <div class="ritual-task done">
+          <div class="ritual-task-icon">📖</div>
+          <div class="ritual-task-info">
+            <div class="ritual-task-name">Learn a word</div>
+            <div class="ritual-task-desc">Completed · +10 XP</div>
+          </div>
+          <div class="ritual-status">✅</div>
+        </div>
+        <div class="ritual-task done">
+          <div class="ritual-task-icon">🧠</div>
+          <div class="ritual-task-info">
+            <div class="ritual-task-name">Quick quiz</div>
+            <div class="ritual-task-desc">Completed · +20 XP</div>
+          </div>
+          <div class="ritual-status">✅</div>
+        </div>
+        <div class="ritual-task">
+          <div class="ritual-task-icon">🔊</div>
+          <div class="ritual-task-info">
+            <div class="ritual-task-name">Pronunciation</div>
+            <div class="ritual-task-desc">Listen to 1 word today</div>
+          </div>
+          <div class="ritual-status">⬜</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Freeze Button -->
+    <div class="freeze-section">
+      <button class="freeze-btn">
+        🧊 Streak Freeze Available
+        <span class="freeze-badge">1 left</span>
+      </button>
+    </div>
+
+    <!-- Comeback -->
+    <div class="comeback-card">
+      <div class="comeback-avatar">🐰</div>
+      <div class="comeback-text">
+        <strong>@bunny_kate</strong> is on a <strong>12-day streak</strong> — 5 days ahead of you! Can you beat them?
+      </div>
+      <button class="comeback-btn">⚔️ Duel</button>
+    </div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar" style="background:rgba(15,0,0,0.97); border-color:#3d0000;">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Home</div></div>
+    <div class="tab"><div class="icon">📖</div><div class="label">Learn</div></div>
+    <div class="tab"><div class="icon">🦊</div><div class="label">Pet</div></div>
+    <div class="tab active"><div class="icon">🔥</div><div class="label" style="color:#ef4444">Streak</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Profile</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#1a0000;border:1px solid #3d0000;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#7f1d1d;line-height:1.6;">
+  <strong style="color:#ef4444">🔥 Mockup 06 — Streak Ritual</strong><br><br>
+  <strong style="color:#fca5a5">For:</strong> Habit builders<br>
+  <strong style="color:#fca5a5">Retention:</strong> Losing the streak = emotional pain<br>
+  <strong style="color:#fca5a5">Audio:</strong> Daily ritual includes pronunciation step<br>
+  <strong style="color:#fca5a5">Risk:</strong> One missed day causes frustration<br><br>
+  <a href="index.html" style="color:#ef4444">← All Mockups</a>
+</div>
+</body>
+</html>

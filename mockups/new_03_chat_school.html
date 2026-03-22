@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · Chat School — AI Teacher</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#e8eaf6;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#f0f2f5;border-radius:44px;overflow:hidden;border:1.5px solid #ccc;box-shadow:0 40px 120px rgba(0,0,0,0.15);display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;padding:14px 24px 0;font-size:12px;color:#999;flex-shrink:0}
+
+/* CHAT HEADER */
+.chat-header{display:flex;align-items:center;gap:12px;padding:10px 16px 10px;background:#fff;border-bottom:1px solid #e8e8e8;flex-shrink:0}
+.ai-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;position:relative}
+.ai-online{position:absolute;bottom:1px;right:1px;width:11px;height:11px;background:#22c55e;border-radius:50%;border:2px solid #fff}
+.ai-info{flex:1}
+.ai-name{font-size:15px;font-weight:700;color:#1a1a1a}
+.ai-status{font-size:11px;color:#22c55e}
+.ai-streak{background:#fff3e0;border:1px solid #ffcc80;border-radius:100px;padding:4px 10px;font-size:11px;font-weight:700;color:#e65100}
+
+/* MESSAGES */
+.messages{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+
+/* Bot message */
+.msg-bot{display:flex;align-items:flex-start;gap:8px}
+.msg-bot-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.bubble-bot{background:#fff;border-radius:4px 18px 18px 18px;padding:10px 14px;max-width:280px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.bubble-bot .word-big{font-size:22px;font-weight:900;color:#1d4ed8;margin-bottom:3px}
+.bubble-bot .ipa{font-size:11px;color:#6d28d9;margin-bottom:4px}
+.bubble-bot .text{font-size:14px;color:#333;line-height:1.5}
+.bubble-bot .example{background:#f0f0ff;border-left:3px solid #5b21b6;border-radius:0 8px 8px 0;padding:6px 10px;margin-top:6px;font-size:12px;color:#444;line-height:1.5}
+.bubble-bot .example em{color:#5b21b6;font-style:normal;font-weight:700}
+.msg-time{font-size:10px;color:#bbb;margin-top:3px;text-align:left;padding-left:40px}
+
+/* Audio button */
+.audio-pill{display:inline-flex;align-items:center;gap:6px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:100px;padding:5px 12px;font-size:12px;color:#2e7d32;cursor:pointer;margin-top:6px;font-weight:600}
+
+/* User message */
+.msg-user{display:flex;justify-content:flex-end}
+.bubble-user{background:linear-gradient(135deg,#1d4ed8,#5b21b6);border-radius:18px 4px 18px 18px;padding:10px 14px;max-width:260px;color:#fff;font-size:14px;line-height:1.5;box-shadow:0 2px 8px rgba(29,78,216,0.3)}
+.msg-time-user{font-size:10px;color:#bbb;margin-top:3px;text-align:right}
+
+/* Quiz bubble */
+.quiz-bubble{background:#fff;border-radius:4px 18px 18px 18px;padding:12px 14px;max-width:290px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.quiz-q{font-size:13px;font-weight:700;color:#333;margin-bottom:8px}
+.quiz-opts{display:flex;flex-direction:column;gap:6px}
+.quiz-opt{padding:8px 12px;border-radius:10px;background:#f5f5f5;font-size:13px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;font-weight:500}
+.quiz-opt:hover{background:#e8eaf6;border-color:#5b21b6}
+.quiz-opt.correct{background:#e8f5e9;border-color:#4caf50;color:#1b5e20}
+.quiz-opt.wrong{background:#ffebee;border-color:#ef5350;color:#b71c1c}
+
+/* XP pop */
+.xp-banner{background:linear-gradient(135deg,#5b21b6,#1d4ed8);border-radius:12px;padding:8px 14px;margin-top:4px;display:flex;align-items:center;gap:8px;max-width:200px}
+.xp-banner .xi{font-size:20px}
+.xp-banner .xt{font-size:13px;font-weight:700;color:#fff}
+
+/* TYPING INDICATOR */
+.typing{display:flex;align-items:center;gap:8px;padding:4px 0}
+.typing-bubble{background:#fff;border-radius:4px 18px 18px 18px;padding:10px 16px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.typing-dots{display:flex;gap:4px}
+.typing-dots span{width:7px;height:7px;border-radius:50%;background:#bbb;animation:dot 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:0.2s}
+.typing-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* INPUT BAR */
+.input-bar{background:#fff;border-top:1px solid #e8e8e8;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.chat-input{flex:1;background:#f5f5f5;border:none;border-radius:20px;padding:10px 16px;font-size:14px;outline:none;color:#333}
+.send-btn{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#1d4ed8);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.quick-btns{display:flex;gap:6px;padding:6px 14px 0;overflow-x:auto}
+.qb{background:#fff;border:1px solid #e0e0e0;border-radius:100px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;color:#555;font-weight:500;transition:all 0.15s}
+.qb:hover{background:#e8eaf6;border-color:#5b21b6;color:#5b21b6}
+.qb.active{background:#5b21b6;border-color:#5b21b6;color:#fff}
+
+/* STREAK TOP */
+.streak-bar{background:linear-gradient(90deg,#ff9500,#ff6b00);padding:6px 16px;display:flex;align-items:center;justify-content:space-between}
+.sb-text{font-size:11px;color:#fff;font-weight:700}
+.sb-btn{background:rgba(255,255,255,0.25);border:none;border-radius:8px;padding:3px 10px;font-size:11px;color:#fff;cursor:pointer;font-weight:700}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- STREAK TOP -->
+  <div class="streak-bar">
+    <div class="sb-text">🔥 7-денна серія · Наступна нагорода через 1 день</div>
+    <button class="sb-btn">Деталі</button>
+  </div>
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="ai-avatar">🦉<div class="ai-online"></div></div>
+    <div class="ai-info">
+      <div class="ai-name">Voodoo AI · Вчитель</div>
+      <div class="ai-status">● В мережі · пише...</div>
+    </div>
+    <div class="ai-streak">⭐ 340 XP</div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div class="messages" id="messages">
+
+    <div class="msg-bot">
+      <div class="msg-bot-avatar">🦉</div>
+      <div>
+        <div class="bubble-bot">
+          <div class="text">Привіт! 👋 Сьогодні вивчимо слово яке змінить твоє спілкування назавжди:</div>
+          <div class="word-big">Resilient</div>
+          <div class="ipa">/rɪˈzɪliənt/ · прикметник</div>
+          <div class="text">💡 <b>Стійкий</b> — той хто відновлюється після труднощів. Як гумовий м'яч: вдарили — відскочив.</div>
+          <div class="example">"She is <em>incredibly resilient</em> — nothing can break her spirit." 💜</div>
+          <div class="audio-pill" onclick="this.textContent='⏸ Зупинити'">🔊 Послухати вимову</div>
+        </div>
+        <div class="msg-time">9:40 · прочитано ✓✓</div>
+      </div>
+    </div>
+
+    <div class="msg-user">
+      <div>
+        <div class="bubble-user">Зрозуміло! А як це використати у реальному житті? 🤔</div>
+        <div class="msg-time-user">9:41 ✓✓</div>
+      </div>
+    </div>
+
+    <div class="msg-bot">
+      <div class="msg-bot-avatar">🦉</div>
+      <div>
+        <div class="bubble-bot">
+          <div class="text">Чудове питання! 🌟 Ось 3 реальні ситуації:</div>
+          <div class="example">1. <em>She's so resilient</em> after the tough year she had.<br>2. We need <em>resilient</em> team players for this project.<br>3. Children are more <em>resilient</em> than we think.</div>
+        </div>
+        <div class="msg-time">9:41</div>
+      </div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="msg-bot">
+      <div class="msg-bot-avatar">🦉</div>
+      <div>
+        <div class="quiz-bubble">
+          <div class="quiz-q">🎯 Швидкий тест! Що означає "resilient"?</div>
+          <div class="quiz-opts" id="quiz">
+            <div class="quiz-opt" onclick="quizAnswer(this,false)">😢 Сумний</div>
+            <div class="quiz-opt" onclick="quizAnswer(this,true)">💪 Стійкий</div>
+            <div class="quiz-opt" onclick="quizAnswer(this,false)">🤩 Красивий</div>
+            <div class="quiz-opt" onclick="quizAnswer(this,false)">😴 Сонливий</div>
+          </div>
+        </div>
+        <div class="msg-time">9:41</div>
+      </div>
+    </div>
+
+    <!-- XP earned (hidden initially) -->
+    <div id="xp-earned" style="display:none;padding-left:40px">
+      <div class="xp-banner">
+        <div class="xi">🏆</div>
+        <div class="xt">+25 XP · Слово записано!</div>
+      </div>
+    </div>
+
+    <!-- Typing indicator (hidden initially) -->
+    <div class="typing" id="typing" style="display:none">
+      <div class="msg-bot-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:15px">🦉</div>
+      <div class="typing-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>
+    </div>
+
+  </div>
+
+  <!-- QUICK REPLIES -->
+  <div class="quick-btns" id="qbtns">
+    <div class="qb" onclick="sendMsg(this,'📖 Наступне слово')">📖 Наступне слово</div>
+    <div class="qb" onclick="sendMsg(this,'🔊 Ще приклади')">🔊 Ще приклади</div>
+    <div class="qb" onclick="sendMsg(this,'🏆 Мій прогрес')">🏆 Мій прогрес</div>
+    <div class="qb" onclick="sendMsg(this,'💬 Порозмовляємо')">💬 Порозмовляємо</div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="input-bar">
+    <input class="chat-input" id="inp" placeholder="Напиши щось по-англійськи...">
+    <button class="send-btn" onclick="sendCustom()">➤</button>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#fff;border:1px solid #e0e0e0;border-radius:14px;padding:14px 18px;max-width:260px;font-size:12px;color:#555;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
+  <strong style="color:#5b21b6">03 · Chat School — AI в Telegram чаті</strong><br><br>
+  <strong>Механіка:</strong> Урок = звичайне листування<br>
+  <strong>UX-ідея:</strong> Вчишся там де вже проводиш час<br>
+  <strong>Оригінальність:</strong> Вчитель звертається до ТЕБЕ<br>
+  <strong>Retention:</strong> Нотифікація = повідомлення від друга<br>
+  <strong>Аудиторія:</strong> Всі хто вже в Telegram<br><br>
+  <a href="new_index.html" style="color:#5b21b6">← Всі мокапи</a>
+</div>
+
+<script>
+const nextWords = [
+  {w:'Ambitious',t:'Амбітний',e:'He is very ambitious about his career.'},
+  {w:'Grateful',t:'Вдячний',e:'I am so grateful for your help.'},
+  {w:'Brilliant',t:'Блискучий',e:'She came up with a brilliant idea.'},
+];
+let nextIdx=0, quizDone=false;
+
+function quizAnswer(el,correct){
+  if(quizDone) return;
+  quizDone=true;
+  document.querySelectorAll('.quiz-opt').forEach(o=>o.onclick=null);
+  if(correct){
+    el.classList.add('correct');
+    document.getElementById('xp-earned').style.display='block';
+    setTimeout(showTypingThen,800);
+  } else {
+    el.classList.add('wrong');
+    document.querySelectorAll('.quiz-opt').forEach(o=>{ if(o.textContent.includes('Стійкий')) o.classList.add('correct'); });
+    setTimeout(showTypingThen,800);
+  }
+  scrollBottom();
+}
+
+function showTypingThen(){
+  document.getElementById('typing').style.display='flex';
+  scrollBottom();
+  setTimeout(()=>{
+    document.getElementById('typing').style.display='none';
+    addBotMsg(correct?'Правильно! 🎉 "Resilient" = стійкий. Ти готовий до наступного слова?':'Майже! 💪 Це буває. "Resilient" = стійкий. Наступного разу точно!');
+    scrollBottom();
+  },1500);
+}
+
+function addBotMsg(text){
+  const m=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-bot';
+  d.innerHTML=`<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#1d4ed8);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🦉</div><div><div class="bubble-bot"><div class="text">${text}</div></div><div class="msg-time">зараз</div></div>`;
+  m.appendChild(d);
+  scrollBottom();
+}
+
+function sendMsg(el,text){
+  document.querySelectorAll('.qb').forEach(q=>q.classList.remove('active'));
+  el.classList.add('active');
+  const m=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-user';
+  d.innerHTML=`<div><div class="bubble-user">${text}</div><div class="msg-time-user">зараз ✓✓</div></div>`;
+  m.appendChild(d);
+  scrollBottom();
+  document.getElementById('typing').style.display='flex';
+  scrollBottom();
+  setTimeout(()=>{
+    document.getElementById('typing').style.display='none';
+    const w=nextWords[nextIdx%nextWords.length]; nextIdx++;
+    addBotMsg(`Наступне слово: <b>${w.w}</b> [${w.t}]<br><br>"${w.e}"<br><br>+20 XP нараховано! 🌟`);
+    scrollBottom();
+  },1200);
+}
+
+function sendCustom(){
+  const v=document.getElementById('inp').value.trim();
+  if(!v) return;
+  const m=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg-user';
+  d.innerHTML=`<div><div class="bubble-user">${v}</div><div class="msg-time-user">зараз ✓✓</div></div>`;
+  m.appendChild(d);
+  document.getElementById('inp').value='';
+  scrollBottom();
+  document.getElementById('typing').style.display='flex';
+  setTimeout(()=>{
+    document.getElementById('typing').style.display='none';
+    addBotMsg('Супер! 💪 Спробуй сказати це по-англійськи. Чи хочеш наступне слово?');
+  },1500);
+}
+
+function scrollBottom(){
+  const m=document.getElementById('messages');
+  m.scrollTop=m.scrollHeight;
+}
+
+let correct=false;
+document.querySelectorAll('.quiz-opt').forEach(o=>{
+  const orig=o.onclick;
+  o.addEventListener('click',e=>{ correct=o.textContent.includes('Стійкий'); });
+});
+</script>
+</body>
+</html>

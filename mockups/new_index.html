@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voodoo English — Game Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c28;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-dim: rgba(124,58,237,0.18);
+    --gold: #f59e0b;
+    --gold-dim: rgba(245,158,11,0.15);
+    --green: #10b981;
+    --red: #ef4444;
+    --white: #ffffff;
+    --text-muted: rgba(255,255,255,0.5);
+    --radius: 16px;
+  }
+
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+  }
+
+  header {
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1030 50%, #0f0f1a 100%);
+    border-bottom: 1px solid rgba(124,58,237,0.3);
+    padding: 48px 24px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 50%, rgba(124,58,237,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 80% 50%, rgba(245,158,11,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--purple-light);
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 900;
+    background: linear-gradient(135deg, #fff 0%, #a855f7 50%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--text-muted);
+    max-width: 500px;
+    margin: 0 auto 28px;
+    line-height: 1.6;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--gold); }
+  .stat-label { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 24px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 10;
+  }
+
+  .filter-btn {
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover { border-color: var(--purple-light); color: var(--white); }
+  .filter-btn.active { background: var(--purple); border-color: var(--purple); color: #fff; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 32px 24px 64px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,58,237,0.3);
+    border-color: rgba(124,58,237,0.4);
+  }
+
+  .card-accent { height: 4px; width: 100%; }
+
+  .card-body {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+
+  .card-emoji {
+    font-size: 36px;
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(124,58,237,0.4));
+  }
+
+  .card-info { flex: 1; min-width: 0; }
+  .card-number { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; }
+  .card-title { font-size: 18px; font-weight: 800; color: var(--white); margin-bottom: 4px; line-height: 1.2; }
+  .card-uk { font-size: 12px; color: var(--text-muted); }
+
+  .card-desc { font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.6; margin-bottom: 16px; flex: 1; }
+
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+
+  .tag {
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .tag-vocab    { background: rgba(124,58,237,0.2);  color: #a855f7; }
+  .tag-grammar  { background: rgba(16,185,129,0.15); color: #10b981; }
+  .tag-strategy { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .tag-speed    { background: rgba(239,68,68,0.15);  color: #ef4444; }
+  .tag-social   { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .tag-puzzle   { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .tag-roleplay { background: rgba(20,184,166,0.15); color: #2dd4bf; }
+
+  .play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--purple);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .play-btn:hover { background: var(--purple-light); transform: scale(1.02); }
+  .play-btn .arrow { font-size: 16px; transition: transform 0.2s; }
+  .card:hover .play-btn .arrow { transform: translateX(3px); }
+
+  .diff-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 3px 9px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .diff-easy   { background: rgba(16,185,129,0.2);  color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+  .diff-medium { background: rgba(245,158,11,0.2);  color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+  .diff-hard   { background: rgba(239,68,68,0.2);   color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+
+  footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  footer strong { color: var(--purple-light); }
+
+  @media (max-width: 600px) {
+    .grid { padding: 16px 12px 40px; gap: 12px; }
+    header { padding: 32px 16px 28px; }
+    .stats-row { gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Voodoo English Platform</div>
+  <h1>🎮 Game Gallery</h1>
+  <p class="subtitle">12 інтерактивних ігор для вивчення англійської. Від словникового запасу до граматики — через гру.</p>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-num">12</span><span class="stat-label">Ігор</span></div>
+    <div class="stat"><span class="stat-num">5+</span><span class="stat-label">Категорій</span></div>
+    <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Реіграбельність</span></div>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <button class="filter-btn active" onclick="filter(this,'all')">Всі</button>
+  <button class="filter-btn" onclick="filter(this,'vocab')">Словник</button>
+  <button class="filter-btn" onclick="filter(this,'grammar')">Граматика</button>
+  <button class="filter-btn" onclick="filter(this,'speed')">Швидкість</button>
+  <button class="filter-btn" onclick="filter(this,'strategy')">Стратегія</button>
+  <button class="filter-btn" onclick="filter(this,'social')">Соціальні</button>
+  <button class="filter-btn" onclick="filter(this,'roleplay')">Рольові</button>
+</div>
+
+<div class="grid" id="grid">
+
+  <div class="card" data-tags="vocab strategy puzzle">
+    <div class="card-accent" style="background:linear-gradient(90deg,#7c3aed,#a855f7)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">🔗</div>
+        <div class="card-info">
+          <div class="card-number">Game 01</div>
+          <div class="card-title">Connections</div>
+          <div class="card-uk">Зв'язки</div>
+        </div>
+      </div>
+      <p class="card-desc">Знайди 4 групи з 16 слів. NYT-стиль — вгадай що об'єднує кожну четвірку. Кольорові категорії від легкого до пасткового.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-strategy">Стратегія</span>
+        <span class="tag tag-puzzle">Пазл</span>
+      </div>
+      <a href="new_16_connections.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab roleplay puzzle">
+    <div class="card-accent" style="background:linear-gradient(90deg,#374151,#6b7280)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-hard">Hard</span>
+      <div class="card-top">
+        <div class="card-emoji">📋</div>
+        <div class="card-info">
+          <div class="card-number">Game 02</div>
+          <div class="card-title">Papers Please</div>
+          <div class="card-uk">Документи, будь ласка</div>
+        </div>
+      </div>
+      <p class="card-desc">Інспектор на кордоні. Перевіряй документи, шукай помилки у перекладі. Штампуй APPROVE або DENY. Кожен день — нові правила.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-roleplay">Рольова</span>
+        <span class="tag tag-puzzle">Пазл</span>
+      </div>
+      <a href="new_17_papers.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab speed">
+    <div class="card-accent" style="background:linear-gradient(90deg,#ec4899,#f43f5e)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-easy">Easy</span>
+      <div class="card-top">
+        <div class="card-emoji">💘</div>
+        <div class="card-info">
+          <div class="card-number">Game 03</div>
+          <div class="card-title">Word Dating</div>
+          <div class="card-uk">Побачення зі словом</div>
+        </div>
+      </div>
+      <p class="card-desc">Tinder для слів! Свайп вправо якщо слово відповідає опису, вліво — якщо ні. Швидко, засадливо, з комбо-бонусами.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-speed">Швидкість</span>
+      </div>
+      <a href="new_18_dating.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab strategy social">
+    <div class="card-accent" style="background:linear-gradient(90deg,#f59e0b,#d97706)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">🔨</div>
+        <div class="card-info">
+          <div class="card-number">Game 04</div>
+          <div class="card-title">Word Auction</div>
+          <div class="card-uk">Аукціон слів</div>
+        </div>
+      </div>
+      <p class="card-desc">Торги на аукціоні! Відповідай на питання щоб виграти лот. Бот-суперники підвищують ставки. 3D flip reveal після кожного раунду.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-strategy">Стратегія</span>
+        <span class="tag tag-social">Соціальна</span>
+      </div>
+      <a href="new_19_auction.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab social strategy">
+    <div class="card-accent" style="background:linear-gradient(90deg,#8b5cf6,#6d28d9)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-hard">Hard</span>
+      <div class="card-top">
+        <div class="card-emoji">🎭</div>
+        <div class="card-info">
+          <div class="card-number">Game 05</div>
+          <div class="card-title">Balderdash</div>
+          <div class="card-uk">Балдердеш</div>
+        </div>
+      </div>
+      <p class="card-desc">Вигадуй фейкові визначення рідкісних слів. Переконай суперників що твоє визначення — справжнє. Блефуй і вгадуй!</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-social">Соціальна</span>
+        <span class="tag tag-strategy">Стратегія</span>
+      </div>
+      <a href="new_20_balderdash.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab speed">
+    <div class="card-accent" style="background:linear-gradient(90deg,#ef4444,#f97316)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">⚡</div>
+        <div class="card-info">
+          <div class="card-number">Game 06</div>
+          <div class="card-title">Word Race</div>
+          <div class="card-uk">Перегони слів</div>
+        </div>
+      </div>
+      <p class="card-desc">Друкуй англійські слова якнайшвидше! WPM лічильник, спідометр, комбо-система. Кожна секунда на рахунку.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-speed">Швидкість</span>
+      </div>
+      <a href="new_21_wordrace.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab puzzle grammar">
+    <div class="card-accent" style="background:linear-gradient(90deg,#10b981,#059669)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">📅</div>
+        <div class="card-info">
+          <div class="card-number">Game 07</div>
+          <div class="card-title">Daily Crossword</div>
+          <div class="card-uk">Щоденний кросворд</div>
+        </div>
+      </div>
+      <p class="card-desc">Кросворд нового дня. Підказки українською, відповіді англійською. Стрік, хінти, авто-збереження прогресу.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-puzzle">Пазл</span>
+        <span class="tag tag-grammar">Граматика</span>
+      </div>
+      <a href="new_22_crossword.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab strategy social">
+    <div class="card-accent" style="background:linear-gradient(90deg,#3b82f6,#1d4ed8)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-hard">Hard</span>
+      <div class="card-top">
+        <div class="card-emoji">🕵️</div>
+        <div class="card-info">
+          <div class="card-number">Game 08</div>
+          <div class="card-title">Codenames</div>
+          <div class="card-uk">Кодові імена</div>
+        </div>
+      </div>
+      <p class="card-desc">5×5 сітка слів. Капітан дає підказки щоб команда знайшла своїх агентів. Уникай вбивці! Класична командна гра.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-strategy">Стратегія</span>
+        <span class="tag tag-social">Соціальна</span>
+      </div>
+      <a href="new_23_codenames.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab puzzle">
+    <div class="card-accent" style="background:linear-gradient(90deg,#7c3aed,#10b981)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">🧬</div>
+        <div class="card-info">
+          <div class="card-number">Game 09</div>
+          <div class="card-title">Word Evolution</div>
+          <div class="card-uk">Еволюція слів</div>
+        </div>
+      </div>
+      <p class="card-desc">Ланцюжок з 5 еволюціонуючих слів. Вивчай — відповідай — переходь на наступний рівень. ДНК-анімація, Darwin-рейтинг.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-puzzle">Пазл</span>
+      </div>
+      <a href="new_24_evolution.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab speed grammar">
+    <div class="card-accent" style="background:linear-gradient(90deg,#10b981,#f59e0b)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-medium">Medium</span>
+      <div class="card-top">
+        <div class="card-emoji">⛓️</div>
+        <div class="card-info">
+          <div class="card-number">Game 10</div>
+          <div class="card-title">Word Chain</div>
+          <div class="card-uk">Ланцюг слів</div>
+        </div>
+      </div>
+      <p class="card-desc">Остання літера — початок наступного слова! Будуй ланцюг якомога довше. Бот-суперник, мультиплікатор, 300+ слів у словнику.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-speed">Швидкість</span>
+        <span class="tag tag-grammar">Граматика</span>
+      </div>
+      <a href="new_25_wordchain.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="vocab puzzle roleplay">
+    <div class="card-accent" style="background:linear-gradient(90deg,#00ff88,#059669)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-hard">Hard</span>
+      <div class="card-top">
+        <div class="card-emoji">🔐</div>
+        <div class="card-info">
+          <div class="card-number">Game 11</div>
+          <div class="card-title">Розвідник</div>
+          <div class="card-uk">Spy Decoder</div>
+        </div>
+      </div>
+      <p class="card-desc">Таємний агент розшифровує зашифровані повідомлення. Хакерський термінал, 3 рівні складності, матричний дощ. 5 місій.</p>
+      <div class="card-tags">
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-puzzle">Пазл</span>
+        <span class="tag tag-roleplay">Рольова</span>
+      </div>
+      <a href="new_26_rozvidnyk.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+  <div class="card" data-tags="grammar vocab strategy">
+    <div class="card-accent" style="background:linear-gradient(90deg,#ef4444,#7c3aed)"></div>
+    <div class="card-body">
+      <span class="diff-badge diff-hard">Hard</span>
+      <div class="card-top">
+        <div class="card-emoji">⚔️</div>
+        <div class="card-info">
+          <div class="card-number">Game 12</div>
+          <div class="card-title">Word Raid</div>
+          <div class="card-uk">Рейд на боса</div>
+        </div>
+      </div>
+      <p class="card-desc">RPG-битва з Босами Слів! Дракон Граматики → Лорд Лексики → Архімаг Слів. Відповідай правильно — завдавай шкоди. 3 здібності.</p>
+      <div class="card-tags">
+        <span class="tag tag-grammar">Граматика</span>
+        <span class="tag tag-vocab">Словник</span>
+        <span class="tag tag-strategy">Стратегія</span>
+      </div>
+      <a href="new_27_wordraid.html" class="play-btn">ГРАТИ <span class="arrow">→</span></a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>Voodoo English Platform</strong> — 12 ігрових демо · 2026
+</footer>
+
+<script>
+  function filter(btn, tag) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.card').forEach(card => {
+      if (tag === 'all') {
+        card.style.display = '';
+      } else {
+        card.style.display = (card.dataset.tags || '').includes(tag) ? '' : 'none';
+      }
+    });
+  }
+</script>
+
+</body>
+</html>

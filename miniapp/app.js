@@ -3023,7 +3023,7 @@ function renderArchetypeSelect() {
 
   document.getElementById('main').innerHTML =
     '<div class="onboarding-screen fade-in">' +
-      '<div style="font-size:14px;color:rgba(255,255,255,0.45);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">ThreeWords Daily</div>' +
+      '<div style="font-size:14px;color:rgba(255,255,255,0.45);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Voodoo 🪄</div>' +
       '<div class="onb-title" style="margin-bottom:4px">Обери компаньйона</div>' +
       '<div class="onb-sub" style="margin-bottom:20px">Він буде рости разом з тобою 🌱</div>' +
       '<div class="char-pick-grid">' + charHTML + '</div>' +
@@ -3037,7 +3037,7 @@ function showPremiumOffer() {
   overlay.innerHTML =
     '<div class="premium-modal">' +
       '<div class="premium-modal-icon">⭐</div>' +
-      '<div class="premium-modal-title">ThreeWords Premium</div>' +
+      '<div class="premium-modal-title">Voodoo Premium</div>' +
       '<div class="premium-modal-list">' +
         '<div class="pm-row">🔓 Персонажі Vex та Seraph</div>' +
         '<div class="pm-row">⚡ Подвійний XP на уроки</div>' +

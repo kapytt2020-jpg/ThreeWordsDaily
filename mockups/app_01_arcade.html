@@ -1,0 +1,2192 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VOODOO ARCADE</title>
+<style>
+  /* =============================================
+     BASE RESET & FONTS
+  ============================================= */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg:        #0a0010;
+    --bg2:       #0d0018;
+    --bg3:       #110020;
+    --cyan:      #00ffff;
+    --magenta:   #ff00ff;
+    --yellow:    #ffff00;
+    --red:       #ff2244;
+    --green:     #00ff88;
+    --orange:    #ff8800;
+    --white:     #ffffff;
+    --dim:       #6644aa;
+    --panel:     #100020;
+    --panel2:    #180030;
+    --border:    #2a0060;
+    --glow-c:    0 0 8px #00ffff, 0 0 20px #00ffff44;
+    --glow-m:    0 0 8px #ff00ff, 0 0 20px #ff00ff44;
+    --glow-y:    0 0 8px #ffff00, 0 0 20px #ffff0044;
+    --glow-r:    0 0 8px #ff2244, 0 0 20px #ff224466;
+    --glow-g:    0 0 8px #00ff88, 0 0 20px #00ff8844;
+    --tab-h:     60px;
+    --topbar-h:  54px;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    position: fixed;
+  }
+
+  /* =============================================
+     SCANLINE OVERLAY (full app)
+  ============================================= */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+  }
+
+  /* =============================================
+     NEON GRID BACKGROUND
+  ============================================= */
+  .neon-grid {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,255,0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
+    animation: gridpulse 4s ease-in-out infinite;
+  }
+  @keyframes gridpulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.6; }
+  }
+
+  /* perspective floor lines */
+  .neon-grid::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 24px,
+        rgba(255,0,255,0.06) 24px,
+        rgba(255,0,255,0.06) 25px
+      );
+    mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 100%);
+  }
+
+  /* =============================================
+     APP SHELL
+  ============================================= */
+  #app {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    max-width: 430px;
+    margin: 0 auto;
+  }
+
+  /* =============================================
+     SCREENS
+  ============================================= */
+  .screen {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .screen.active {
+    display: flex;
+  }
+
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* =============================================
+     TOP BAR
+  ============================================= */
+  .topbar {
+    height: var(--topbar-h);
+    min-height: var(--topbar-h);
+    background: rgba(10,0,16,0.95);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    position: relative;
+    z-index: 10;
+  }
+  .topbar::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), var(--magenta), transparent);
+    opacity: 0.6;
+  }
+
+  .topbar-logo {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--magenta);
+    text-shadow: var(--glow-m);
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+
+  .topbar-stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+  }
+  .stat-pill.tokens {
+    color: var(--yellow);
+    border-color: rgba(255,255,0,0.25);
+    text-shadow: 0 0 6px var(--yellow);
+  }
+  .stat-pill.streak {
+    color: var(--orange);
+    border-color: rgba(255,136,0,0.25);
+    text-shadow: 0 0 6px var(--orange);
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--cyan); }
+
+  /* =============================================
+     BOTTOM TAB BAR
+  ============================================= */
+  .tabbar {
+    height: var(--tab-h);
+    min-height: var(--tab-h);
+    background: rgba(8,0,14,0.97);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: stretch;
+    position: relative;
+    z-index: 10;
+  }
+  .tabbar::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--magenta), var(--cyan), transparent);
+    opacity: 0.5;
+  }
+
+  .tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    padding: 6px 0;
+  }
+  .tab::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: transparent;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .tab.active::after {
+    background: var(--cyan);
+    box-shadow: var(--glow-c);
+  }
+  .tab.active .tab-icon { filter: drop-shadow(0 0 4px var(--cyan)); }
+  .tab.active .tab-label { color: var(--cyan); text-shadow: var(--glow-c); }
+
+  .tab-icon { font-size: 20px; }
+  .tab-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: bold;
+  }
+
+  /* tab vote indicator */
+  .tab-badge {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 18px);
+    width: 8px;
+    height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    box-shadow: var(--glow-r);
+    animation: blink 1s ease-in-out infinite;
+  }
+
+  /* =============================================
+     SCREEN 1 — LOBBY
+  ============================================= */
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-transform: uppercase;
+    padding: 14px 16px 8px;
+  }
+  .section-title span {
+    color: var(--cyan);
+    text-shadow: var(--glow-c);
+  }
+
+  /* Cabinet Grid */
+  .cabinet-grid {
+    padding: 4px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cabinet-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cabinet-card:active { transform: scale(0.98); }
+
+  /* glow lines on card */
+  .cabinet-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .cabinet-card:hover::before { opacity: 1; }
+
+  .cabinet-card.cyan   { border-color: rgba(0,255,255,0.3); }
+  .cabinet-card.cyan::before   { box-shadow: inset 0 0 20px rgba(0,255,255,0.05); }
+  .cabinet-card.cyan:hover   { border-color: rgba(0,255,255,0.6); box-shadow: 0 0 16px rgba(0,255,255,0.15); }
+
+  .cabinet-card.magenta { border-color: rgba(255,0,255,0.3); }
+  .cabinet-card.magenta::before { box-shadow: inset 0 0 20px rgba(255,0,255,0.05); }
+  .cabinet-card.magenta:hover { border-color: rgba(255,0,255,0.6); box-shadow: 0 0 16px rgba(255,0,255,0.15); }
+
+  .cabinet-card.green { border-color: rgba(0,255,136,0.3); }
+  .cabinet-card.green::before { box-shadow: inset 0 0 20px rgba(0,255,136,0.05); }
+  .cabinet-card.green:hover { border-color: rgba(0,255,136,0.6); box-shadow: 0 0 16px rgba(0,255,136,0.15); }
+
+  .cabinet-card.yellow { border-color: rgba(255,255,0,0.3); }
+  .cabinet-card.yellow::before { box-shadow: inset 0 0 20px rgba(255,255,0,0.05); }
+  .cabinet-card.yellow:hover { border-color: rgba(255,255,0,0.6); box-shadow: 0 0 16px rgba(255,255,0,0.15); }
+
+  /* DANGER cabinet — flashing red */
+  .cabinet-card.danger {
+    border-color: rgba(255,34,68,0.5);
+    animation: dangerflash 1.2s ease-in-out infinite;
+  }
+  @keyframes dangerflash {
+    0%,100% { border-color: rgba(255,34,68,0.3); box-shadow: none; }
+    50%      { border-color: rgba(255,34,68,0.9); box-shadow: 0 0 24px rgba(255,34,68,0.3), inset 0 0 20px rgba(255,34,68,0.05); }
+  }
+
+  .cabinet-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.06);
+    image-rendering: pixelated;
+  }
+
+  .cabinet-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .cabinet-name {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cabinet-card.cyan   .cabinet-name { color: var(--cyan); text-shadow: 0 0 6px rgba(0,255,255,0.5); }
+  .cabinet-card.magenta .cabinet-name { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,255,0.5); }
+  .cabinet-card.green  .cabinet-name { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.5); }
+  .cabinet-card.yellow .cabinet-name { color: var(--yellow); text-shadow: 0 0 6px rgba(255,255,0,0.5); }
+  .cabinet-card.danger .cabinet-name { color: var(--red); text-shadow: 0 0 6px rgba(255,34,68,0.5); }
+
+  .cabinet-meta {
+    font-size: 10px;
+    color: #6655aa;
+    letter-spacing: 0.5px;
+  }
+  .cabinet-meta strong {
+    color: #9988cc;
+  }
+
+  .cabinet-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .play-btn {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    color: var(--white);
+  }
+  .cabinet-card.cyan   .play-btn { border-color: var(--cyan); color: var(--cyan); }
+  .cabinet-card.magenta .play-btn { border-color: var(--magenta); color: var(--magenta); }
+  .cabinet-card.green  .play-btn { border-color: var(--green); color: var(--green); }
+  .cabinet-card.yellow .play-btn { border-color: var(--yellow); color: var(--yellow); }
+  .cabinet-card.danger .play-btn { border-color: var(--red); color: var(--red); }
+
+  .cabinet-star {
+    font-size: 10px;
+    color: #9988aa;
+  }
+
+  /* danger banner */
+  .danger-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,34,68,0.12);
+    border-top: 1px solid rgba(255,34,68,0.2);
+    margin: 8px -14px -14px;
+    padding: 7px 14px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: bold;
+  }
+  .danger-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    box-shadow: var(--glow-r);
+    flex-shrink: 0;
+    animation: blink 0.8s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.2; }
+  }
+
+  /* new mystery cabinet */
+  .mystery-card {
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255,0,255,0.03),
+      rgba(255,0,255,0.03) 10px,
+      rgba(0,255,255,0.03) 10px,
+      rgba(0,255,255,0.03) 20px
+    );
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .mystery-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+    border: 1px dashed rgba(255,255,255,0.1);
+    animation: mystpulse 2s ease-in-out infinite;
+  }
+  @keyframes mystpulse {
+    0%,100% { opacity: 0.5; transform: scale(1); }
+    50%      { opacity: 1; transform: scale(1.05); }
+  }
+  .mystery-info {}
+  .mystery-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--magenta);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    text-shadow: var(--glow-m);
+  }
+  .mystery-name {
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+  }
+  .mystery-sub {
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+    margin-top: 4px;
+  }
+
+  /* =============================================
+     SCREEN 2 — VOTING
+  ============================================= */
+  .vote-screen {
+    background: var(--bg);
+  }
+
+  .vote-header {
+    padding: 20px 16px 14px;
+    text-align: center;
+    position: relative;
+  }
+
+  .vote-title {
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    text-shadow: 0 0 12px rgba(255,34,68,0.6), 0 0 30px rgba(255,34,68,0.3);
+    margin-bottom: 12px;
+  }
+
+  .vote-timer-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,34,68,0.08);
+    border: 1px solid rgba(255,34,68,0.25);
+    border-radius: 30px;
+    padding: 7px 16px;
+  }
+  .timer-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,34,68,0.7);
+    text-transform: uppercase;
+  }
+  .timer-value {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--red);
+    text-shadow: var(--glow-r);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .vote-subtitle {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0 16px 14px;
+  }
+
+  .vote-list {
+    padding: 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vote-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .vote-item.leader {
+    border-color: rgba(255,34,68,0.5);
+    background: rgba(255,34,68,0.06);
+    animation: dangerflash 1.5s ease-in-out infinite;
+  }
+
+  .vote-rank {
+    width: 24px;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .vote-item.leader .vote-rank {
+    color: var(--red);
+    text-shadow: var(--glow-r);
+    font-weight: bold;
+  }
+
+  .vote-emoji { font-size: 22px; flex-shrink: 0; }
+
+  .vote-info { flex: 1; min-width: 0; }
+  .vote-game-name {
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 3px;
+  }
+  .vote-item.leader .vote-game-name { color: var(--red); text-shadow: var(--glow-r); }
+  .vote-bar-wrap {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 3px;
+  }
+  .vote-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .vote-item.leader .vote-bar { background: var(--red); box-shadow: 0 0 6px var(--red); }
+  .vote-item:not(.leader) .vote-bar { background: var(--dim); }
+  .vote-count {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+  .vote-item.leader .vote-count { color: rgba(255,34,68,0.7); }
+
+  .vote-down-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(255,34,68,0.08);
+    border: 1px solid rgba(255,34,68,0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .vote-down-btn:active,
+  .vote-down-btn.voted {
+    background: rgba(255,34,68,0.25);
+    border-color: var(--red);
+    box-shadow: 0 0 10px rgba(255,34,68,0.3);
+    transform: scale(0.92);
+  }
+
+  .vote-leader-badge {
+    position: absolute;
+    top: -1px;
+    right: 10px;
+    background: var(--red);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 0 0 6px 6px;
+    font-weight: bold;
+    color: var(--bg);
+  }
+
+  .vote-confirm-wrap {
+    padding: 14px 12px 8px;
+  }
+
+  .btn-confirm {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #cc0022, #ff2244);
+    border: none;
+    border-radius: 10px;
+    color: var(--white);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255,34,68,0.3);
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-confirm:active {
+    transform: scale(0.98);
+    box-shadow: 0 0 30px rgba(255,34,68,0.5);
+  }
+
+  .vote-footnote {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    text-transform: uppercase;
+    text-align: center;
+    padding: 10px 16px 6px;
+    line-height: 1.6;
+  }
+
+  /* =============================================
+     SCREEN 3 — NEW GAME OVERLAY (popup)
+     (shown as a full screen in this mockup)
+  ============================================= */
+  .announce-screen {
+    background: rgba(0,0,0,0.92);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* dramatic spotlight */
+  .announce-screen::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 400px;
+    background: radial-gradient(ellipse at top, rgba(255,0,255,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .announce-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    min-height: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .announce-tag {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--magenta);
+    text-shadow: var(--glow-m);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .announce-tag::before,
+  .announce-tag::after {
+    content: '';
+    width: 30px;
+    height: 1px;
+    background: var(--magenta);
+    box-shadow: var(--glow-m);
+  }
+
+  .announce-title {
+    font-size: 26px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--white);
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    margin-bottom: 36px;
+    line-height: 1.2;
+  }
+
+  /* mystery cabinet animation */
+  .mystery-cabinet-wrap {
+    width: 140px;
+    height: 180px;
+    margin: 0 auto 28px;
+    position: relative;
+  }
+
+  .mystery-cabinet-body {
+    width: 140px;
+    height: 180px;
+    background: linear-gradient(180deg, #1a0030 0%, #0d0020 100%);
+    border: 2px solid rgba(255,0,255,0.4);
+    border-radius: 12px 12px 4px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 0 30px rgba(255,0,255,0.2), inset 0 0 20px rgba(0,0,0,0.5);
+  }
+
+  .mystery-cabinet-screen {
+    width: 100px;
+    height: 80px;
+    background: #000;
+    border: 2px solid rgba(255,0,255,0.3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  .mystery-cabinet-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(255,0,255,0.04) 3px,
+      rgba(255,0,255,0.04) 4px
+    );
+  }
+
+  .cabinet-screen-content {
+    font-size: 36px;
+    position: relative;
+    z-index: 1;
+    transition: all 0.5s;
+  }
+  .cabinet-screen-content.hidden {
+    filter: blur(12px);
+    opacity: 0.3;
+  }
+  .cabinet-screen-content.revealed {
+    filter: none;
+    opacity: 1;
+    animation: revealPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes revealPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .mystery-cabinet-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: rgba(255,0,255,0.6);
+    text-transform: uppercase;
+  }
+
+  .mystery-cabinet-body::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 12px 12px 4px 4px;
+    border: 2px solid rgba(255,0,255,0.15);
+    animation: cabinetglow 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes cabinetglow {
+    0%,100% { box-shadow: 0 0 20px rgba(255,0,255,0.15); }
+    50%      { box-shadow: 0 0 40px rgba(255,0,255,0.4), 0 0 80px rgba(255,0,255,0.15); }
+  }
+
+  .ai-generating {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    min-height: 20px;
+    transition: opacity 0.3s;
+  }
+
+  .reveal-game-name {
+    font-size: 24px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: var(--glow-c);
+    margin-bottom: 12px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .reveal-game-name.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.6;
+    max-width: 280px;
+    letter-spacing: 0.5px;
+    margin-bottom: 30px;
+    opacity: 0;
+    transition: opacity 0.5s 0.2s;
+  }
+  .reveal-desc.visible { opacity: 1; }
+
+  .btn-play-first {
+    padding: 15px 32px;
+    background: transparent;
+    border: 2px solid var(--cyan);
+    border-radius: 10px;
+    color: var(--cyan);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-shadow: var(--glow-c);
+    box-shadow: 0 0 20px rgba(0,255,255,0.2), inset 0 0 20px rgba(0,255,255,0.05);
+    transition: all 0.2s;
+    opacity: 0;
+    transition: opacity 0.5s 0.4s, all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-play-first.visible {
+    opacity: 1;
+  }
+  .btn-play-first:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 30px rgba(0,255,255,0.4);
+  }
+
+  .restart-announce {
+    margin-top: 20px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.2);
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.5s 0.6s;
+  }
+  .restart-announce.visible { opacity: 1; }
+
+  /* loading dots */
+  .loading-dots {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 6px;
+  }
+  .loading-dots span {
+    width: 4px;
+    height: 4px;
+    background: var(--magenta);
+    border-radius: 50%;
+    animation: dotpulse 1.2s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotpulse {
+    0%,80%,100% { opacity: 0.2; transform: scale(0.8); }
+    40%          { opacity: 1; transform: scale(1); }
+  }
+
+  /* =============================================
+     SCREEN 4 — SINGLE GAME VIEW
+  ============================================= */
+  .game-screen {
+    background: var(--bg);
+  }
+
+  .game-hero {
+    background: linear-gradient(180deg, rgba(0,255,255,0.06) 0%, transparent 100%);
+    border-bottom: 1px solid rgba(0,255,255,0.1);
+    padding: 20px 16px 16px;
+    position: relative;
+  }
+
+  .game-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-bottom: 16px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .game-back-btn:hover { color: var(--cyan); }
+
+  .game-header-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .game-big-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(0,255,255,0.06);
+    border: 1px solid rgba(0,255,255,0.2);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(0,255,255,0.1);
+  }
+
+  .game-title-block {}
+  .game-title {
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 10px rgba(0,255,255,0.4);
+    margin-bottom: 4px;
+  }
+  .game-subtitle {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .game-stats-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .game-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .game-stat-value {
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .game-stat-label {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  .game-play-section {
+    padding: 16px;
+  }
+
+  .btn-play-big {
+    width: 100%;
+    padding: 17px;
+    background: linear-gradient(135deg, rgba(0,255,255,0.15), rgba(0,255,255,0.05));
+    border: 2px solid var(--cyan);
+    border-radius: 12px;
+    color: var(--cyan);
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-shadow: var(--glow-c);
+    box-shadow: 0 0 20px rgba(0,255,255,0.15);
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    margin-bottom: 12px;
+  }
+  .btn-play-big:active {
+    transform: scale(0.98);
+    box-shadow: 0 0 30px rgba(0,255,255,0.3);
+  }
+
+  .token-cost {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .token-cost strong { color: var(--yellow); text-shadow: 0 0 6px var(--yellow); }
+
+  .game-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px;
+  }
+  .game-divider::before {
+    content: '';
+    display: block;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan) 30%, var(--magenta) 70%, transparent);
+    opacity: 0.3;
+  }
+
+  .rating-section {
+    padding: 0 16px;
+    margin-bottom: 16px;
+  }
+  .rating-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .rating-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .thumb-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--dim);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .thumb-btn.up:active,
+  .thumb-btn.up.active {
+    border-color: var(--green);
+    color: var(--green);
+    background: rgba(0,255,136,0.08);
+    box-shadow: 0 0 10px rgba(0,255,136,0.15);
+  }
+  .thumb-btn.down:active,
+  .thumb-btn.down.active {
+    border-color: var(--red);
+    color: var(--red);
+    background: rgba(255,34,68,0.08);
+    box-shadow: 0 0 10px rgba(255,34,68,0.15);
+  }
+  .rating-score {
+    flex: 1;
+    text-align: right;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--white);
+  }
+  .rating-score span {
+    color: var(--yellow);
+    text-shadow: 0 0 6px var(--yellow);
+  }
+
+  .similar-section {
+    padding: 0 16px 20px;
+  }
+  .similar-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .similar-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .similar-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .similar-chip:active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* =============================================
+     PROFILE SCREEN (minimal, for tab)
+  ============================================= */
+  .profile-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--magenta), var(--cyan));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 30px rgba(255,0,255,0.3);
+  }
+  .profile-name {
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+  .profile-handle {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    margin-bottom: 30px;
+  }
+  .profile-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 30px;
+  }
+  .profile-stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 8px;
+    text-align: center;
+  }
+  .profile-stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--cyan);
+    text-shadow: var(--glow-c);
+    margin-bottom: 4px;
+  }
+  .profile-stat-label {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+  .profile-note {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  /* =============================================
+     LEADERBOARD SCREEN
+  ============================================= */
+  .board-screen {
+    background: var(--bg);
+  }
+  .board-header {
+    padding: 16px 16px 8px;
+    text-align: center;
+  }
+  .board-title {
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--yellow);
+    text-shadow: var(--glow-y);
+    margin-bottom: 4px;
+  }
+  .board-sub {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  .board-list {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .board-item {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .board-item.me {
+    border-color: rgba(0,255,255,0.3);
+    background: rgba(0,255,255,0.04);
+  }
+  .board-rank {
+    width: 28px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .board-item:nth-child(1) .board-rank { color: var(--yellow); text-shadow: var(--glow-y); }
+  .board-item:nth-child(2) .board-rank { color: #cccccc; }
+  .board-item:nth-child(3) .board-rank { color: var(--orange); }
+  .board-item:nth-child(n+4) .board-rank { color: var(--dim); font-size: 11px; }
+
+  .board-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--dim), #330055);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .board-item.me .board-avatar { background: linear-gradient(135deg, var(--cyan), var(--magenta)); }
+
+  .board-info { flex: 1; min-width: 0; }
+  .board-username {
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+  .board-item.me .board-username { color: var(--cyan); text-shadow: 0 0 6px rgba(0,255,255,0.4); }
+  .board-game-count {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.5px;
+  }
+
+  .board-score {
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--yellow);
+    text-shadow: 0 0 6px rgba(255,255,0,0.3);
+    flex-shrink: 0;
+  }
+
+  /* =============================================
+     UTILITY
+  ============================================= */
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .screen.active .cabinet-card { animation: slideUp 0.3s ease both; }
+  .screen.active .cabinet-card:nth-child(1) { animation-delay: 0.0s; }
+  .screen.active .cabinet-card:nth-child(2) { animation-delay: 0.05s; }
+  .screen.active .cabinet-card:nth-child(3) { animation-delay: 0.10s; }
+  .screen.active .cabinet-card:nth-child(4) { animation-delay: 0.15s; }
+  .screen.active .cabinet-card:nth-child(5) { animation-delay: 0.20s; }
+
+  .screen.active .vote-item { animation: slideUp 0.3s ease both; }
+  .screen.active .vote-item:nth-child(1) { animation-delay: 0.0s; }
+  .screen.active .vote-item:nth-child(2) { animation-delay: 0.06s; }
+  .screen.active .vote-item:nth-child(3) { animation-delay: 0.12s; }
+  .screen.active .vote-item:nth-child(4) { animation-delay: 0.18s; }
+  .screen.active .vote-item:nth-child(5) { animation-delay: 0.24s; }
+
+  .screen.active .board-item { animation: slideUp 0.3s ease both; }
+  .screen.active .board-item:nth-child(1) { animation-delay: 0.0s; }
+  .screen.active .board-item:nth-child(2) { animation-delay: 0.06s; }
+  .screen.active .board-item:nth-child(3) { animation-delay: 0.12s; }
+  .screen.active .board-item:nth-child(4) { animation-delay: 0.18s; }
+  .screen.active .board-item:nth-child(5) { animation-delay: 0.24s; }
+  .screen.active .board-item:nth-child(6) { animation-delay: 0.30s; }
+</style>
+</head>
+<body>
+
+<div class="neon-grid"></div>
+
+<div id="app">
+
+  <!-- ==========================================
+       SCREEN 1: LOBBY
+  =========================================== -->
+  <div class="screen active" id="screen-lobby">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+        <div class="stat-pill streak">🔥 7</div>
+      </div>
+      <div class="icon-btn" onclick="alert('Налаштування')">⚙️</div>
+    </div>
+
+    <!-- SCROLL AREA -->
+    <div class="scroll-area">
+      <div class="section-title">
+        <span>▶ АКТИВНІ КАБІНЕТИ</span> &nbsp;—&nbsp; 5 ІГОР
+      </div>
+
+      <div class="cabinet-grid">
+
+        <!-- Cabinet 1: WORD DUEL -->
+        <div class="cabinet-card cyan" onclick="openGame('word-duel')">
+          <div class="cabinet-icon">⚔️</div>
+          <div class="cabinet-info">
+            <div class="cabinet-name">WORD DUEL</div>
+            <div class="cabinet-meta">Грали сьогодні: <strong>247</strong></div>
+            <div class="cabinet-meta">⭐ 4.9 &nbsp;·&nbsp; 🏆 Рейтинговий</div>
+          </div>
+          <div class="cabinet-action">
+            <button class="play-btn" onclick="event.stopPropagation(); openGame('word-duel')">ГРАТИ</button>
+            <div class="cabinet-star">⭐ 4.9</div>
+          </div>
+        </div>
+
+        <!-- Cabinet 2: SPEED MATCH -->
+        <div class="cabinet-card magenta" onclick="openGame('speed-match')">
+          <div class="cabinet-icon">⚡</div>
+          <div class="cabinet-info">
+            <div class="cabinet-name">SPEED MATCH</div>
+            <div class="cabinet-meta">Грали сьогодні: <strong>189</strong></div>
+            <div class="cabinet-meta">⭐ 4.7 &nbsp;·&nbsp; ⏱ Швидкість</div>
+          </div>
+          <div class="cabinet-action">
+            <button class="play-btn">ГРАТИ</button>
+            <div class="cabinet-star">⭐ 4.7</div>
+          </div>
+        </div>
+
+        <!-- Cabinet 3: SENTENCE FORGE -->
+        <div class="cabinet-card green" onclick="openGame('sentence-forge')">
+          <div class="cabinet-icon">🔨</div>
+          <div class="cabinet-info">
+            <div class="cabinet-name">SENTENCE FORGE</div>
+            <div class="cabinet-meta">Грали сьогодні: <strong>124</strong></div>
+            <div class="cabinet-meta">⭐ 4.6 &nbsp;·&nbsp; 📝 Граматика</div>
+          </div>
+          <div class="cabinet-action">
+            <button class="play-btn">ГРАТИ</button>
+            <div class="cabinet-star">⭐ 4.6</div>
+          </div>
+        </div>
+
+        <!-- Cabinet 4: PHANTOM WORDS — DANGER -->
+        <div class="cabinet-card danger" onclick="goTab('vote')">
+          <div class="cabinet-icon">👻</div>
+          <div class="cabinet-info">
+            <div class="cabinet-name">PHANTOM WORDS</div>
+            <div class="cabinet-meta">Грали сьогодні: <strong>31</strong></div>
+            <div class="cabinet-meta">⭐ 2.1 &nbsp;·&nbsp; ⚠️ Небезпечна зона</div>
+            <div class="danger-banner">
+              <div class="danger-dot"></div>
+              ВИХОДИТЬ ЗАВТРА &nbsp;|&nbsp; ГОЛОСУЙ ЗАРАЗ
+            </div>
+          </div>
+        </div>
+
+        <!-- Cabinet 5: LISTEN UP -->
+        <div class="cabinet-card yellow" onclick="openGame('listen-up')">
+          <div class="cabinet-icon">🎧</div>
+          <div class="cabinet-info">
+            <div class="cabinet-name">LISTEN UP</div>
+            <div class="cabinet-meta">Грали сьогодні: <strong>98</strong></div>
+            <div class="cabinet-meta">⭐ 4.4 &nbsp;·&nbsp; 👂 Аудіо</div>
+          </div>
+          <div class="cabinet-action">
+            <button class="play-btn">ГРАТИ</button>
+            <div class="cabinet-star">⭐ 4.4</div>
+          </div>
+        </div>
+
+        <!-- Mystery cabinet -->
+        <div class="mystery-card" onclick="goTab('announce')">
+          <div class="mystery-icon">❓</div>
+          <div class="mystery-info">
+            <div class="mystery-label">🔔 Нова гра сьогодні!</div>
+            <div class="mystery-name">????? ?????</div>
+            <div class="mystery-sub">VOODOO AI готує сюрприз → натисни</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tabbar">
+      <div class="tab active" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 2: VOTING
+  =========================================== -->
+  <div class="screen" id="screen-vote">
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+        <div class="stat-pill streak">🔥 7</div>
+      </div>
+      <div class="icon-btn" onclick="alert('Налаштування')">⚙️</div>
+    </div>
+
+    <div class="scroll-area">
+      <div class="vote-header">
+        <div class="vote-title">ЯКУ ГРУ ПРИБРАТИ?</div>
+        <div class="vote-timer-wrap">
+          <div class="timer-label">Закривається через</div>
+          <div class="timer-value" id="countdown">14:32:07</div>
+        </div>
+      </div>
+
+      <div class="vote-subtitle">
+        Обери гру, яка тобі подобається найменше
+      </div>
+
+      <div class="vote-list">
+
+        <!-- LEADER -->
+        <div class="vote-item leader">
+          <div class="vote-leader-badge">ЛІДЕР ВИХОДУ</div>
+          <div class="vote-rank">#1</div>
+          <div class="vote-emoji">👻</div>
+          <div class="vote-info">
+            <div class="vote-game-name">PHANTOM WORDS</div>
+            <div class="vote-bar-wrap">
+              <div class="vote-bar" style="width: 78%"></div>
+            </div>
+            <div class="vote-count">892 голоси проти</div>
+          </div>
+          <button class="vote-down-btn voted" onclick="castVote(this)">👎</button>
+        </div>
+
+        <div class="vote-item">
+          <div class="vote-rank">#2</div>
+          <div class="vote-emoji">🎧</div>
+          <div class="vote-info">
+            <div class="vote-game-name">LISTEN UP</div>
+            <div class="vote-bar-wrap">
+              <div class="vote-bar" style="width: 42%"></div>
+            </div>
+            <div class="vote-count">487 голосів проти</div>
+          </div>
+          <button class="vote-down-btn" onclick="castVote(this)">👎</button>
+        </div>
+
+        <div class="vote-item">
+          <div class="vote-rank">#3</div>
+          <div class="vote-emoji">⚡</div>
+          <div class="vote-info">
+            <div class="vote-game-name">SPEED MATCH</div>
+            <div class="vote-bar-wrap">
+              <div class="vote-bar" style="width: 28%"></div>
+            </div>
+            <div class="vote-count">321 голос проти</div>
+          </div>
+          <button class="vote-down-btn" onclick="castVote(this)">👎</button>
+        </div>
+
+        <div class="vote-item">
+          <div class="vote-rank">#4</div>
+          <div class="vote-emoji">🔨</div>
+          <div class="vote-info">
+            <div class="vote-game-name">SENTENCE FORGE</div>
+            <div class="vote-bar-wrap">
+              <div class="vote-bar" style="width: 15%"></div>
+            </div>
+            <div class="vote-count">174 голоси проти</div>
+          </div>
+          <button class="vote-down-btn" onclick="castVote(this)">👎</button>
+        </div>
+
+        <div class="vote-item">
+          <div class="vote-rank">#5</div>
+          <div class="vote-emoji">⚔️</div>
+          <div class="vote-info">
+            <div class="vote-game-name">WORD DUEL</div>
+            <div class="vote-bar-wrap">
+              <div class="vote-bar" style="width: 8%"></div>
+            </div>
+            <div class="vote-count">94 голоси проти</div>
+          </div>
+          <button class="vote-down-btn" onclick="castVote(this)">👎</button>
+        </div>
+
+      </div>
+
+      <div class="vote-confirm-wrap">
+        <button class="btn-confirm" onclick="confirmVote()">ПІДТВЕРДИТИ ГОЛОС</button>
+      </div>
+
+      <div class="vote-footnote">
+        Завтра о 00:00 найгірша гра автоматично замінюється<br>
+        VOODOO AI генерує нову гру для спільноти
+      </div>
+
+    </div>
+
+    <div class="tabbar">
+      <div class="tab" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab active" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 3: NEW GAME ANNOUNCEMENT
+  =========================================== -->
+  <div class="screen" id="screen-announce">
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+      </div>
+      <div class="icon-btn" onclick="goTab('lobby')">✕</div>
+    </div>
+
+    <div class="scroll-area announce-screen">
+      <div class="announce-inner">
+
+        <div class="announce-tag">Нове надходження</div>
+
+        <div class="announce-title">🔔 НОВА ГРА<br>СЬОГОДНІ</div>
+
+        <div class="mystery-cabinet-wrap">
+          <div class="mystery-cabinet-body">
+            <div class="mystery-cabinet-screen">
+              <div class="cabinet-screen-content hidden" id="cabinet-screen-emoji">🧬</div>
+            </div>
+            <div class="mystery-cabinet-label">VOODOO AI</div>
+          </div>
+        </div>
+
+        <div class="ai-generating" id="ai-generating-text">
+          VOODOO AI ГЕНЕРУЄ НОВУ ГРУ<span class="loading-dots"><span></span><span></span><span></span></span>
+        </div>
+
+        <div class="reveal-game-name" id="reveal-name">WORD EVOLUTION 🧬</div>
+        <div class="reveal-desc" id="reveal-desc">
+          Спостерігай, як слова еволюціонують від давньоанглійської до сучасної. Здогадайся значення на кожному етапі та збери очки еволюції.
+        </div>
+        <button class="btn-play-first" id="reveal-btn" onclick="openGame('word-evolution')">ГРАТИ ПЕРШИМ →</button>
+        <div class="restart-announce" id="reveal-restart" onclick="restartAnnounce()">↺ ПЕРЕГЛЯНУТИ ЗНОВУ</div>
+
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 4: SINGLE GAME VIEW
+  =========================================== -->
+  <div class="screen" id="screen-game">
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+        <div class="stat-pill streak">🔥 7</div>
+      </div>
+      <div class="icon-btn" onclick="goTab('lobby')">✕</div>
+    </div>
+
+    <div class="scroll-area game-screen">
+
+      <!-- HERO -->
+      <div class="game-hero">
+        <div class="game-back-btn" onclick="goTab('lobby')">← НАЗАД ДО АРКАДИ</div>
+        <div class="game-header-row">
+          <div class="game-big-icon" id="game-icon">⚔️</div>
+          <div class="game-title-block">
+            <div class="game-title" id="game-title">WORD DUEL</div>
+            <div class="game-subtitle" id="game-subtitle">Бій слів &nbsp;·&nbsp; 1 vs 1</div>
+          </div>
+        </div>
+
+        <div class="game-stats-row">
+          <div class="game-stat">
+            <div class="game-stat-value">12,847</div>
+            <div class="game-stat-label">Гравців</div>
+          </div>
+          <div class="game-stat">
+            <div class="game-stat-value" id="game-rating-val">⭐ 4.8</div>
+            <div class="game-stat-label">Рейтинг</div>
+          </div>
+          <div class="game-stat">
+            <div class="game-stat-value">234</div>
+            <div class="game-stat-label">Сьогодні</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLAY -->
+      <div class="game-play-section">
+        <button class="btn-play-big" onclick="alert('Гра починається! 🎮')">ГРАТИ</button>
+        <div class="token-cost">Коштує <strong>🟡 10 токенів</strong> за раунд</div>
+      </div>
+
+      <div class="game-divider"></div>
+
+      <!-- RATING -->
+      <div class="rating-section">
+        <div class="rating-label">твоя оцінка</div>
+        <div class="rating-row">
+          <button class="thumb-btn up" onclick="rateGame('up', this)">👍 <span id="up-count">1,204</span></button>
+          <button class="thumb-btn down" onclick="rateGame('down', this)">👎 <span id="down-count">87</span></button>
+          <div class="rating-score">Рейтинг: <span>93%</span></div>
+        </div>
+      </div>
+
+      <div class="game-divider"></div>
+
+      <!-- SIMILAR -->
+      <div class="similar-section">
+        <div class="similar-label">Схожі ігри</div>
+        <div class="similar-chips">
+          <div class="similar-chip" onclick="openGame('speed-match')">⚡ SPEED MATCH</div>
+          <div class="similar-chip" onclick="openGame('sentence-forge')">🔨 SENTENCE FORGE</div>
+          <div class="similar-chip" onclick="openGame('listen-up')">🎧 LISTEN UP</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tabbar">
+      <div class="tab" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 5: LEADERBOARD (bonus)
+  =========================================== -->
+  <div class="screen" id="screen-board">
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+        <div class="stat-pill streak">🔥 7</div>
+      </div>
+      <div class="icon-btn" onclick="alert('Налаштування')">⚙️</div>
+    </div>
+
+    <div class="scroll-area">
+      <div class="board-header">
+        <div class="board-title">🏆 ТОП АРКАДИ</div>
+        <div class="board-sub">Цей тиждень &nbsp;·&nbsp; Всі ігри</div>
+      </div>
+
+      <div class="board-list">
+        <div class="board-item">
+          <div class="board-rank">🥇</div>
+          <div class="board-avatar">🦊</div>
+          <div class="board-info">
+            <div class="board-username">FOXMASTER</div>
+            <div class="board-game-count">184 ігри цього тижня</div>
+          </div>
+          <div class="board-score">🟡 14,820</div>
+        </div>
+        <div class="board-item">
+          <div class="board-rank">🥈</div>
+          <div class="board-avatar">🐺</div>
+          <div class="board-info">
+            <div class="board-username">WORD_WOLF</div>
+            <div class="board-game-count">162 ігри цього тижня</div>
+          </div>
+          <div class="board-score">🟡 12,340</div>
+        </div>
+        <div class="board-item">
+          <div class="board-rank">🥉</div>
+          <div class="board-avatar">🐉</div>
+          <div class="board-info">
+            <div class="board-username">LEXDRAGON</div>
+            <div class="board-game-count">148 ігор цього тижня</div>
+          </div>
+          <div class="board-score">🟡 11,090</div>
+        </div>
+        <div class="board-item">
+          <div class="board-rank">#4</div>
+          <div class="board-avatar">🦁</div>
+          <div class="board-info">
+            <div class="board-username">LIONSPELL</div>
+            <div class="board-game-count">129 ігор цього тижня</div>
+          </div>
+          <div class="board-score">🟡 9,450</div>
+        </div>
+        <div class="board-item me">
+          <div class="board-rank">#17</div>
+          <div class="board-avatar">🧙</div>
+          <div class="board-info">
+            <div class="board-username">ТИ</div>
+            <div class="board-game-count">34 ігри цього тижня</div>
+          </div>
+          <div class="board-score">🟡 2,840</div>
+        </div>
+        <div class="board-item">
+          <div class="board-rank">#18</div>
+          <div class="board-avatar">🐸</div>
+          <div class="board-info">
+            <div class="board-username">FROGWORDS</div>
+            <div class="board-game-count">31 гра цього тижня</div>
+          </div>
+          <div class="board-score">🟡 2,710</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab active" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       SCREEN 6: PROFILE (bonus)
+  =========================================== -->
+  <div class="screen" id="screen-profile">
+    <div class="topbar">
+      <div class="topbar-logo">VOODOO</div>
+      <div class="topbar-stats">
+        <div class="stat-pill tokens">🟡 2,840</div>
+        <div class="stat-pill streak">🔥 7</div>
+      </div>
+      <div class="icon-btn" onclick="alert('Налаштування')">⚙️</div>
+    </div>
+
+    <div class="scroll-area">
+      <div class="profile-screen">
+        <div class="profile-avatar">🧙</div>
+        <div class="profile-name">CLICKECOM</div>
+        <div class="profile-handle">@clickecom &nbsp;·&nbsp; Гравець з БЕРЕЗНЯ 2026</div>
+
+        <div class="profile-stats-grid">
+          <div class="profile-stat">
+            <div class="profile-stat-value">247</div>
+            <div class="profile-stat-label">Ігор</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" style="color: var(--orange); text-shadow: 0 0 6px var(--orange);">🔥 7</div>
+            <div class="profile-stat-label">Серія</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value">🟡 2,840</div>
+            <div class="profile-stat-label">Токени</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value">#17</div>
+            <div class="profile-stat-label">Рейтинг</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" style="color: var(--green); text-shadow: var(--glow-g);">B2</div>
+            <div class="profile-stat-label">Рівень</div>
+          </div>
+          <div class="profile-stat">
+            <div class="profile-stat-value" style="color: var(--magenta); text-shadow: var(--glow-m);">12</div>
+            <div class="profile-stat-label">Голосів</div>
+          </div>
+        </div>
+
+        <div class="profile-note">
+          ЩОДЕННА ЦІЛЬ: 20 ІГОР &nbsp;·&nbsp; 14/20 СЬОГОДНІ<br>
+          УЛЮБЛЕНА ГРА: ⚔️ WORD DUEL
+        </div>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab" onclick="goTab('lobby')">
+        <div class="tab-icon">🕹️</div>
+        <div class="tab-label">Ігри</div>
+      </div>
+      <div class="tab" onclick="goTab('board')">
+        <div class="tab-icon">🏆</div>
+        <div class="tab-label">Рейтинг</div>
+      </div>
+      <div class="tab active" onclick="goTab('profile')">
+        <div class="tab-icon">👤</div>
+        <div class="tab-label">Профіль</div>
+      </div>
+      <div class="tab" onclick="goTab('vote')">
+        <div class="tab-icon">🗳️</div>
+        <div class="tab-label">Голосувати</div>
+        <div class="tab-badge"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+// =============================================
+// NAVIGATION
+// =============================================
+const SCREENS = {
+  lobby:    'screen-lobby',
+  vote:     'screen-vote',
+  announce: 'screen-announce',
+  game:     'screen-game',
+  board:    'screen-board',
+  profile:  'screen-profile',
+};
+
+let currentScreen = 'lobby';
+let announceTimer = null;
+
+function goTab(name) {
+  // hide all
+  Object.values(SCREENS).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+  // show target
+  const target = document.getElementById(SCREENS[name]);
+  if (target) target.classList.add('active');
+  currentScreen = name;
+
+  if (name === 'announce') {
+    startAnnounce();
+  }
+}
+
+// =============================================
+// GAME DATA (for single game view)
+// =============================================
+const GAME_DATA = {
+  'word-duel':      { icon: '⚔️', title: 'WORD DUEL',      sub: 'Бій слів · 1 vs 1',          rating: '⭐ 4.9' },
+  'speed-match':    { icon: '⚡', title: 'SPEED MATCH',    sub: 'Швидкість · Ліміт 60 сек',   rating: '⭐ 4.7' },
+  'sentence-forge': { icon: '🔨', title: 'SENTENCE FORGE', sub: 'Граматика · Будуй речення',   rating: '⭐ 4.6' },
+  'listen-up':      { icon: '🎧', title: 'LISTEN UP',      sub: 'Аудіо · Розпізнай слово',    rating: '⭐ 4.4' },
+  'word-evolution': { icon: '🧬', title: 'WORD EVOLUTION', sub: 'Нова гра · Еволюція слів',   rating: '⭐ NEW' },
+};
+
+function openGame(id) {
+  const data = GAME_DATA[id] || GAME_DATA['word-duel'];
+  document.getElementById('game-icon').textContent     = data.icon;
+  document.getElementById('game-title').textContent    = data.title;
+  document.getElementById('game-subtitle').textContent = data.sub;
+  document.getElementById('game-rating-val').textContent = data.rating;
+  // reset rating buttons
+  document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('active'));
+  goTab('game');
+}
+
+// =============================================
+// VOTE INTERACTION
+// =============================================
+function castVote(btn) {
+  // remove voted from all
+  document.querySelectorAll('.vote-down-btn').forEach(b => b.classList.remove('voted'));
+  btn.classList.add('voted');
+  // subtle pulse feedback
+  btn.style.transform = 'scale(0.88)';
+  setTimeout(() => { btn.style.transform = ''; }, 150);
+}
+
+function confirmVote() {
+  const voted = document.querySelector('.vote-down-btn.voted');
+  if (!voted) {
+    alert('Спочатку оберіть гру для видалення!');
+    return;
+  }
+  const gameName = voted.closest('.vote-item').querySelector('.vote-game-name').textContent;
+  // animate button
+  const btn = document.querySelector('.btn-confirm');
+  btn.textContent = '✓ ГОЛОС ПРИЙНЯТО';
+  btn.style.background = 'linear-gradient(135deg, #004422, #00aa44)';
+  btn.style.boxShadow = '0 0 20px rgba(0,255,136,0.3)';
+  setTimeout(() => {
+    btn.textContent = 'ПІДТВЕРДИТИ ГОЛОС';
+    btn.style.background = '';
+    btn.style.boxShadow = '';
+  }, 2000);
+}
+
+// =============================================
+// RATING INTERACTION (game screen)
+// =============================================
+function rateGame(dir, btn) {
+  document.querySelectorAll('.thumb-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const upCount = document.getElementById('up-count');
+  const downCount = document.getElementById('down-count');
+  if (dir === 'up') {
+    upCount.textContent = '1,205';
+  } else {
+    downCount.textContent = '88';
+  }
+}
+
+// =============================================
+// COUNTDOWN TIMER
+// =============================================
+let totalSeconds = 14 * 3600 + 32 * 60 + 7;
+function updateCountdown() {
+  if (totalSeconds <= 0) { totalSeconds = 86399; }
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const fmt = n => String(n).padStart(2, '0');
+  const el = document.getElementById('countdown');
+  if (el) el.textContent = `${fmt(h)}:${fmt(m)}:${fmt(s)}`;
+  totalSeconds--;
+}
+setInterval(updateCountdown, 1000);
+
+// =============================================
+// NEW GAME ANNOUNCE ANIMATION
+// =============================================
+function startAnnounce() {
+  // reset state
+  const screenEmoji = document.getElementById('cabinet-screen-emoji');
+  const aiText      = document.getElementById('ai-generating-text');
+  const revealName  = document.getElementById('reveal-name');
+  const revealDesc  = document.getElementById('reveal-desc');
+  const revealBtn   = document.getElementById('reveal-btn');
+  const revealRestart = document.getElementById('reveal-restart');
+
+  screenEmoji.className = 'cabinet-screen-content hidden';
+  screenEmoji.textContent = '🧬';
+  aiText.style.opacity = '1';
+  revealName.classList.remove('visible');
+  revealDesc.classList.remove('visible');
+  revealBtn.classList.remove('visible');
+  revealRestart.classList.remove('visible');
+
+  if (announceTimer) clearTimeout(announceTimer);
+
+  // step 1: 1.5s — AI generating visible
+  announceTimer = setTimeout(() => {
+    aiText.style.opacity = '0.4';
+    // step 2: 3s — reveal emoji
+    announceTimer = setTimeout(() => {
+      screenEmoji.className = 'cabinet-screen-content revealed';
+      aiText.textContent = 'ГОТОВО!';
+      aiText.style.opacity = '1';
+      aiText.style.color = 'var(--cyan)';
+      // step 3: 4.2s — reveal name
+      announceTimer = setTimeout(() => {
+        revealName.classList.add('visible');
+        aiText.style.opacity = '0';
+        // step 4: 5s — reveal desc
+        announceTimer = setTimeout(() => {
+          revealDesc.classList.add('visible');
+          // step 5: 5.8s — reveal button
+          announceTimer = setTimeout(() => {
+            revealBtn.classList.add('visible');
+            revealRestart.classList.add('visible');
+          }, 800);
+        }, 700);
+      }, 1200);
+    }, 1500);
+  }, 1500);
+}
+
+function restartAnnounce() {
+  startAnnounce();
+}
+</script>
+</body>
+</html>

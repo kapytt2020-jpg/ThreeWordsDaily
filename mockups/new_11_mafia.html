@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Mafia</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+html,body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #08000e;
+  color: #fff;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* PHASES */
+.phase { display:none; flex-direction:column; height:100vh; align-items:center; justify-content:center; }
+.phase.active { display:flex; }
+
+/* ══════ INTRO ══════ */
+#intro { background: radial-gradient(ellipse at 50% 30%, #1f0015 0%, #08000e 70%); gap:0; }
+
+.intro-logo {
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1;
+  margin-bottom: 6px;
+  animation: logoPulse 2.5s ease-in-out infinite;
+}
+@keyframes logoPulse {
+  0%,100% { text-shadow: 0 0 40px rgba(200,20,20,0.7); }
+  50% { text-shadow: 0 0 80px rgba(220,0,0,1), 0 0 140px rgba(200,0,0,0.4); }
+}
+.intro-word { color: #ff2020; }
+.intro-mafia { color: rgba(255,255,255,0.9); }
+
+.intro-tagline {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  margin-bottom: 52px;
+}
+
+.players-joining {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.pj-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: all 0.35s ease;
+}
+.pj-slot.in { opacity:1; transform:translateY(0); }
+
+.pj-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 2px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.pj-avatar.you {
+  border-color: rgba(220,30,30,0.5);
+  box-shadow: 0 0 20px rgba(220,0,0,0.2);
+}
+.pj-name { font-size: 11px; color: rgba(255,255,255,0.4); }
+.pj-name.you-name { color: #ff5555; font-weight: 700; }
+
+.intro-status {
+  font-size: 13px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 2px;
+}
+.dots::after {
+  content: '';
+  animation: dotAnim 1.5s steps(4, end) infinite;
+}
+@keyframes dotAnim {
+  0%   { content:''; }
+  25%  { content:'.'; }
+  50%  { content:'..'; }
+  75%  { content:'...'; }
+  100% { content:''; }
+}
+
+/* ══════ ROLE ══════ */
+#role { background:#08000e; gap:20px; }
+
+.role-instruction {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.card-wrap {
+  width: 230px;
+  height: 330px;
+  perspective: 1000px;
+  cursor: pointer;
+}
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(.4,0,.2,1);
+}
+.card-inner.flipped { transform: rotateY(180deg); }
+
+.card-side {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.card-back-side {
+  background: linear-gradient(145deg, #1a0010 0%, #2d001f 100%);
+  border: 2px solid rgba(180,20,20,0.3);
+}
+.cb-question { font-size: 64px; opacity: 0.15; }
+.cb-text {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.15);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.card-front-citizen {
+  background: linear-gradient(145deg, #001830 0%, #002a55 100%);
+  border: 2px solid rgba(80,130,255,0.4);
+  transform: rotateY(180deg);
+}
+.card-front-mafia {
+  background: linear-gradient(145deg, #1a0000 0%, #3d0000 100%);
+  border: 2px solid rgba(220,30,30,0.5);
+  box-shadow: inset 0 0 60px rgba(200,0,0,0.15);
+  transform: rotateY(180deg);
+}
+
+.cf-icon { font-size: 48px; }
+.cf-role-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+}
+.cf-role-name {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.citizen-text { color: #60a5fa; }
+.mafia-text { color: #ff2020; text-shadow: 0 0 20px rgba(255,0,0,0.5); }
+
+.cf-divider {
+  width: 50%;
+  height: 1px;
+  background: rgba(255,255,255,0.12);
+  margin: 2px 0;
+}
+.cf-word-en {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.cf-word-ua {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+}
+.cf-hint {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.tap-hint {
+  font-size: 12px;
+  color: rgba(255,255,255,0.18);
+  animation: hintBlink 2s ease infinite;
+}
+@keyframes hintBlink { 0%,100%{opacity:.18} 50%{opacity:.5} }
+
+/* ══════ DISCUSS ══════ */
+#discuss {
+  display:none;
+  flex-direction:column;
+  height:100vh;
+  align-items:stretch;
+  justify-content:flex-start;
+}
+
+.dh {
+  padding: 14px 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.dh-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+}
+
+.timer-wrap {
+  position: relative;
+  width: 42px; height: 42px;
+}
+.timer-wrap svg { transform: rotate(-90deg); }
+.timer-bg { fill:none; stroke:rgba(255,255,255,0.08); stroke-width:3; }
+.timer-fg { fill:none; stroke:#ff2020; stroke-width:3; stroke-linecap:round; transition: stroke-dashoffset 1s linear; }
+.timer-num {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#ff6060;
+}
+
+.word-pill {
+  margin: 10px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.wp-word {
+  font-size: 17px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.wp-ua { font-size: 12px; color: rgba(255,255,255,0.35); }
+.wp-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(220,30,30,0.15);
+  border: 1px solid rgba(220,30,30,0.3);
+  color: #ff6060;
+  display: none;
+}
+
+.chat { flex:1; overflow-y:auto; padding:8px 16px; display:flex; flex-direction:column; gap:10px; }
+
+.msg {
+  display:flex; gap:10px; align-items:flex-end;
+  opacity:0; transform:translateY(8px);
+  transition: all 0.3s ease;
+}
+.msg.show { opacity:1; transform:translateY(0); }
+.msg.me { flex-direction:row-reverse; }
+
+.m-ava {
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(255,255,255,0.07);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; flex-shrink:0;
+}
+.m-body { max-width:78%; }
+.m-name {
+  font-size:9px; color:rgba(255,255,255,0.28);
+  margin-bottom:3px;
+}
+.m-name.sus { color:#fbbf24; }
+.m-bubble {
+  padding:9px 13px;
+  border-radius:14px;
+  font-size:13px;
+  line-height:1.4;
+}
+.m-bubble.them {
+  background:rgba(255,255,255,0.07);
+  border-bottom-left-radius:4px;
+}
+.m-bubble.me-style {
+  background:rgba(220,30,30,0.2);
+  border:1px solid rgba(220,30,30,0.25);
+  border-bottom-right-radius:4px;
+}
+
+.quick-area {
+  padding: 10px 16px 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  flex-shrink:0;
+}
+.quick-label {
+  font-size:10px; color:rgba(255,255,255,0.2);
+  letter-spacing:2px; text-transform:uppercase;
+  margin-bottom:8px;
+}
+.quick-btns { display:flex; flex-direction:column; gap:6px; }
+.qb {
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  color:rgba(255,255,255,0.65);
+  padding:9px 13px;
+  border-radius:10px;
+  font-size:12px;
+  text-align:left;
+  cursor:pointer;
+  transition:all .2s;
+}
+.qb:hover { background:rgba(220,30,30,0.15); border-color:rgba(220,30,30,0.3); color:#fff; }
+.qb:disabled { opacity:.3; cursor:default; }
+
+/* ══════ VOTE ══════ */
+#vote {
+  background: radial-gradient(ellipse at 50% 20%, #1f0008 0%, #08000e 70%);
+  gap:16px;
+}
+
+.vote-hd {
+  text-align:center;
+}
+.vote-title {
+  font-size:28px; font-weight:900;
+  letter-spacing:4px; text-transform:uppercase;
+  color:#ff2020;
+  text-shadow:0 0 30px rgba(255,0,0,0.5);
+}
+.vote-sub {
+  font-size:11px; color:rgba(255,255,255,0.25);
+  letter-spacing:2px; text-transform:uppercase;
+  margin-top:4px;
+}
+
+.vote-grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  padding:0 24px;
+  width:100%;
+  max-width:360px;
+}
+.vp {
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  cursor:pointer;
+  transition:all .2s;
+}
+.vp.no-vote { cursor:default; }
+
+.vp-ava {
+  width:66px; height:66px; border-radius:50%;
+  background:rgba(255,255,255,0.06);
+  border:2px solid rgba(255,255,255,0.1);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  transition:all .25s;
+}
+.vp:not(.no-vote):hover .vp-ava {
+  border-color:rgba(220,30,30,0.5);
+  box-shadow:0 0 20px rgba(220,0,0,0.2);
+  transform:scale(1.06);
+}
+.vp.chosen .vp-ava {
+  border-color:#ff2020;
+  box-shadow:0 0 28px rgba(220,0,0,0.45);
+  transform:scale(1.1);
+}
+.vp-name { font-size:10px; color:rgba(255,255,255,0.4); }
+.vp-name.me-v { color:#ff6060; }
+.vp-count { font-size:9px; color:rgba(255,255,255,0.2); }
+
+.vote-action-btn {
+  background:linear-gradient(135deg,#bb1010,#ff2020);
+  color:#fff; border:none;
+  padding:14px 44px;
+  border-radius:14px;
+  font-size:15px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 8px 28px rgba(200,20,20,0.4);
+  transition:all .2s;
+}
+.vote-action-btn:active { transform:scale(.95); }
+.vote-action-btn:disabled { opacity:.3; cursor:not-allowed; }
+
+/* ══════ REVEAL ══════ */
+#reveal { background:#08000e; gap:20px; }
+
+.reveal-pre {
+  font-size:80px; font-weight:900; color:#ff2020;
+  text-shadow:0 0 60px rgba(255,0,0,0.8);
+}
+.rev-was { font-size:12px; letter-spacing:3px; color:rgba(255,255,255,0.3); text-transform:uppercase; }
+.rev-ava {
+  width:96px; height:96px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:44px;
+  border:3px solid #ff2020;
+  box-shadow:0 0 50px rgba(255,0,0,0.45), inset 0 0 24px rgba(255,0,0,0.15);
+  animation:revGlow 2s ease infinite;
+}
+@keyframes revGlow {
+  0%,100%{box-shadow:0 0 40px rgba(255,0,0,.4)}
+  50%{box-shadow:0 0 80px rgba(255,0,0,.7)}
+}
+.rev-name { font-size:26px; font-weight:900; color:#ff2020; letter-spacing:2px; }
+.rev-info {
+  background:rgba(255,40,40,0.08);
+  border:1px solid rgba(255,40,40,0.2);
+  border-radius:14px;
+  padding:14px 22px;
+  text-align:center;
+}
+.rev-word { font-size:18px; font-weight:800; text-transform:uppercase; letter-spacing:2px; }
+.rev-saw { font-size:12px; color:#ff7070; margin-top:6px; }
+.rev-real { font-size:12px; color:rgba(255,255,255,0.35); margin-top:3px; }
+.rev-result {
+  font-size:30px; font-weight:900;
+  letter-spacing:3px; text-transform:uppercase;
+  text-align:center;
+}
+.rev-result.win { color:#34d399; text-shadow:0 0 30px rgba(52,211,153,0.5); }
+.rev-result.lose { color:#ff2020; text-shadow:0 0 30px rgba(255,0,0,0.5); }
+.rev-sub { font-size:12px; color:rgba(255,255,255,0.3); text-align:center; }
+.replay-btn {
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.6);
+  padding:11px 26px; border-radius:12px;
+  font-size:13px; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.replay-btn:hover { background:rgba(255,255,255,0.11); color:#fff; }
+
+@keyframes countIn {
+  from { transform:scale(2.5); opacity:0; }
+  to   { transform:scale(1); opacity:1; }
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="phase active" id="intro">
+  <div class="intro-logo">
+    <span class="intro-word">WORD</span><br>
+    <span class="intro-mafia">MAFIA</span>
+  </div>
+  <div class="intro-tagline">Хто знає неправильне слово?</div>
+  <div class="players-joining" id="pjGrid">
+    <div class="pj-slot" id="pp0"><div class="pj-avatar">🐺</div><div class="pj-name">Олексій</div></div>
+    <div class="pj-slot" id="pp1"><div class="pj-avatar">🦊</div><div class="pj-name">Марія</div></div>
+    <div class="pj-slot" id="pp2"><div class="pj-avatar you">😎</div><div class="pj-name you-name">ТИ</div></div>
+    <div class="pj-slot" id="pp3"><div class="pj-avatar">🐱</div><div class="pj-name">Денис</div></div>
+    <div class="pj-slot" id="pp4"><div class="pj-avatar">🦋</div><div class="pj-name">Катя</div></div>
+    <div class="pj-slot" id="pp5"><div class="pj-avatar">🦅</div><div class="pj-name">Ігор</div></div>
+  </div>
+  <div class="intro-status">Роздаємо карти<span class="dots"></span></div>
+</div>
+
+<!-- ROLE -->
+<div class="phase" id="role">
+  <div class="role-instruction">Твоя роль у цій грі</div>
+  <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+    <div class="card-inner" id="cardInner">
+      <div class="card-side card-back-side">
+        <div class="cb-question">🃏</div>
+        <div class="cb-text">Натисни щоб<br>дізнатись роль</div>
+      </div>
+      <div class="card-side card-front-citizen" id="cardFront">
+        <div class="cf-icon">🏛️</div>
+        <div class="cf-role-label">Твоя роль</div>
+        <div class="cf-role-name citizen-text">МИРНИЙ</div>
+        <div class="cf-divider"></div>
+        <div class="cf-word-en">EXPENSIVE</div>
+        <div class="cf-word-ua">= «дорогий»</div>
+        <div class="cf-hint">Знайди хто знає<br>неправильний переклад.</div>
+      </div>
+    </div>
+  </div>
+  <div class="tap-hint" id="tapHint">👆 Торкнись карти</div>
+</div>
+
+<!-- DISCUSS -->
+<div class="phase" id="discuss">
+  <div class="dh">
+    <div class="dh-title">Обговорення</div>
+    <div class="timer-wrap">
+      <svg width="42" height="42">
+        <circle class="timer-bg" cx="21" cy="21" r="17"/>
+        <circle class="timer-fg" cx="21" cy="21" r="17"
+          id="timerArc"
+          stroke-dasharray="107"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="timerNum">60</div>
+    </div>
+  </div>
+
+  <div class="word-pill">
+    <div>
+      <div class="wp-word">EXPENSIVE</div>
+      <div class="wp-ua" id="wpUa">твій переклад: дорогий</div>
+    </div>
+    <div class="wp-badge" id="mafBadge">МАФ 🔴</div>
+  </div>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="quick-area">
+    <div class="quick-label">Твоє повідомлення</div>
+    <div class="quick-btns">
+      <button class="qb" onclick="sendMe(0)">"Expensive things aren't always quality 🤷"</button>
+      <button class="qb" onclick="sendMe(1)">"Цей ресторан дуже expensive, я не міг собі дозволити 😅"</button>
+      <button class="qb" onclick="sendMe(2)">"Ігор уникає прямого використання слова 👀"</button>
+    </div>
+  </div>
+</div>
+
+<!-- VOTE -->
+<div class="phase" id="vote">
+  <div class="vote-hd">
+    <div class="vote-title">ХТО МАФ?</div>
+    <div class="vote-sub">Оберіть підозрюваного</div>
+  </div>
+  <div class="vote-grid" id="voteGrid">
+    <div class="vp" onclick="pickVote(this,'Олексій')"><div class="vp-ava">🐺</div><div class="vp-name">Олексій</div><div class="vp-count" id="vc0">0 голосів</div></div>
+    <div class="vp" onclick="pickVote(this,'Марія')"><div class="vp-ava">🦊</div><div class="vp-name">Марія</div><div class="vp-count" id="vc1">0 голосів</div></div>
+    <div class="vp no-vote"><div class="vp-ava">😎</div><div class="vp-name me-v">Ти</div><div class="vp-count">—</div></div>
+    <div class="vp" onclick="pickVote(this,'Денис')"><div class="vp-ava">🐱</div><div class="vp-name">Денис</div><div class="vp-count" id="vc3">0 голосів</div></div>
+    <div class="vp" onclick="pickVote(this,'Катя')"><div class="vp-ava">🦋</div><div class="vp-name">Катя</div><div class="vp-count" id="vc4">0 голосів</div></div>
+    <div class="vp" onclick="pickVote(this,'Ігор')"><div class="vp-ava">🦅</div><div class="vp-name">Ігор</div><div class="vp-count" id="vc5">0 голосів</div></div>
+  </div>
+  <button class="vote-action-btn" id="voteBtn" disabled onclick="submitVote()">Голосувати</button>
+</div>
+
+<!-- REVEAL -->
+<div class="phase" id="reveal"></div>
+
+<script>
+const MAFIA = 'Ігор';
+const MAFIA_EMOJI = '🦅';
+const CORRECT_UA = 'дорогий';
+const MAFIA_SAW = 'дешевий';
+const WORD_EN = 'EXPENSIVE';
+
+let userVote = null;
+let chosenVoteEl = null;
+let timerInterval = null;
+let msgsSent = false;
+
+/* ── INTRO ── */
+setTimeout(() => {
+  const slots = document.querySelectorAll('.pj-slot');
+  slots.forEach((s, i) => setTimeout(() => s.classList.add('in'), 250 + i * 280));
+  setTimeout(() => goPhase('role'), 250 + slots.length * 280 + 1100);
+}, 300);
+
+/* ── ROLE ── */
+function flipCard() {
+  const ci = document.getElementById('cardInner');
+  if (!ci.classList.contains('flipped')) {
+    ci.classList.add('flipped');
+    document.getElementById('tapHint').textContent = '👆 Торкнись ще раз → почати';
+  } else {
+    document.getElementById('tapHint').textContent = '⏳ Завантаження...';
+    setTimeout(() => startDiscussion(), 500);
+  }
+}
+
+/* ── DISCUSSION ── */
+const aiMsgs = [
+  { name:'Олексій', em:'🐺', text:'Expensive — це коли щось коштує дуже дорого, правда? Як той телефон 😄', delay:2200 },
+  { name:'Марія',   em:'🦊', text:'Так, expensive = дорогий. Ігоре, а ти що думаєш про це слово?', delay:5400 },
+  { name:'Ігор',    em:'🦅', text:'Expensive — ну... це слово про ціну. Ціна важлива, так!', delay:8800, sus:true },
+  { name:'Денис',   em:'🐱', text:'Ігор, а можеш вжити слово в реченні? 🤔', delay:13000 },
+  { name:'Ігор',    em:'🦅', text:'Так! Ось... цей магазин expensive. Ну ви розумієте, правда? 😅', delay:16500, sus:true },
+  { name:'Катя',    em:'🦋', text:'Я б сказала: "This bag is too expensive for me" — занадто дорога 💸', delay:20500 },
+  { name:'Олексій', em:'🐺', text:'Ігор якось уникає перекласти слово напряму... підозріло 👀', delay:25000 },
+  { name:'Ігор',    em:'🦅', text:'Я нічого не уникаю! Expensive просто... всі знають що це 🙄', delay:28000, sus:true },
+];
+
+function startDiscussion() {
+  goPhase('discuss');
+  let sec = 60;
+  const arc = document.getElementById('timerArc');
+  const C = 2 * Math.PI * 17; // ~107
+  timerInterval = setInterval(() => {
+    sec--;
+    document.getElementById('timerNum').textContent = sec;
+    arc.style.strokeDashoffset = C * (1 - sec / 60);
+    if (sec <= 0) { clearInterval(timerInterval); goVote(); }
+  }, 1000);
+  aiMsgs.forEach(m => setTimeout(() => appendMsg(m), m.delay));
+}
+
+function appendMsg(m) {
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `
+    <div class="m-ava">${m.em}</div>
+    <div class="m-body">
+      <div class="m-name ${m.sus ? 'sus' : ''}">${m.name}${m.sus ? ' 🤨' : ''}</div>
+      <div class="m-bubble them">${m.text}</div>
+    </div>`;
+  const chat = document.getElementById('chat');
+  chat.appendChild(div);
+  requestAnimationFrame(() => { div.classList.add('show'); chat.scrollTop = 9999; });
+}
+
+const myTexts = [
+  "Expensive things aren't always quality 🤷",
+  "Цей ресторан дуже expensive, не міг собі дозволити 😅",
+  "Ігор уникає прямого використання слова 👀"
+];
+
+function sendMe(idx) {
+  if (msgsSent) return;
+  msgsSent = true;
+  document.querySelectorAll('.qb').forEach(b => b.disabled = true);
+  const div = document.createElement('div');
+  div.className = 'msg me show';
+  div.innerHTML = `
+    <div class="m-ava">😎</div>
+    <div class="m-body">
+      <div class="m-name">Ти</div>
+      <div class="m-bubble me-style">${myTexts[idx]}</div>
+    </div>`;
+  const chat = document.getElementById('chat');
+  chat.appendChild(div);
+  chat.scrollTop = 9999;
+  setTimeout(() => { clearInterval(timerInterval); goVote(); }, 2800);
+}
+
+/* ── VOTE ── */
+function goVote() {
+  goPhase('vote');
+  // AI votes appear with delay
+  setTimeout(() => {
+    document.getElementById('vc5').textContent = '3 голоси';
+    document.getElementById('vc1').textContent = '1 голос'; // Ігор votes Марія
+  }, 1200);
+}
+
+function pickVote(el, name) {
+  if (chosenVoteEl) chosenVoteEl.classList.remove('chosen');
+  chosenVoteEl = el;
+  el.classList.add('chosen');
+  userVote = name;
+  document.getElementById('voteBtn').disabled = false;
+}
+
+function submitVote() {
+  const won = userVote === MAFIA;
+  goReveal(won);
+}
+
+/* ── REVEAL ── */
+function goReveal(won) {
+  const el = document.getElementById('reveal');
+  el.innerHTML = '<div class="reveal-pre" id="rCount">3</div>';
+  goPhase('reveal');
+  let c = 3;
+  const t = setInterval(() => {
+    c--;
+    if (c <= 0) { clearInterval(t); showResult(won); return; }
+    const rc = document.getElementById('rCount');
+    rc.textContent = c;
+    rc.style.animation = 'none';
+    void rc.offsetWidth;
+    rc.style.animation = 'countIn .4s ease';
+  }, 900);
+}
+
+function showResult(won) {
+  document.getElementById('reveal').innerHTML = `
+    <div class="rev-was">Мафія була...</div>
+    <div class="rev-ava">${MAFIA_EMOJI}</div>
+    <div class="rev-name">${MAFIA.toUpperCase()}</div>
+    <div class="rev-info">
+      <div class="rev-word">${WORD_EN}</div>
+      <div class="rev-saw">${MAFIA} думав: «${MAFIA_SAW}» ❌</div>
+      <div class="rev-real">Правильно: «${CORRECT_UA}» ✓</div>
+    </div>
+    <div class="rev-result ${won ? 'win' : 'lose'}">${won ? '🏆 ПЕРЕМОГА!' : '💀 МАФ ПЕРЕМІГ'}</div>
+    <div class="rev-sub">${won
+      ? '+50 монет · +1 слово вивчено'
+      : `Ти голосував за ${userVote}, а мафія — ${MAFIA}`
+    }</div>
+    <button class="replay-btn" onclick="location.reload()">Грати знову</button>
+  `;
+}
+
+function goPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const target = document.getElementById(id);
+  target.style.display = 'flex';
+  target.classList.add('active');
+}
+
+// Fix: initial hide
+document.querySelectorAll('.phase:not(.active)').forEach(p => p.style.display='none');
+</script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup 05 — Pet Room / Tamagotchi</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+.room { position:relative; margin:12px 16px; border-radius:20px; overflow:hidden; height:280px; background:linear-gradient(180deg,#0f1a2e 0%,#1a2a40 50%,#0d1520 100%); border:1px solid #1e3a5a; }
+.room-sky { position:absolute;top:0;left:0;right:0;height:80px;background:linear-gradient(180deg,rgba(124,58,237,0.15),transparent); }
+.room-floor { position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(180deg,transparent,rgba(16,185,129,0.1)); border-top:1px solid rgba(16,185,129,0.15); }
+.window { position:absolute;top:20px;right:24px;width:60px;height:50px;background:linear-gradient(135deg,rgba(96,165,250,0.3),rgba(37,99,235,0.2)); border:2px solid rgba(96,165,250,0.3); border-radius:10px; display:flex;align-items:center;justify-content:center;font-size:24px; }
+.bookshelf { position:absolute;left:16px;top:60px;font-size:32px; }
+.plant { position:absolute;right:16px;bottom:60px;font-size:28px; }
+.lamp { position:absolute;left:50%;top:10px;transform:translateX(-50%);font-size:20px; }
+.lamp::after { content:''; position:absolute;top:100%;left:50%;transform:translateX(-50%);width:60px;height:60px;background:radial-gradient(circle,rgba(245,158,11,0.15),transparent);border-radius:50%; }
+.pet-room { position:absolute; bottom:55px; left:50%; transform:translateX(-50%); font-size:80px; cursor:pointer; }
+.pet-room:hover { animation:wiggle 0.3s ease; }
+@keyframes wiggle { 0%,100%{transform:translateX(-50%) rotate(0)} 25%{transform:translateX(-50%) rotate(-5deg)} 75%{transform:translateX(-50%) rotate(5deg)} }
+.pet-speech { position:absolute;top:24px;left:50%;transform:translateX(-50%);background:rgba(10,10,30,0.9);border:1px solid rgba(124,58,237,0.4);border-radius:12px;padding:8px 14px;font-size:12px;color:#a78bfa;white-space:nowrap; }
+.lock-badge { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.6);border-radius:12px;padding:10px;font-size:22px;cursor:pointer; }
+.upgrades { padding:0 16px 12px; }
+.upgrade-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
+.upgrade-item { background:#111827;border:1px solid #1e2d45;border-radius:14px;padding:10px 6px;text-align:center;cursor:pointer;position:relative; }
+.upgrade-item.owned { border-color:rgba(124,58,237,0.4);background:rgba(124,58,237,0.1); }
+.upgrade-item.locked { opacity:0.5; }
+.upgrade-icon { font-size:24px;margin-bottom:4px; }
+.upgrade-name { font-size:10px;color:#94a3b8; }
+.upgrade-cost { font-size:10px;color:#f59e0b;font-weight:700; }
+.owned-badge { position:absolute;top:4px;right:4px;width:12px;height:12px;background:#10b981;border-radius:50%; }
+.stats-row { display:flex;gap:8px;padding:0 16px 12px; }
+.stat-card { flex:1;background:#111827;border:1px solid #1e2d45;border-radius:14px;padding:12px 10px;text-align:center; }
+.stat-icon { font-size:20px;margin-bottom:4px; }
+.stat-val { font-size:18px;font-weight:800; }
+.stat-label { font-size:10px;color:#64748b;margin-top:2px; }
+.learn-bar { margin:0 16px 12px;background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(37,99,235,0.1));border:1px solid rgba(124,58,237,0.3);border-radius:16px;padding:14px 16px; }
+.learn-bar .title { font-size:14px;font-weight:700;margin-bottom:4px; }
+.learn-bar .sub { font-size:12px;color:#94a3b8;margin-bottom:10px; }
+.learn-btn { width:100%;padding:10px;background:linear-gradient(135deg,#7c3aed,#2563eb);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:14px;cursor:pointer; }
+.mood-banner { margin:0 16px 12px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);border-radius:12px;padding:10px 14px;font-size:13px;color:#34d399;display:flex;align-items:center;gap:8px; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+  <div class="screen" style="overflow-y:auto">
+    <div style="padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:12px;color:#64748b">Кімната Кікри</div>
+        <div style="font-size:20px;font-weight:800">🏠 Місяць 2</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="background:#1e2d45;border-radius:100px;padding:6px 12px;font-size:13px;font-weight:700">⭐ 340</div>
+        <div style="background:#1e2d45;border-radius:100px;padding:6px 12px;font-size:13px;font-weight:700">🔥 7</div>
+      </div>
+    </div>
+
+    <!-- Room -->
+    <div class="room">
+      <div class="room-sky"></div>
+      <div class="window">🌙</div>
+      <div class="lamp">💡</div>
+      <div class="bookshelf">📚</div>
+      <div class="plant">🌿</div>
+      <div class="room-floor"></div>
+      <div class="pet-room float" onclick="this.style.fontSize='90px';setTimeout(()=>this.style.fontSize='80px',200)">🦊</div>
+      <div class="pet-speech">Вчи зі мною! 📖</div>
+    </div>
+
+    <!-- Mood -->
+    <div class="mood-banner">
+      😊 Кікра щаслива! Ти навчався 7 днів поспіль
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-val" style="color:#a78bfa">248</div>
+        <div class="stat-label">Слів</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-val" style="color:#f87171">7</div>
+        <div class="stat-label">Стрік</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-val" style="color:#fbbf24">340</div>
+        <div class="stat-label">XP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-val" style="color:#34d399">85%</div>
+        <div class="stat-label">HP</div>
+      </div>
+    </div>
+
+    <!-- Upgrades -->
+    <div class="upgrades">
+      <div class="section-title">Апгрейди кімнати</div>
+      <div class="upgrade-grid">
+        <div class="upgrade-item owned">
+          <div class="owned-badge"></div>
+          <div class="upgrade-icon">🪑</div>
+          <div class="upgrade-name">Крісло</div>
+          <div style="font-size:10px;color:#10b981">✓ Є</div>
+        </div>
+        <div class="upgrade-item owned">
+          <div class="owned-badge"></div>
+          <div class="upgrade-icon">📚</div>
+          <div class="upgrade-name">Полиця</div>
+          <div style="font-size:10px;color:#10b981">✓ Є</div>
+        </div>
+        <div class="upgrade-item">
+          <div class="upgrade-icon">🖥️</div>
+          <div class="upgrade-name">Комп'ютер</div>
+          <div class="upgrade-cost">200 ⭐</div>
+        </div>
+        <div class="upgrade-item locked">
+          <div class="upgrade-icon">🎵</div>
+          <div class="upgrade-name">Музика</div>
+          <div class="upgrade-cost">500 ⭐</div>
+        </div>
+        <div class="upgrade-item locked">
+          <div class="upgrade-icon">🌸</div>
+          <div class="upgrade-name">Сад</div>
+          <div class="upgrade-cost">Рівень 8</div>
+        </div>
+        <div class="upgrade-item locked">
+          <div class="upgrade-icon">🏆</div>
+          <div class="upgrade-name">Трофей</div>
+          <div class="upgrade-cost">50 слів</div>
+        </div>
+        <div class="upgrade-item locked">
+          <div class="upgrade-icon">🐟</div>
+          <div class="upgrade-name">Акваріум</div>
+          <div class="upgrade-cost">1000 ⭐</div>
+        </div>
+        <div class="upgrade-item locked">
+          <div class="upgrade-icon">🌟</div>
+          <div class="upgrade-name">Зірки</div>
+          <div class="upgrade-cost">Premium</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learn CTA -->
+    <div class="learn-bar">
+      <div class="title">Кікра хоче вчитись! 📖</div>
+      <div class="sub">Вивчи 5 слів щоб підняти їй настрій</div>
+      <button class="learn-btn">🎓 Почати урок (3 хв)</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab"><div class="icon">🏠</div><div class="label">Дім</div></div>
+    <div class="tab active"><div class="icon">🏡</div><div class="label">Кімната</div></div>
+    <div class="tab"><div class="icon">📖</div><div class="label">Вчити</div></div>
+    <div class="tab"><div class="icon">🏆</div><div class="label">Топ</div></div>
+    <div class="tab"><div class="icon">👤</div><div class="label">Я</div></div>
+  </div>
+</div>
+<div style="position:fixed;top:20px;left:20px;background:#1e2a3a;border:1px solid #2a3a4a;border-radius:12px;padding:12px 16px;max-width:280px;font-size:12px;color:#94a3b8;line-height:1.6">
+  <strong style="color:#38bdf8">🏠 Mockup 05 — Pet Room</strong><br><br>
+  <strong style="color:#e2e8f0">Для кого:</strong> Tamagotchi-lover, casual gamers<br>
+  <strong style="color:#e2e8f0">Retention loop:</strong> Кімната росте = юзер повертається<br>
+  <strong style="color:#e2e8f0">Монетизація:</strong> Апгрейди за Stars ⭐<br>
+  <strong style="color:#e2e8f0">Ризик:</strong> Складна розробка; баланс потрібен<br><br>
+  <a href="index.html" style="color:#60a5fa">← Всі мокапи</a>
+</div>
+</body>
+</html>

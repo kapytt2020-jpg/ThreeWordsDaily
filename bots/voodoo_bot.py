@@ -344,6 +344,25 @@ async def cmd_play(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+async def cmd_podcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send user a personalized podcast based on their learned words."""
+    user = update.effective_user
+    msg  = await update.message.reply_text(
+        "🎙 Генерую твій персональний подкаст...\n"
+        "Це займе ~30 секунд ⏳"
+    )
+    try:
+        from agents.podcast_agent import generate_and_send_personal
+        ok = await generate_and_send_personal(user.id)
+        if ok:
+            await msg.delete()
+        else:
+            await msg.edit_text("❌ Не вдалось створити подкаст. Спробуй пізніше.")
+    except Exception as e:
+        log.error("cmd_podcast error: %s", e)
+        await msg.edit_text("❌ Технічна помилка. Спробуй ще раз.")
+
+
 async def cmd_leaderboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     stats = await db.get_stats()
     top10 = stats.get("top10", [])
@@ -408,6 +427,7 @@ async def post_init(app: Application) -> None:
         BotCommand("invite",      "👥 Запросити друга (+50 XP)"),
         BotCommand("freeze",      "❄️ Заморожувач серії (15 ⭐)"),
         BotCommand("subscribe",   "💎 Voodoo Premium"),
+        BotCommand("podcast",     "🎙 Персональний подкаст"),
         BotCommand("help",        "❓ Допомога"),
     ])
     db.init_db()
@@ -434,6 +454,7 @@ async def main() -> None:
     app.add_handler(CommandHandler("play",        cmd_play))
     app.add_handler(CommandHandler("lessons",     cmd_play))
     app.add_handler(CommandHandler("invite",      cmd_invite))
+    app.add_handler(CommandHandler("podcast",     cmd_podcast))
 
     app.add_handler(CallbackQueryHandler(cb_level,   pattern=r"^level_"))
     app.add_handler(CallbackQueryHandler(cb_quiz,    pattern=r"^quiz_"))

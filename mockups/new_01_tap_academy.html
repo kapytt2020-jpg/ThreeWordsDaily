@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · Tap Academy</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#f0f0f5;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#fafafa;border-radius:44px;overflow:hidden;border:1.5px solid #ddd;box-shadow:0 40px 120px rgba(0,0,0,0.18);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#999;flex-shrink:0}
+
+/* TOP HEADER */
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 18px 12px;flex-shrink:0}
+.coins-pill{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#ff9500,#ff6b00);border-radius:100px;padding:8px 16px;color:#fff;font-size:14px;font-weight:800;box-shadow:0 4px 16px rgba(255,107,0,0.35)}
+.stars-pill{display:flex;align-items:center;gap:6px;background:#1a1a2e;border-radius:100px;padding:8px 16px;color:#fff;font-size:14px;font-weight:800}
+.streak-pill{display:flex;align-items:center;gap:4px;background:#fff3e0;border:1px solid #ffcc80;border-radius:100px;padding:6px 12px;font-size:13px;font-weight:700;color:#e65100}
+
+/* TAP ZONE */
+.tap-zone{display:flex;flex-direction:column;align-items:center;padding:10px 0 0;flex-shrink:0}
+.energy-wrap{width:280px;height:8px;background:#e8e8e8;border-radius:100px;margin-bottom:10px;overflow:hidden}
+.energy-bar{height:8px;background:linear-gradient(90deg,#ff9500,#ff6b00);border-radius:100px;width:72%;transition:width 0.3s}
+.energy-label{font-size:11px;color:#999;margin-bottom:14px}
+.tap-btn{width:190px;height:190px;border-radius:50%;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#ffb347,#ff6b00 60%,#e65100);box-shadow:0 8px 40px rgba(255,107,0,0.5),0 0 0 12px rgba(255,107,0,0.1),0 0 0 24px rgba(255,107,0,0.05);transition:transform 0.08s,box-shadow 0.08s;user-select:none}
+.tap-btn:active{transform:scale(0.94);box-shadow:0 4px 20px rgba(255,107,0,0.4)}
+.tap-emoji{font-size:72px;pointer-events:none}
+.tap-hint{font-size:12px;color:#bbb;margin-top:12px;letter-spacing:0.5px}
+.coin-pop{position:absolute;pointer-events:none;font-size:16px;font-weight:800;color:#ff6b00;animation:coinFloat 1s ease-out forwards;opacity:0}
+@keyframes coinFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-80px) scale(1.3)}}
+
+/* TODAY WORD */
+.word-card{margin:14px 16px 0;background:#fff;border-radius:20px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,0.06);border:1px solid #f0f0f0}
+.wc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#bbb;margin-bottom:6px}
+.wc-row{display:flex;align-items:center;justify-content:space-between}
+.wc-word{font-size:26px;font-weight:900;color:#1a1a2e}
+.wc-ipa{font-size:12px;color:#9b59b6;margin-top:2px}
+.wc-ua{font-size:14px;color:#666;margin-top:2px}
+.wc-earn{background:linear-gradient(135deg,#ff9500,#ff6b00);border-radius:100px;padding:4px 10px;font-size:11px;font-weight:800;color:#fff}
+.wc-study-btn{width:100%;margin-top:10px;padding:10px;background:#1a1a2e;border:none;border-radius:12px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+
+/* STATS ROW */
+.stats-row{display:flex;gap:8px;padding:12px 16px 0}
+.stat{flex:1;background:#fff;border-radius:16px;padding:10px 8px;text-align:center;box-shadow:0 1px 8px rgba(0,0,0,0.05)}
+.stat .si{font-size:18px}
+.stat .sv{font-size:17px;font-weight:800;color:#1a1a2e;margin:2px 0}
+.stat .sl{font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:0.5px}
+
+/* LEADERBOARD PREVIEW */
+.lb-wrap{margin:12px 16px;background:#fff;border-radius:20px;padding:14px 16px;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
+.lb-title{font-size:12px;font-weight:700;color:#1a1a2e;margin-bottom:10px;display:flex;justify-content:space-between}
+.lb-title a{font-size:11px;color:#ff6b00;text-decoration:none}
+.lb-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f5f5f5}
+.lb-row:last-child{border:none}
+.lb-pos{font-size:14px;width:20px;text-align:center}
+.lb-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}
+.lb-name{flex:1;font-size:13px;font-weight:600;color:#333}
+.lb-coins{font-size:12px;font-weight:700;color:#ff6b00}
+
+/* INVITE BANNER */
+.invite-banner{margin:10px 16px 12px;background:linear-gradient(135deg,#1a1a2e,#2d1b69);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ib-text{flex:1}
+.ib-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.ib-sub{font-size:11px;color:rgba(255,255,255,0.6)}
+.ib-btn{background:linear-gradient(135deg,#ff9500,#ff6b00);border:none;border-radius:10px;padding:8px 14px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* TAB BAR */
+.tabbar{display:flex;background:#fff;border-top:1px solid #f0f0f0;padding:8px 0 20px;flex-shrink:0;margin-top:auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#bbb;font-weight:500}
+.tab.on .tl{color:#ff6b00}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <div class="topbar">
+    <div class="coins-pill">🪙 <span id="coins">12,450</span></div>
+    <div class="streak-pill">🔥 7 днів</div>
+    <div class="stars-pill">⭐ <span id="stars">340</span></div>
+  </div>
+
+  <!-- TAP ZONE -->
+  <div class="tap-zone">
+    <div class="energy-wrap"><div class="energy-bar" id="ebar"></div></div>
+    <div class="energy-label">Енергія: <span id="en">720</span> / 1000 ⚡</div>
+    <div style="position:relative">
+      <button class="tap-btn" id="tapBtn" onclick="doTap(event)">
+        <span class="tap-emoji">🪄</span>
+      </button>
+    </div>
+    <div class="tap-hint">ТАП щоб заробити монети</div>
+  </div>
+
+  <!-- WORD OF DAY -->
+  <div class="word-card">
+    <div class="wc-label">📖 Слово зараз</div>
+    <div class="wc-row">
+      <div>
+        <div class="wc-word">Resilient</div>
+        <div class="wc-ipa">/rɪˈzɪliənt/</div>
+        <div class="wc-ua">стійкий, витривалий</div>
+      </div>
+      <div class="wc-earn">🪙 +500</div>
+    </div>
+    <button class="wc-study-btn" onclick="studyWord()">⚡ Вивчити та отримати 500 монет</button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat"><div class="si">📚</div><div class="sv">248</div><div class="sl">Слів</div></div>
+    <div class="stat"><div class="si">🪙</div><div class="sv" id="stat-coins">12.4K</div><div class="sl">Монет</div></div>
+    <div class="stat"><div class="si">🏆</div><div class="sv">#14</div><div class="sl">Рейтинг</div></div>
+    <div class="stat"><div class="si">👥</div><div class="sv">3</div><div class="sl">Друзів</div></div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="lb-wrap">
+    <div class="lb-title">🏆 Топ тижня <a href="#">Всі →</a></div>
+    <div class="lb-row"><div class="lb-pos">🥇</div><div class="lb-avatar" style="background:#fff3cd">😎</div><div class="lb-name">Олексій</div><div class="lb-coins">🪙 89,200</div></div>
+    <div class="lb-row"><div class="lb-pos">🥈</div><div class="lb-avatar" style="background:#f0f0f0">🦊</div><div class="lb-name">Марія</div><div class="lb-coins">🪙 67,100</div></div>
+    <div class="lb-row"><div class="lb-pos">🥉</div><div class="lb-avatar" style="background:#fce4ec">🐱</div><div class="lb-name">Дмитро</div><div class="lb-coins">🪙 54,800</div></div>
+    <div class="lb-row" style="background:#fff8f0;border-radius:8px;padding:6px 8px;border:none"><div class="lb-pos" style="color:#ff6b00;font-weight:700">#14</div><div class="lb-avatar" style="background:#ffe0b2">🌟</div><div class="lb-name" style="font-weight:700">Ти</div><div class="lb-coins">🪙 12,450</div></div>
+  </div>
+
+  <!-- INVITE -->
+  <div class="invite-banner">
+    <div style="font-size:28px">🎁</div>
+    <div class="ib-text">
+      <div class="ib-title">Запроси друга → +5,000 🪙</div>
+      <div class="ib-sub">Ти і друг отримаєте бонус одразу</div>
+    </div>
+    <button class="ib-btn" onclick="alert('Посилання скопійовано!')">Запросити</button>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on"><div class="ti">🏠</div><div class="tl">Тап</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Вчити</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👥</div><div class="tl">Друзі</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#fff;border:1px solid #e0e0e0;border-radius:14px;padding:14px 18px;max-width:260px;font-size:12px;color:#555;line-height:1.7;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+  <strong style="color:#ff6b00">01 · Tap & Earn Academy</strong><br><br>
+  <strong>Механіка:</strong> Notcoin-стиль тапу + навчання<br>
+  <strong>Монетизація:</strong> Монети→Telegram Stars<br>
+  <strong>Вірусність:</strong> Реферал +5000 монет<br>
+  <strong>Аудиторія:</strong> Всі (дуже низький поріг входу)<br>
+  <strong>Топ-фактор:</strong> Tap loop = повернення 5+ р/день<br><br>
+  <a href="new_index.html" style="color:#ff6b00">← Всі мокапи</a>
+</div>
+
+<script>
+let coins = 12450, energy = 720, tapCount = 0;
+function doTap(e){
+  if(energy<=0) return;
+  const earn = 3 + Math.floor(Math.random()*5);
+  coins += earn; energy = Math.max(0, energy-5);
+  document.getElementById('coins').textContent = coins.toLocaleString();
+  document.getElementById('stat-coins').textContent = (coins/1000).toFixed(1)+'K';
+  document.getElementById('en').textContent = energy;
+  document.getElementById('ebar').style.width = (energy/10)+'%';
+  // Coin pop
+  const pop = document.createElement('div');
+  pop.className = 'coin-pop';
+  pop.textContent = '+'+earn+' 🪙';
+  pop.style.left = (Math.random()*60+20)+'%';
+  pop.style.top = (Math.random()*40+20)+'%';
+  document.getElementById('tapBtn').parentElement.appendChild(pop);
+  setTimeout(()=>pop.remove(),1000);
+  // Refill energy slowly
+  clearTimeout(window._et);
+  window._et = setTimeout(()=>{ energy=Math.min(1000,energy+100); document.getElementById('en').textContent=energy; document.getElementById('ebar').style.width=(energy/10)+'%'; },3000);
+}
+function studyWord(){
+  coins += 500;
+  document.getElementById('coins').textContent = coins.toLocaleString();
+  alert('✅ Слово вивчено! +500 🪙\n\nResilient = стійкий');
+}
+</script>
+</body>
+</html>

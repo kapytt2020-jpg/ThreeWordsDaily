@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · Pet Colony</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0a0814;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#0d0b1a;border-radius:44px;overflow:hidden;border:1.5px solid #2a1f4a;box-shadow:0 40px 120px rgba(100,50,200,0.3);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#555;flex-shrink:0}
+
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:6px 16px 10px}
+.res{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:100px;padding:7px 14px;font-size:13px;font-weight:700;color:#fff}
+
+/* COLONY GRID */
+.colony-title{padding:8px 16px;font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+.colony-hint{font-size:10px;color:#5a4f7a;font-weight:500}
+.colony-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px 8px}
+.cell{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all 0.2s;overflow:hidden}
+.cell:hover{border-color:rgba(139,92,246,0.5);background:rgba(139,92,246,0.08)}
+.cell.occupied{border-color:rgba(139,92,246,0.3);background:radial-gradient(circle at 50% 80%,rgba(139,92,246,0.15),transparent)}
+.cell.selected{border-color:#8b5cf6;background:rgba(139,92,246,0.2);box-shadow:0 0 20px rgba(139,92,246,0.4)}
+.cell.empty{border-style:dashed;border-color:rgba(255,255,255,0.08)}
+.pet-in-cell{font-size:32px;margin-bottom:2px;transition:transform 0.2s}
+.cell:active .pet-in-cell{transform:scale(0.85)}
+.cell-level{font-size:9px;font-weight:700;color:#a78bfa;background:rgba(139,92,246,0.2);border-radius:100px;padding:1px 6px}
+.cell-xp{position:absolute;bottom:3px;left:0;right:0;height:2px;background:rgba(255,255,255,0.1);border-radius:100px}
+.cell-xp-fill{height:2px;background:linear-gradient(90deg,#8b5cf6,#06b6d4);border-radius:100px;transition:width 0.4s}
+.merge-hint{position:absolute;top:-2px;right:-2px;width:14px;height:14px;background:#ec4899;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:8px;border:1px solid #0d0b1a}
+.cell.can-merge .merge-hint{display:flex}
+.cell.empty .plus-icon{font-size:24px;color:#2a2040}
+
+/* ACTION BAR */
+.action-bar{padding:6px 14px 8px;display:flex;gap:8px}
+.action-btn{flex:1;padding:11px;border-radius:14px;border:none;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.action-btn:active{transform:scale(0.95)}
+.btn-merge{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff}
+.btn-lesson{background:linear-gradient(135deg,#0ea5e9,#06b6d4);color:#fff}
+.btn-claim{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
+
+/* PET DETAIL POPUP */
+.pet-detail{margin:0 14px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(139,92,246,0.3);border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.pd-emoji{font-size:52px}
+.pd-info{flex:1}
+.pd-name{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
+.pd-class{font-size:11px;color:#a78bfa}
+.pd-xpbar{height:4px;background:rgba(255,255,255,0.1);border-radius:100px;margin:6px 0;overflow:hidden}
+.pd-xpfill{height:4px;background:linear-gradient(90deg,#8b5cf6,#06b6d4);border-radius:100px;width:65%}
+.pd-stats{display:flex;gap:10px;font-size:10px;color:#888}
+.pd-stat b{color:#c4b5fd}
+.pd-actions{display:flex;flex-direction:column;gap:6px}
+.pd-btn{padding:8px 12px;border-radius:10px;border:none;font-size:11px;font-weight:700;cursor:pointer}
+
+/* COLLECTION BAR */
+.coll-bar{padding:6px 14px 8px}
+.coll-label{font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.coll-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.coll-item{flex-shrink:0;text-align:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px;width:64px}
+.ci-emoji{font-size:26px;margin-bottom:2px}
+.ci-name{font-size:9px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-locked{filter:grayscale(1);opacity:0.3}
+
+/* MERGE NOTIFICATION */
+.merge-notif{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:linear-gradient(135deg,#8b5cf6,#ec4899);border-radius:20px;padding:20px 30px;text-align:center;z-index:100;transition:all 0.4s cubic-bezier(.175,.885,.32,1.275)}
+.merge-notif.show{transform:translate(-50%,-50%) scale(1)}
+.mn-emoji{font-size:60px;margin-bottom:8px}
+.mn-title{font-size:20px;font-weight:900;color:#fff;margin-bottom:4px}
+.mn-sub{font-size:13px;color:rgba(255,255,255,0.8)}
+
+/* TABBAR */
+.tabbar{display:flex;background:rgba(10,8,20,0.95);border-top:1px solid rgba(255,255,255,0.05);padding:8px 0 22px;flex-shrink:0;margin-top:auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#444;font-weight:500}
+.tab.on .tl{color:#8b5cf6}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <div class="topbar">
+    <div class="res">🫐 <span id="berries">1,240</span></div>
+    <div class="res">⭐ <span id="xp">340</span> XP</div>
+    <div class="res">🔥 7</div>
+  </div>
+
+  <!-- COLONY -->
+  <div class="colony-title">
+    🏠 Моя колонія
+    <span class="colony-hint">Тисни пета щоб злити ▸▸</span>
+  </div>
+
+  <div class="colony-grid" id="grid">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- SELECTED PET INFO -->
+  <div class="pet-detail" id="pet-detail">
+    <div class="pd-emoji" id="pd-emoji">🦊</div>
+    <div class="pd-info">
+      <div class="pd-name" id="pd-name">Кікра · Рівень 3</div>
+      <div class="pd-class" id="pd-class">🔮 Темний Маг</div>
+      <div class="pd-xpbar"><div class="pd-xpfill" id="pd-xpfill"></div></div>
+      <div class="pd-stats">
+        <span><b id="pd-words">48</b> слів</span>
+        <span><b id="pd-power">320</b> сили</span>
+        <span>XP <b id="pd-xpval">65</b>/100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-bar">
+    <button class="action-btn btn-lesson" onclick="doLesson()">📖 Урок (+XP)</button>
+    <button class="action-btn btn-merge" id="mergeBtn" onclick="doMerge()" disabled style="opacity:0.4">🔀 Злити</button>
+    <button class="action-btn btn-claim" onclick="doClaim()">🫐 Зібрати</button>
+  </div>
+
+  <!-- COLLECTION -->
+  <div class="coll-bar">
+    <div class="coll-label">🎖 Колекція петів</div>
+    <div class="coll-row">
+      <div class="coll-item"><div class="ci-emoji">🦊</div><div class="ci-name">Лис Lv3</div></div>
+      <div class="coll-item"><div class="ci-emoji">🐺</div><div class="ci-name">Вовк Lv2</div></div>
+      <div class="coll-item"><div class="ci-emoji">🐉</div><div class="ci-name" style="color:#a78bfa">Дракон Lv5</div></div>
+      <div class="coll-item ci-locked"><div class="ci-emoji">🦁</div><div class="ci-name">Лев ???</div></div>
+      <div class="coll-item ci-locked"><div class="ci-emoji">🦄</div><div class="ci-name">Єдиноріг ???</div></div>
+      <div class="coll-item ci-locked"><div class="ci-emoji">🔮</div><div class="ci-name">Феникс ???</div></div>
+    </div>
+  </div>
+
+  <!-- MERGE NOTIF -->
+  <div class="merge-notif" id="mergeNotif">
+    <div class="mn-emoji">🐉</div>
+    <div class="mn-title">Еволюція!</div>
+    <div class="mn-sub">Лис Lv3 + Лис Lv3 = Вовк Lv4!</div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on"><div class="ti">🏠</div><div class="tl">Колонія</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Вчити</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">🛒</div><div class="tl">Крамниця</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#1a0f2e;border:1px solid #2d1f4a;border-radius:14px;padding:14px 18px;max-width:260px;font-size:12px;color:#888;line-height:1.7;box-shadow:0 4px 20px rgba(100,50,200,0.2)">
+  <strong style="color:#a78bfa">02 · Pet Colony (Catizen-стиль)</strong><br><br>
+  <strong style="color:#e2e8f0">Механіка:</strong> Злиття петів = еволюція<br>
+  <strong style="color:#e2e8f0">Навчання:</strong> Уроки дають XP для петів<br>
+  <strong style="color:#e2e8f0">Вірусність:</strong> Показ рідких петів→ заздрість<br>
+  <strong style="color:#e2e8f0">Монетизація:</strong> Рідкі пети за Stars<br>
+  <strong style="color:#e2e8f0">Топ-фактор:</strong> Колекціонування = addiction<br><br>
+  <a href="new_index.html" style="color:#a78bfa">← Всі мокапи</a>
+</div>
+
+<script>
+const PETS = [
+  {e:'🦊',n:'Кікра',lv:3,xp:65,words:48,cls:'Темний Маг'},
+  {e:'🦊',n:'Лисик',lv:3,xp:40,words:35,cls:'Темний Маг'},
+  {e:'🐺',n:'Вовк',lv:2,xp:80,words:22,cls:'Воїн'},
+  {e:'🦋',n:'Мотря',lv:1,xp:20,words:8,cls:'Арт Муза'},
+  {e:'🐉',n:'Зоро',lv:5,xp:90,words:120,cls:'Легенда'},
+  {e:'🐱',n:'Мурко',lv:2,xp:55,words:18,cls:'Стелс'},
+  null,null,null,null,null,null
+];
+let sel = -1, berries=1240;
+
+function renderGrid(){
+  const g = document.getElementById('grid');
+  g.innerHTML = '';
+  PETS.forEach((p,i)=>{
+    const c = document.createElement('div');
+    c.className = 'cell ' + (p ? 'occupied' : 'empty');
+    if(sel===i) c.classList.add('selected');
+    if(p && PETS.some((q,j)=>q&&j!==i&&q.lv===p.lv&&q.e===p.e)) c.classList.add('can-merge');
+    if(p){
+      c.innerHTML=`<div class="merge-hint">⬆</div><div class="pet-in-cell">${p.e}</div><div class="cell-level">Lv${p.lv}</div><div class="cell-xp"><div class="cell-xp-fill" style="width:${p.xp}%"></div></div>`;
+    } else {
+      c.innerHTML='<div class="plus-icon">+</div>';
+    }
+    c.onclick=()=>selectCell(i);
+    g.appendChild(c);
+  });
+}
+
+function selectCell(i){
+  if(!PETS[i]) return;
+  sel = i;
+  const p = PETS[i];
+  document.getElementById('pd-emoji').textContent=p.e;
+  document.getElementById('pd-name').textContent=p.n+' · Рівень '+p.lv;
+  document.getElementById('pd-class').textContent='🔮 '+p.cls;
+  document.getElementById('pd-xpfill').style.width=p.xp+'%';
+  document.getElementById('pd-words').textContent=p.words;
+  document.getElementById('pd-power').textContent=p.lv*p.words*2;
+  document.getElementById('pd-xpval').textContent=p.xp;
+  // enable merge if pair exists
+  const canMerge = PETS.some((q,j)=>q&&j!==i&&q.lv===p.lv&&q.e===p.e);
+  document.getElementById('mergeBtn').disabled=!canMerge;
+  document.getElementById('mergeBtn').style.opacity=canMerge?1:0.4;
+  renderGrid();
+}
+
+function doMerge(){
+  if(sel<0||!PETS[sel]) return;
+  const p=PETS[sel];
+  const j=PETS.findIndex((q,i)=>q&&i!==sel&&q.lv===p.lv&&q.e===p.e);
+  if(j<0) return;
+  PETS[sel]={...p, lv:p.lv+1, xp:0, words:p.words+20};
+  PETS[j]=null;
+  sel=-1;
+  renderGrid();
+  const n=document.getElementById('mergeNotif');
+  n.querySelector('.mn-sub').textContent=`${p.e} Lv${p.lv} + ${p.e} Lv${p.lv} = ${p.e} Lv${p.lv+1}!`;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),2200);
+}
+
+function doLesson(){
+  if(sel>=0&&PETS[sel]){
+    PETS[sel].xp=Math.min(100,PETS[sel].xp+25);
+    PETS[sel].words+=3;
+    document.getElementById('xp').textContent=+document.getElementById('xp').textContent+25;
+    selectCell(sel);
+  } else { alert('Обери пета спочатку'); }
+}
+
+function doClaim(){
+  berries += 120;
+  document.getElementById('berries').textContent=berries.toLocaleString();
+  const n=document.getElementById('mergeNotif');
+  n.querySelector('.mn-emoji').textContent='🫐';
+  n.querySelector('.mn-title').textContent='+120 Ягід!';
+  n.querySelector('.mn-sub').textContent='Пети зібрали врожай поки ти навчався';
+  n.classList.add('show');
+  setTimeout(()=>{n.classList.remove('show');n.querySelector('.mn-emoji').textContent='🐉';n.querySelector('.mn-title').textContent='Еволюція!';},1800);
+}
+
+renderGrid();
+</script>
+</body>
+</html>

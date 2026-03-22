@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · Word Stock Market — Слова мають ціну</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#f0faf0;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#fff;border-radius:44px;overflow:hidden;border:1.5px solid #d1fae5;box-shadow:0 40px 120px rgba(16,185,129,0.12);display:flex;flex-direction:column}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#9ca3af}
+
+/* HEADER */
+.sm-header{background:linear-gradient(135deg,#064e3b,#065f46);padding:14px 18px 16px;position:relative;overflow:hidden}
+.sm-bg{position:absolute;inset:0}
+.ticker-tape{position:absolute;bottom:0;left:0;right:0;height:20px;background:rgba(0,0,0,0.2);overflow:hidden;white-space:nowrap}
+.ticker-inner{display:inline-block;animation:ticker 20s linear infinite;font-size:10px;color:#6ee7b7;padding:3px 0}
+@keyframes ticker{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+.sm-h-row{display:flex;align-items:flex-start;justify-content:space-between;position:relative;margin-bottom:14px}
+.portfolio-val{color:#fff}
+.pv-label{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:2px}
+.pv-amount{font-size:28px;font-weight:900}
+.pv-change{font-size:12px;color:#4ade80;font-weight:700;margin-top:2px}
+.sm-stats{display:flex;gap:10px;position:relative}
+.ss{background:rgba(255,255,255,0.1);border-radius:12px;padding:8px 12px;text-align:center}
+.ss-val{font-size:16px;font-weight:800;color:#fff}
+.ss-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+
+/* MARKET TABLE */
+.market-wrap{padding:12px 16px 8px}
+.mkt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mkt-title{font-size:14px;font-weight:800;color:#1f2937}
+.mkt-filter{display:flex;gap:6px}
+.mf{background:#f3f4f6;border-radius:100px;padding:4px 10px;font-size:11px;cursor:pointer;color:#6b7280;border:1px solid transparent;transition:all 0.15s}
+.mf.on{background:#d1fae5;border-color:#6ee7b7;color:#065f46;font-weight:700}
+
+.stock-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;margin-bottom:6px;border:1px solid #f3f4f6;cursor:pointer;transition:all 0.2s}
+.stock-row:hover{border-color:#d1fae5;background:#f0fdf4}
+.sr-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sr-info{flex:1}
+.sr-word{font-size:14px;font-weight:700;color:#1f2937}
+.sr-holders{font-size:10px;color:#9ca3af;margin-top:1px}
+.sr-chart{width:60px;height:24px;position:relative;flex-shrink:0}
+.sr-price{text-align:right;flex-shrink:0;width:65px}
+.sr-val{font-size:14px;font-weight:800}
+.sr-pct{font-size:11px;font-weight:700;border-radius:100px;padding:1px 6px;display:inline-block;margin-top:2px}
+.up{color:#16a34a}.up-bg{background:#dcfce7;color:#16a34a}
+.down{color:#dc2626}.down-bg{background:#fee2e2;color:#dc2626}
+
+/* SPARKLINE */
+.spark{width:60px;height:24px}
+
+/* MY PORTFOLIO */
+.portfolio-wrap{padding:0 16px 10px}
+.pw-label{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between}
+.pw-label span{color:#10b981;font-size:11px}
+.holding{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#f0fdf4;border:1px solid #d1fae5;border-radius:12px;margin-bottom:6px;cursor:pointer}
+.h-icon{font-size:18px}
+.h-info{flex:1}
+.h-word{font-size:13px;font-weight:700;color:#1f2937}
+.h-sub{font-size:10px;color:#9ca3af}
+.h-pnl{text-align:right}
+.h-val{font-size:13px;font-weight:800;color:#16a34a}
+.h-pct{font-size:10px;color:#16a34a}
+
+/* BUY PANEL */
+.buy-panel{margin:0 16px 10px;background:linear-gradient(135deg,#064e3b,#065f46);border-radius:16px;padding:14px 16px;color:#fff}
+.bp-label{font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.bp-word{font-size:20px;font-weight:800;margin-bottom:2px}
+.bp-ipa{font-size:11px;color:#6ee7b7;margin-bottom:6px}
+.bp-desc{font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:10px;line-height:1.5}
+.bp-row{display:flex;gap:8px}
+.bp-info{flex:1;background:rgba(255,255,255,0.08);border-radius:10px;padding:8px 10px}
+.bpi-val{font-size:16px;font-weight:800}
+.bpi-lbl{font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+.buy-btn{padding:12px 20px;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(16,185,129,0.4)}
+
+/* HOW IT WORKS */
+.how-wrap{margin:0 16px 10px;background:#f9fafb;border:1px solid #f3f4f6;border-radius:14px;padding:12px 14px}
+.hw-label{font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.hw-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#374151;margin-bottom:4px}
+.hw-item:last-child{margin:0}
+
+/* TAB */
+.tabbar{display:flex;background:#fff;border-top:1px solid #f3f4f6;padding:8px 0 22px;flex-shrink:0;margin-top:auto}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#9ca3af;font-weight:500}
+.tab.on .tl{color:#10b981}
+.tab.on .ti{filter:drop-shadow(0 0 6px #10b981)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <!-- HEADER -->
+  <div class="sm-header">
+    <div class="sm-bg"></div>
+    <div class="sm-h-row">
+      <div class="portfolio-val">
+        <div class="pv-label">Твій словниковий портфель</div>
+        <div class="pv-amount">₴ 12,840</div>
+        <div class="pv-change">▲ +340 (+2.7%) сьогодні</div>
+      </div>
+      <div class="sm-stats">
+        <div class="ss"><div class="ss-val">48</div><div class="ss-lbl">Слів</div></div>
+        <div class="ss"><div class="ss-val">🔥7</div><div class="ss-lbl">Стрік</div></div>
+      </div>
+    </div>
+    <div class="ticker-tape">
+      <div class="ticker-inner">📈 RESILIENT +12% · AMBITIOUS +8% · BRILLIANT +5% · CURIOUS +18% · GRATEFUL -3% · CONFIDENT +22% · RELENTLESS +9% · VIBRANT +14% · 📈 RESILIENT +12% · AMBITIOUS +8%</div>
+    </div>
+  </div>
+
+  <!-- MARKET -->
+  <div class="market-wrap">
+    <div class="mkt-header">
+      <div class="mkt-title">📊 Word Market</div>
+      <div class="mkt-filter">
+        <div class="mf on" onclick="filter(this)">Топ</div>
+        <div class="mf" onclick="filter(this)">Ростуть</div>
+        <div class="mf" onclick="filter(this)">Нові</div>
+      </div>
+    </div>
+
+    <div class="stock-row" onclick="selectStock('Resilient','стійкий',280,12)">
+      <div class="sr-icon" style="background:#dcfce7">💪</div>
+      <div class="sr-info">
+        <div class="sr-word">Resilient</div>
+        <div class="sr-holders">1,247 власників</div>
+      </div>
+      <svg class="spark" viewBox="0 0 60 24"><polyline points="0,18 10,14 20,16 30,8 40,10 50,4 60,2" fill="none" stroke="#16a34a" stroke-width="1.5"/></svg>
+      <div class="sr-price">
+        <div class="sr-val up">₴ 280</div>
+        <div class="sr-pct up-bg">▲ +12%</div>
+      </div>
+    </div>
+
+    <div class="stock-row" onclick="selectStock('Curious','цікавий',195,18)">
+      <div class="sr-icon" style="background:#ede9fe">🔍</div>
+      <div class="sr-info">
+        <div class="sr-word">Curious</div>
+        <div class="sr-holders">892 власників</div>
+      </div>
+      <svg class="spark" viewBox="0 0 60 24"><polyline points="0,20 10,15 20,18 30,10 40,6 50,3 60,1" fill="none" stroke="#16a34a" stroke-width="1.5"/></svg>
+      <div class="sr-price">
+        <div class="sr-val up">₴ 195</div>
+        <div class="sr-pct up-bg">▲ +18%</div>
+      </div>
+    </div>
+
+    <div class="stock-row" onclick="selectStock('Grateful','вдячний',145,-3)">
+      <div class="sr-icon" style="background:#fef3c7">🙏</div>
+      <div class="sr-info">
+        <div class="sr-word">Grateful</div>
+        <div class="sr-holders">2,104 власників</div>
+      </div>
+      <svg class="spark" viewBox="0 0 60 24"><polyline points="0,4 10,6 20,5 30,8 40,12 50,14 60,18" fill="none" stroke="#dc2626" stroke-width="1.5"/></svg>
+      <div class="sr-price">
+        <div class="sr-val down">₴ 145</div>
+        <div class="sr-pct down-bg">▼ -3%</div>
+      </div>
+    </div>
+
+    <div class="stock-row" onclick="selectStock('Brilliant','блискучий',320,5)">
+      <div class="sr-icon" style="background:#fef9c3">⭐</div>
+      <div class="sr-info">
+        <div class="sr-word">Brilliant</div>
+        <div class="sr-holders">678 власників</div>
+      </div>
+      <svg class="spark" viewBox="0 0 60 24"><polyline points="0,14 10,12 20,14 30,10 40,8 50,6 60,5" fill="none" stroke="#16a34a" stroke-width="1.5"/></svg>
+      <div class="sr-price">
+        <div class="sr-val up">₴ 320</div>
+        <div class="sr-pct up-bg">▲ +5%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PORTFOLIO -->
+  <div class="portfolio-wrap">
+    <div class="pw-label">Мій портфель <span>Вартість: ₴12,840</span></div>
+    <div class="holding" onclick="alert('Resilient: вивчено 14 дн тому · Ціна входу ₴240 · Зараз ₴280 · Прибуток +₴40')">
+      <div class="h-icon">💪</div>
+      <div class="h-info"><div class="h-word">Resilient</div><div class="h-sub">Куплено 14 дн тому · ₴240</div></div>
+      <div class="h-pnl"><div class="h-val">₴280</div><div class="h-pct">▲ +₴40</div></div>
+    </div>
+    <div class="holding" onclick="alert('Curious: вивчено 7 дн тому · Ціна входу ₴150 · Зараз ₴195 · Прибуток +₴45')">
+      <div class="h-icon">🔍</div>
+      <div class="h-info"><div class="h-word">Curious</div><div class="h-sub">Куплено 7 дн тому · ₴150</div></div>
+      <div class="h-pnl"><div class="h-val">₴195</div><div class="h-pct">▲ +₴45</div></div>
+    </div>
+  </div>
+
+  <!-- BUY PANEL -->
+  <div class="buy-panel" id="buyPanel">
+    <div class="bp-label">🔥 Гаряча угода зараз</div>
+    <div class="bp-word" id="bp-word">Confident</div>
+    <div class="bp-ipa" id="bp-ipa">/ˈkɒnfɪdənt/ · впевнений</div>
+    <div class="bp-desc" id="bp-desc">Зараз ростуть слова пов'язані з психологією. Confident виріс на 22% за тиждень!</div>
+    <div class="bp-row">
+      <div class="bp-info"><div class="bpi-val" id="bp-val">₴ 210</div><div class="bpi-lbl">Поточна ціна</div></div>
+      <div class="bp-info"><div class="bpi-val">▲ +22%</div><div class="bpi-lbl">Тижн. зріст</div></div>
+      <button class="buy-btn" onclick="buyWord()">📖 Вивчити і купити</button>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="how-wrap">
+    <div class="hw-label">Як це працює</div>
+    <div class="hw-item">📖 Вивчаєш слово → "купуєш" його у свій портфель</div>
+    <div class="hw-item">📈 Чим більше людей вивчають це слово → ціна зростає</div>
+    <div class="hw-item">💰 Продаєш коли ціна висока → отримуєш XP/Зірки</div>
+    <div class="hw-item">🏆 Топ інвесторів → ексклюзивні нагороди</div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab"><div class="ti">🏠</div><div class="tl">Головна</div></div>
+    <div class="tab on"><div class="ti">📈</div><div class="tl">Маркет</div></div>
+    <div class="tab"><div class="ti">💼</div><div class="tl">Портфель</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#fff;border:1px solid #d1fae5;border-radius:14px;padding:14px 18px;max-width:265px;font-size:12px;color:#6b7280;line-height:1.7;box-shadow:0 4px 20px rgba(16,185,129,0.1)">
+  <strong style="color:#065f46">10 · Word Stock Market 📈 (ОРИГІНАЛЬНО)</strong><br><br>
+  <strong>Концепт:</strong> Кожне слово = акція на ринку<br>
+  <strong>Механіка:</strong> Вивчаєш = купуєш, тренд = ціна росте<br>
+  <strong>Оригінальність:</strong> Нікого немає на ринку<br>
+  <strong>Психологія:</strong> Портфель слів = фінансове мислення<br>
+  <strong>Addiction:</strong> Перевіряєш ринок як криптовалюту<br><br>
+  <a href="new_index.html" style="color:#10b981">← Всі мокапи</a>
+</div>
+
+<script>
+function filter(el){
+  document.querySelectorAll('.mf').forEach(f=>f.classList.remove('on'));
+  el.classList.add('on');
+}
+function selectStock(word,ua,price,pct){
+  document.getElementById('bp-word').textContent=word;
+  document.getElementById('bp-ipa').textContent=`/${word.toLowerCase()}/ · ${ua}`;
+  document.getElementById('bp-val').textContent=`₴ ${price}`;
+  document.querySelector('.buy-btn').textContent=`📖 Вивчити і купити`;
+}
+function buyWord(){
+  const w=document.getElementById('bp-word').textContent;
+  const p=document.getElementById('bp-val').textContent;
+  alert(`📈 Слово куплено!\n\n"${w}" додано до твого портфелю\nЦіна входу: ${p}\n\n+25 XP за вивчення\nСтеж за ціною у портфелі!`);
+}
+// Price ticker animation
+setInterval(()=>{
+  const els=document.querySelectorAll('.sr-val');
+  els.forEach(el=>{
+    const v=parseInt(el.textContent.replace('₴ ',''));
+    const delta=Math.round((Math.random()-0.48)*3);
+    el.textContent=`₴ ${v+delta}`;
+  });
+},3000);
+</script>
+</body>
+</html>

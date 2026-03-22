@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dungeon Words</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --bg: #08000f;
+    --purple-deep: #120020;
+    --purple-mid: #2a0045;
+    --amber: #ff8c00;
+    --amber-glow: rgba(255, 140, 0, 0.15);
+    --amber-soft: rgba(255, 140, 0, 0.07);
+    --red: #ff2244;
+    --green: #00ff88;
+    --gold: #ffd700;
+    --text: #e8d5ff;
+    --text-dim: #7755aa;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  #game-container {
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ===== DUNGEON BACKGROUND ===== */
+  .dungeon-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 100%, var(--amber-soft) 0%, transparent 70%),
+      radial-gradient(ellipse 30% 20% at 15% 85%, var(--amber-glow) 0%, transparent 60%),
+      radial-gradient(ellipse 30% 20% at 85% 85%, var(--amber-glow) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 50% 110%, #1a0030 0%, var(--bg) 70%),
+      var(--bg);
+    z-index: 0;
+  }
+
+  .dungeon-bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 39px,
+      rgba(255,140,0,0.03) 39px,
+      rgba(255,140,0,0.03) 40px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 59px,
+      rgba(255,140,0,0.03) 59px,
+      rgba(255,140,0,0.03) 60px
+    );
+  }
+
+  /* Torch flicker */
+  .torch {
+    position: absolute;
+    width: 8px;
+    height: 24px;
+    bottom: 0;
+  }
+  .torch::before {
+    content: '🔥';
+    font-size: 24px;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: flicker 0.15s infinite alternate;
+    filter: drop-shadow(0 0 12px var(--amber));
+  }
+  .torch-left { left: 20px; bottom: 55%; }
+  .torch-right { right: 20px; bottom: 55%; }
+
+  @keyframes flicker {
+    0% { opacity: 0.9; transform: translateX(-50%) scale(1); }
+    100% { opacity: 1; transform: translateX(-50%) scale(1.05) rotate(2deg); }
+  }
+
+  /* ===== INTRO SCREEN ===== */
+  #intro {
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .intro-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(60,0,120,0.6) 0%, transparent 70%);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .intro-content { position: relative; z-index: 2; text-align: center; padding: 24px; }
+
+  .intro-skull {
+    font-size: 72px;
+    display: block;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(180,0,255,0.8));
+    margin-bottom: 16px;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .game-title {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, var(--amber), #ff4488, var(--amber));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s linear infinite, title-in 1s ease-out;
+    line-height: 1;
+    text-shadow: none;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes title-in {
+    from { opacity: 0; transform: scale(0.7) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .game-subtitle {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 2px;
+    font-style: italic;
+  }
+
+  .intro-divider {
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    margin: 24px auto;
+  }
+
+  .intro-tip {
+    font-size: 13px;
+    color: #aa88cc;
+    line-height: 1.7;
+    max-width: 280px;
+    margin: 0 auto 32px;
+  }
+  .intro-tip strong {
+    color: var(--amber);
+  }
+
+  .btn-start {
+    background: linear-gradient(135deg, #4a0080, #8800cc);
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    font-size: 18px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 14px 40px;
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s;
+    box-shadow: 0 0 20px rgba(255,140,0,0.3), inset 0 0 20px rgba(255,140,0,0.05);
+    animation: btn-pulse 2s ease-in-out infinite;
+  }
+  .btn-start::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: -100%;
+    width: 300%;
+    height: 300%;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+    animation: btn-shine 3s linear infinite;
+  }
+  @keyframes btn-shine {
+    0% { transform: translateX(-100%) translateY(-100%); }
+    100% { transform: translateX(100%) translateY(100%); }
+  }
+  @keyframes btn-pulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(255,140,0,0.3); }
+    50% { box-shadow: 0 0 35px rgba(255,140,0,0.6), 0 0 60px rgba(255,140,0,0.2); }
+  }
+  .btn-start:active { transform: scale(0.97); }
+
+  /* ===== BATTLE SCREEN ===== */
+  #battle {
+    z-index: 5;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 0;
+  }
+
+  /* Top HUD */
+  .hud {
+    width: 100%;
+    padding: 10px 16px 8px;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+  }
+
+  .hud-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .room-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .combo-badge {
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff6600, #ff0044);
+    color: white;
+    letter-spacing: 1px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.3s;
+  }
+  .combo-badge.visible {
+    opacity: 1;
+    transform: scale(1);
+    animation: combo-pop 0.3s ease-out;
+  }
+  @keyframes combo-pop {
+    0% { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+
+  .hp-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .hp-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .hp-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .hp-bar {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+  }
+
+  .monster-hp-bar { background: linear-gradient(90deg, #cc0000, #ff4422); }
+  .player-hp-bar  { background: linear-gradient(90deg, #0066ff, #00aaff); }
+
+  .hp-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* Monster area */
+  .monster-arena {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 100%;
+  }
+
+  .monster-word {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: white;
+    text-shadow: 0 0 20px var(--amber), 0 0 40px rgba(255,140,0,0.5);
+    margin-bottom: 16px;
+    animation: word-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes word-in {
+    from { opacity: 0; transform: scale(0.5) translateY(-20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .monster-emoji {
+    font-size: 90px;
+    display: block;
+    line-height: 1;
+    animation: monster-idle 2s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(180,0,255,0.6));
+    position: relative;
+    z-index: 2;
+    cursor: default;
+  }
+  @keyframes monster-idle {
+    0%, 100% { transform: translateY(0px) rotate(-1deg); }
+    50% { transform: translateY(-8px) rotate(1deg); }
+  }
+  .monster-emoji.boss-idle {
+    animation: boss-float 2.5s ease-in-out infinite;
+    font-size: 110px;
+    filter: drop-shadow(0 0 30px rgba(255,0,0,0.7));
+  }
+  @keyframes boss-float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-10px) scale(1.04); }
+  }
+
+  .monster-emoji.hit {
+    animation: monster-hit 0.4s ease-out forwards, monster-idle 2s ease-in-out infinite 0.4s;
+  }
+  @keyframes monster-hit {
+    0% { transform: translateX(0) scale(1); filter: drop-shadow(0 0 30px #ff0000); }
+    20% { transform: translateX(-20px) scale(0.95); }
+    40% { transform: translateX(15px) scale(1.05); }
+    60% { transform: translateX(-10px) scale(0.98); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  .monster-emoji.dead {
+    animation: monster-die 0.6s ease-in forwards;
+  }
+  @keyframes monster-die {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    50% { transform: scale(1.3) rotate(15deg); opacity: 0.8; }
+    100% { transform: scale(0) rotate(45deg); opacity: 0; }
+  }
+
+  .monster-name-tag {
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+
+  /* XP bar */
+  .xp-strip {
+    width: 80%;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple-mid), #aa00ff);
+    transition: width 0.8s ease;
+  }
+
+  /* Flash overlay */
+  #flash-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  #flash-overlay.flash-green { background: rgba(0,255,136,0.15); opacity: 1; }
+  #flash-overlay.flash-red   { background: rgba(255,34,68,0.2);  opacity: 1; }
+
+  /* Damage number */
+  .damage-num {
+    position: absolute;
+    font-size: 28px;
+    font-weight: 900;
+    pointer-events: none;
+    animation: dmg-float 1s ease-out forwards;
+    z-index: 60;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+  .damage-num.hit-num { color: var(--red); top: 30%; left: 50%; transform: translateX(-50%); }
+  .damage-num.heal-num { color: var(--green); top: 40%; left: 50%; transform: translateX(-50%); }
+  @keyframes dmg-float {
+    0% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1.2); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.8); }
+  }
+
+  /* Spell cards area */
+  .cards-area {
+    width: 100%;
+    padding: 10px 10px 14px;
+    flex-shrink: 0;
+  }
+
+  .cards-question {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .spell-card {
+    background: linear-gradient(145deg, #1a0035, #0d0022);
+    border: 1px solid rgba(180,100,255,0.25);
+    border-radius: 8px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 8px rgba(0,0,0,0.4);
+  }
+
+  .spell-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .spell-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,140,0,0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 16px rgba(255,140,0,0.2);
+  }
+  .spell-card:hover::before { opacity: 1; }
+  .spell-card:active { transform: scale(0.97) translateY(0); }
+
+  .spell-card.disabled {
+    pointer-events: none;
+  }
+
+  .spell-card.correct {
+    border-color: var(--green) !important;
+    background: linear-gradient(145deg, #003320, #001a10) !important;
+    box-shadow: 0 0 20px rgba(0,255,136,0.4) !important;
+    animation: card-correct 0.5s ease-out;
+  }
+  @keyframes card-correct {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+
+  .spell-card.wrong {
+    border-color: var(--red) !important;
+    background: linear-gradient(145deg, #330010, #1a0008) !important;
+    box-shadow: 0 0 20px rgba(255,34,68,0.4) !important;
+    animation: card-wrong 0.4s ease-out;
+  }
+  @keyframes card-wrong {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+  }
+
+  .card-rune {
+    font-size: 18px;
+    margin-bottom: 4px;
+    display: block;
+    opacity: 0.6;
+  }
+
+  .card-text {
+    font-size: 17px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+
+  .card-type {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Screen shake */
+  @keyframes screen-shake {
+    0%, 100% { transform: translateX(0); }
+    10% { transform: translateX(-8px) translateY(4px); }
+    20% { transform: translateX(8px) translateY(-4px); }
+    30% { transform: translateX(-6px) translateY(2px); }
+    40% { transform: translateX(6px) translateY(-2px); }
+    50% { transform: translateX(-4px); }
+    60% { transform: translateX(4px); }
+    70% { transform: translateX(-2px); }
+  }
+  #game-container.shake { animation: screen-shake 0.5s ease-out; }
+
+  /* ===== ROOM CLEAR SCREEN ===== */
+  #room-clear {
+    z-index: 8;
+    background: rgba(8,0,15,0.95);
+  }
+
+  .room-clear-content {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .clear-icon { font-size: 60px; margin-bottom: 16px; display: block; }
+
+  .clear-title {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.6);
+    margin-bottom: 8px;
+    animation: clear-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes clear-pop {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .clear-xp {
+    font-size: 16px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+
+  .clear-word-learned {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 0 auto 24px;
+    max-width: 240px;
+  }
+  .clear-word-learned .eng { font-size: 20px; font-weight: bold; color: var(--amber); letter-spacing: 2px; }
+  .clear-word-learned .arrow { font-size: 16px; color: var(--text-dim); margin: 4px 0; }
+  .clear-word-learned .ukr { font-size: 20px; font-weight: bold; color: var(--green); }
+
+  .btn-continue {
+    background: linear-gradient(135deg, #2a0055, #5500aa);
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 12px 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .btn-continue:active { transform: scale(0.97); }
+
+  /* XP Particles */
+  .xp-particle {
+    position: absolute;
+    font-size: 18px;
+    pointer-events: none;
+    animation: xp-fly 1.5s ease-out forwards;
+    z-index: 100;
+  }
+  @keyframes xp-fly {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.5); }
+  }
+
+  /* ===== BOSS INTRO ===== */
+  #boss-intro {
+    z-index: 9;
+    background: rgba(8,0,15,0.98);
+  }
+
+  .boss-red-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(150,0,0,0.4) 0%, transparent 70%);
+    animation: boss-pulse 1s ease-in-out infinite;
+  }
+  @keyframes boss-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .boss-intro-content {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .boss-emoji-intro {
+    font-size: 80px;
+    display: block;
+    animation: boss-enter 1s cubic-bezier(0.34,1.56,0.64,1);
+    filter: drop-shadow(0 0 30px rgba(255,0,0,0.8));
+    margin-bottom: 16px;
+  }
+  @keyframes boss-enter {
+    from { transform: scale(0.1) rotate(-10deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .boss-label {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #ff4444;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .boss-name-big {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: white;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px rgba(255,0,0,0.5);
+    margin-bottom: 8px;
+  }
+  .boss-flavor {
+    font-size: 13px;
+    color: #aa6666;
+    font-style: italic;
+    margin-bottom: 24px;
+  }
+
+  /* ===== VICTORY SCREEN ===== */
+  #victory {
+    z-index: 10;
+    background: #08000f;
+  }
+
+  .victory-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255,215,0,0.12) 0%, transparent 70%);
+    animation: vic-pulse 2s ease-in-out infinite;
+  }
+  @keyframes vic-pulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  .victory-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+  }
+
+  .vic-trophy { font-size: 70px; display: block; margin-bottom: 12px; animation: trophy-spin 0.8s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes trophy-spin {
+    from { transform: scale(0) rotate(-180deg); opacity: 0; }
+    to { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  .vic-title {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, var(--gold), #fff, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 4px;
+  }
+
+  .vic-subtitle {
+    font-size: 14px;
+    color: #aa88cc;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+
+  .vic-stats {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 0 auto 20px;
+    max-width: 280px;
+  }
+
+  .vic-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .vic-stat-row:last-child { border-bottom: none; }
+  .vic-stat-label { font-size: 12px; color: var(--text-dim); letter-spacing: 1px; }
+  .vic-stat-val { font-size: 16px; font-weight: bold; color: var(--gold); }
+
+  .vic-words-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .vic-words-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .vic-word-tag {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 13px;
+    color: var(--green);
+    animation: tag-pop 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+  }
+
+  .coin {
+    position: absolute;
+    font-size: 22px;
+    pointer-events: none;
+    animation: coin-fall linear forwards;
+    z-index: 0;
+  }
+  @keyframes coin-fall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
+  }
+
+  /* ===== DEFEAT SCREEN ===== */
+  #defeat {
+    z-index: 10;
+    background: #08000f;
+  }
+
+  .defeat-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(150,0,0,0.2) 0%, transparent 70%);
+  }
+
+  .defeat-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .def-skull { font-size: 70px; display: block; margin-bottom: 12px; animation: skull-in 0.5s ease-out; }
+  @keyframes skull-in {
+    from { transform: scale(1.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .def-title {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-shadow: 0 0 20px rgba(255,34,68,0.5);
+    margin-bottom: 4px;
+  }
+
+  .def-subtitle {
+    font-size: 14px;
+    color: #886688;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+
+  .def-encourage {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,34,68,0.2);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 0 auto 20px;
+    max-width: 280px;
+  }
+  .def-encourage-text {
+    font-size: 14px;
+    color: #ccaacc;
+    line-height: 1.6;
+  }
+  .def-encourage-text span {
+    color: var(--amber);
+    font-weight: bold;
+  }
+
+  /* ===== SHARED BTN ===== */
+  .btn-action {
+    background: linear-gradient(135deg, #1a003a, #3a0066);
+    border: 2px solid rgba(180,100,255,0.5);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 12px 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .btn-action:active { transform: scale(0.97); }
+
+  /* Correct answer text popup */
+  .correct-popup {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(0,255,136,0.8);
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 70;
+    animation: correct-rise 0.8s ease-out forwards;
+  }
+  @keyframes correct-rise {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -120%) scale(0.9); }
+  }
+</style>
+</head>
+<body>
+<div id="game-container">
+
+  <!-- FLASH OVERLAY -->
+  <div id="flash-overlay"></div>
+
+  <!-- ==================== INTRO SCREEN ==================== -->
+  <div class="screen active" id="intro">
+    <div class="intro-glow"></div>
+    <div class="intro-content">
+      <span class="intro-skull">💀</span>
+      <div class="game-title">DUNGEON<br>WORDS</div>
+      <div class="game-subtitle">Твоя зброя — слова</div>
+      <div class="intro-divider"></div>
+      <p class="intro-tip">
+        Монстри нападають — ти захищаєшся <strong>перекладами</strong>.<br>
+        Вибери правильний переклад → заклинання влучає.<br>
+        Помилишся → монстр б'є тебе.<br>
+        <strong>3 правильних поспіль = COMBO x2!</strong>
+      </p>
+      <button class="btn-start" onclick="startGame()">⚔️ ПОЧАТИ ГРУ</button>
+    </div>
+  </div>
+
+  <!-- ==================== BATTLE SCREEN ==================== -->
+  <div class="screen" id="battle">
+    <div class="dungeon-bg">
+      <div class="torch torch-left"></div>
+      <div class="torch torch-right"></div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud" style="position:relative;z-index:2;">
+      <div class="hud-row">
+        <span class="room-label" id="room-label">Кімната 1</span>
+        <span class="combo-badge" id="combo-badge">COMBO x2!</span>
+      </div>
+      <!-- Monster HP -->
+      <div class="hp-row" style="margin-top:8px;">
+        <span class="hp-icon">👹</span>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar monster-hp-bar" id="monster-hp-bar" style="width:100%"></div>
+        </div>
+        <span class="hp-label" id="monster-hp-label">5/5</span>
+      </div>
+      <!-- Player HP -->
+      <div class="hp-row">
+        <span class="hp-icon">🧙</span>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar player-hp-bar" id="player-hp-bar" style="width:100%"></div>
+        </div>
+        <span class="hp-label" id="player-hp-label">10/10</span>
+      </div>
+    </div>
+
+    <!-- Monster arena -->
+    <div class="monster-arena" style="position:relative;z-index:2;">
+      <div class="monster-word" id="monster-word">SHADOW</div>
+      <span class="monster-emoji" id="monster-emoji">🕷️</span>
+      <div class="monster-name-tag" id="monster-name-tag">ПАВУК</div>
+      <div class="xp-strip">
+        <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Spell cards -->
+    <div class="cards-area" style="position:relative;z-index:2;">
+      <div class="cards-question">Оберіть правильний переклад:</div>
+      <div class="cards-grid" id="cards-grid">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ROOM CLEAR SCREEN ==================== -->
+  <div class="screen" id="room-clear">
+    <div class="room-clear-content" id="room-clear-content">
+      <span class="clear-icon">✨</span>
+      <div class="clear-title" id="clear-title">ВОРОГА ПЕРЕМОЖЕНО!</div>
+      <div class="clear-xp" id="clear-xp">+30 XP</div>
+      <div class="clear-word-learned">
+        <div class="eng" id="clear-word-eng">SHADOW</div>
+        <div class="arrow">▼</div>
+        <div class="ukr" id="clear-word-ukr">тінь</div>
+      </div>
+      <button class="btn-continue" id="btn-continue" onclick="continueToNext()">ДАЛІ →</button>
+    </div>
+  </div>
+
+  <!-- ==================== BOSS INTRO SCREEN ==================== -->
+  <div class="screen" id="boss-intro">
+    <div class="boss-red-glow"></div>
+    <div class="boss-intro-content">
+      <span class="boss-emoji-intro" id="boss-emoji-intro">🐉</span>
+      <div class="boss-label">⚠ ФІНАЛЬНИЙ БОС ⚠</div>
+      <div class="boss-name-big">ДРАКОН</div>
+      <div class="boss-flavor">"Тут тремтіли найхоробріші..."</div>
+      <button class="btn-start" onclick="startBoss()" style="font-size:16px;padding:12px 32px;">
+        ⚔️ ВСТУПИТИ В БІЙ
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== VICTORY SCREEN ==================== -->
+  <div class="screen" id="victory">
+    <div class="victory-glow"></div>
+    <div class="victory-content">
+      <span class="vic-trophy">🏆</span>
+      <div class="vic-title">ПЕРЕМОГА!</div>
+      <div class="vic-subtitle">Підземелля скорено!</div>
+
+      <div class="vic-stats">
+        <div class="vic-stat-row">
+          <span class="vic-stat-label">ЗАГАЛЬНИЙ XP</span>
+          <span class="vic-stat-val" id="vic-xp">120 XP</span>
+        </div>
+        <div class="vic-stat-row">
+          <span class="vic-stat-label">ВЛУЧЕНЬ</span>
+          <span class="vic-stat-val" id="vic-hits">4/4</span>
+        </div>
+        <div class="vic-stat-row">
+          <span class="vic-stat-label">МАХ КОМБО</span>
+          <span class="vic-stat-val" id="vic-combo">x2</span>
+        </div>
+      </div>
+
+      <div class="vic-words-title">🔮 Нові слова засвоєно:</div>
+      <div class="vic-words-list" id="vic-words-list"></div>
+
+      <button class="btn-action" onclick="restartGame()" style="border-color:rgba(255,215,0,0.5);color:var(--gold);">
+        ▶ ГРАТИ ЗНОВУ
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== DEFEAT SCREEN ==================== -->
+  <div class="screen" id="defeat">
+    <div class="defeat-glow"></div>
+    <div class="defeat-content">
+      <span class="def-skull">💀</span>
+      <div class="def-title">ТИ ЗАГИНУВ</div>
+      <div class="def-subtitle">Підземелля не подолано... цього разу.</div>
+
+      <div class="def-encourage">
+        <div class="def-encourage-text" id="def-encourage-text">
+          Але ти запам'ятав <span id="def-words-count">0</span> слів цього разу!<br>
+          Вони стануть твоєю силою в наступному бою.
+        </div>
+      </div>
+
+      <div class="vic-words-list" id="def-words-list" style="margin-bottom:20px;"></div>
+
+      <button class="btn-action" onclick="restartGame()">▶ СПРОБУВАТИ ЗНОВУ</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+//  GAME DATA
+// ============================================================
+const ROOMS = [
+  {
+    id: 1,
+    label: "Кімната 1",
+    monster: { emoji: "🕷️", name: "ПАВУК", hp: 3, maxHp: 3, damage: 2 },
+    word: "SHADOW",
+    correct: "тінь",
+    wrong: ["сонце", "вогонь", "вода"],
+    xp: 25,
+    runes: ["🌑","☀️","🔥","💧"],
+    types: ["темрява","світло","вогонь","вода"],
+    isBoss: false,
+  },
+  {
+    id: 2,
+    label: "Кімната 2",
+    monster: { emoji: "🐺", name: "ВОВКУЛАК", hp: 4, maxHp: 4, damage: 3 },
+    word: "FIERCE",
+    correct: "лютий",
+    wrong: ["добрий", "тихий", "малий"],
+    xp: 35,
+    runes: ["⚡","🌿","🍃","🌾"],
+    types: ["лють","доброта","спокій","мала"],
+    isBoss: false,
+  },
+  {
+    id: 3,
+    label: "Кімната 3",
+    monster: { emoji: "👻", name: "ПРИВИД", hp: 2, maxHp: 2, damage: 4 },
+    word: "ANCIENT",
+    correct: "давній",
+    wrong: ["новий", "швидкий", "яскравий"],
+    xp: 40,
+    runes: ["⏳","🌱","💨","✨"],
+    types: ["час","ріст","вітер","світло"],
+    isBoss: false,
+  },
+  {
+    id: 4,
+    label: "БОС",
+    monster: { emoji: "🐉", name: "ДРАКОН", hp: 6, maxHp: 6, damage: 4 },
+    word: "LEGENDARY",
+    correct: "легендарний",
+    wrong: ["звичайний", "маленький", "слабкий"],
+    xp: 80,
+    runes: ["🔮","⚙️","🪨","🌫️"],
+    types: ["сила","звичайне","мала","слабо"],
+    isBoss: true,
+  },
+];
+
+// ============================================================
+//  GAME STATE
+// ============================================================
+let state = {
+  roomIndex: 0,
+  playerHp: 10,
+  playerMaxHp: 10,
+  monsterHp: 0,
+  monsterMaxHp: 0,
+  combo: 0,
+  maxCombo: 0,
+  totalXp: 0,
+  correctAnswers: 0,
+  totalAnswers: 0,
+  learnedWords: [],
+  answering: false,
+  cardOrder: [],
+};
+
+// ============================================================
+//  UTILITY
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ============================================================
+//  START GAME
+// ============================================================
+function startGame() {
+  state = {
+    roomIndex: 0,
+    playerHp: 10,
+    playerMaxHp: 10,
+    monsterHp: 0,
+    monsterMaxHp: 0,
+    combo: 0,
+    maxCombo: 0,
+    totalXp: 0,
+    correctAnswers: 0,
+    totalAnswers: 0,
+    learnedWords: [],
+    answering: false,
+    cardOrder: [],
+  };
+  loadRoom(0);
+}
+
+function restartGame() {
+  showScreen('intro');
+}
+
+// ============================================================
+//  LOAD ROOM
+// ============================================================
+function loadRoom(index) {
+  const room = ROOMS[index];
+  state.roomIndex = index;
+
+  // Boss intro
+  if (room.isBoss) {
+    document.getElementById('boss-emoji-intro').textContent = room.monster.emoji;
+    showScreen('boss-intro');
+    return;
+  }
+
+  // Monster HP
+  state.monsterHp = room.monster.hp;
+  state.monsterMaxHp = room.monster.maxHp;
+
+  // UI
+  document.getElementById('room-label').textContent = room.label;
+
+  // Monster
+  const emoji = document.getElementById('monster-emoji');
+  emoji.textContent = room.monster.emoji;
+  emoji.className = 'monster-emoji';
+  document.getElementById('monster-name-tag').textContent = room.monster.name;
+  document.getElementById('monster-word').textContent = room.word;
+
+  // HP bars
+  updateMonsterHpBar();
+  updatePlayerHpBar();
+
+  // XP bar (progress through dungeon)
+  const xpPct = (index / ROOMS.length) * 100;
+  document.getElementById('xp-fill').style.width = xpPct + '%';
+
+  // Combo badge
+  updateComboBadge();
+
+  // Cards
+  renderCards(room);
+
+  state.answering = false;
+
+  showScreen('battle');
+}
+
+function startBoss() {
+  const room = ROOMS[state.roomIndex];
+  state.monsterHp = room.monster.hp;
+  state.monsterMaxHp = room.monster.maxHp;
+
+  document.getElementById('room-label').textContent = room.label;
+
+  const emoji = document.getElementById('monster-emoji');
+  emoji.textContent = room.monster.emoji;
+  emoji.className = 'monster-emoji boss-idle';
+  document.getElementById('monster-name-tag').textContent = room.monster.name;
+  document.getElementById('monster-word').textContent = room.word;
+
+  updateMonsterHpBar();
+  updatePlayerHpBar();
+  document.getElementById('xp-fill').style.width = '75%';
+  updateComboBadge();
+
+  renderCards(room);
+
+  state.answering = false;
+
+  showScreen('battle');
+}
+
+// ============================================================
+//  RENDER CARDS
+// ============================================================
+function renderCards(room) {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+
+  // Build options array with shuffled positions
+  const options = [
+    { text: room.correct, isCorrect: true, rune: room.runes[0], type: room.types[0] },
+    { text: room.wrong[0], isCorrect: false, rune: room.runes[1], type: room.types[1] },
+    { text: room.wrong[1], isCorrect: false, rune: room.runes[2], type: room.types[2] },
+    { text: room.wrong[2], isCorrect: false, rune: room.runes[3], type: room.types[3] },
+  ];
+
+  const shuffled = shuffle(options);
+
+  shuffled.forEach((opt, i) => {
+    const card = document.createElement('div');
+    card.className = 'spell-card';
+    card.innerHTML = `
+      <span class="card-rune">${opt.rune}</span>
+      <div class="card-text">${opt.text}</div>
+      <div class="card-type">${opt.type}</div>
+    `;
+    card.addEventListener('click', () => handleAnswer(opt.isCorrect, card, i));
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================
+//  ANSWER HANDLER
+// ============================================================
+function handleAnswer(isCorrect, card, cardIndex) {
+  if (state.answering) return;
+  state.answering = true;
+  state.totalAnswers++;
+
+  const room = ROOMS[state.roomIndex];
+  const allCards = document.querySelectorAll('.spell-card');
+  allCards.forEach(c => c.classList.add('disabled'));
+
+  if (isCorrect) {
+    handleCorrect(card, room, allCards);
+  } else {
+    handleWrong(card, room, allCards);
+  }
+}
+
+function handleCorrect(card, room, allCards) {
+  // Mark card
+  card.classList.add('correct');
+
+  // Combo
+  state.combo++;
+  if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+  updateComboBadge();
+
+  // Damage to monster
+  let dmg = state.combo >= 3 ? 2 : 1;
+  state.monsterHp = Math.max(0, state.monsterHp - dmg);
+  state.correctAnswers++;
+
+  // Flash
+  flashGreen();
+
+  // Monster hit animation
+  const emoji = document.getElementById('monster-emoji');
+  emoji.classList.remove('monster-idle', 'boss-idle');
+  emoji.classList.add('hit');
+
+  // Damage number
+  spawnDamageNum('-' + dmg + ' HP', 'hit-num', document.querySelector('.monster-arena'));
+
+  // Correct popup
+  const arena = document.querySelector('.monster-arena');
+  const pop = document.createElement('div');
+  pop.className = 'correct-popup';
+  pop.textContent = state.combo >= 3 ? '✨ COMBO! ✨' : '✓ ВІРНО!';
+  arena.appendChild(pop);
+  setTimeout(() => pop.remove(), 800);
+
+  updateMonsterHpBar();
+
+  setTimeout(() => {
+    if (state.monsterHp <= 0) {
+      monsterDied(room);
+    } else {
+      // Monster survives, re-show same room for another attempt (not in this game - single shot)
+      // Actually each room has one word, monster dies in one correct hit
+      monsterDied(room);
+    }
+  }, 700);
+}
+
+function handleWrong(card, room, allCards) {
+  // Mark card wrong
+  card.classList.add('wrong');
+
+  // Reset combo
+  state.combo = 0;
+  updateComboBadge();
+
+  // Monster attacks player
+  const dmg = room.monster.damage;
+  state.playerHp = Math.max(0, state.playerHp - dmg);
+
+  // Flash red + screen shake
+  flashRed();
+  shakeScreen();
+
+  // Damage to player - show at bottom
+  const cardsArea = document.querySelector('.cards-area');
+  spawnDamageNum('-' + dmg + ' HP', 'hit-num', document.querySelector('.monster-arena'));
+
+  updatePlayerHpBar();
+
+  // Highlight correct card
+  setTimeout(() => {
+    allCards.forEach(c => {
+      if (!c.classList.contains('wrong')) {
+        c.classList.add('correct');
+      }
+    });
+  }, 200);
+
+  setTimeout(() => {
+    if (state.playerHp <= 0) {
+      playerDied();
+    } else {
+      // Continue - same monster word but re-shuffle
+      state.answering = false;
+      renderCards(room);
+    }
+  }, 1200);
+}
+
+// ============================================================
+//  MONSTER DIED
+// ============================================================
+function monsterDied(room) {
+  const emoji = document.getElementById('monster-emoji');
+  emoji.classList.remove('hit');
+  emoji.classList.add('dead');
+
+  // XP
+  let xpGain = room.xp;
+  if (state.maxCombo >= 3) xpGain = Math.floor(xpGain * 1.5);
+  state.totalXp += xpGain;
+
+  // Track learned word
+  if (!state.learnedWords.find(w => w.eng === room.word)) {
+    state.learnedWords.push({ eng: room.word, ukr: room.correct });
+  }
+
+  setTimeout(() => {
+    showRoomClear(room, xpGain);
+  }, 600);
+}
+
+function showRoomClear(room, xpGain) {
+  document.getElementById('clear-title').textContent = room.isBoss ? '⚔️ БОС ПЕРЕМОЖЕНИЙ!' : '✨ ВОРОГ ПЕРЕМОЖЕНИЙ!';
+  document.getElementById('clear-xp').textContent = '+' + xpGain + ' XP';
+  document.getElementById('clear-word-eng').textContent = room.word;
+  document.getElementById('clear-word-ukr').textContent = room.correct;
+
+  // XP particles
+  spawnXpParticles();
+
+  showScreen('room-clear');
+}
+
+function continueToNext() {
+  const nextIndex = state.roomIndex + 1;
+  if (nextIndex >= ROOMS.length) {
+    showVictory();
+  } else {
+    loadRoom(nextIndex);
+  }
+}
+
+// ============================================================
+//  PLAYER DIED
+// ============================================================
+function playerDied() {
+  // Fill in learned words
+  const count = state.learnedWords.length;
+  document.getElementById('def-words-count').textContent = count;
+
+  const list = document.getElementById('def-words-list');
+  list.innerHTML = '';
+  state.learnedWords.forEach((w, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'vic-word-tag';
+    tag.style.animationDelay = (i * 0.1) + 's';
+    tag.textContent = w.eng + ' = ' + w.ukr;
+    list.appendChild(tag);
+  });
+
+  showScreen('defeat');
+}
+
+// ============================================================
+//  VICTORY
+// ============================================================
+function showVictory() {
+  document.getElementById('vic-xp').textContent = state.totalXp + ' XP';
+  document.getElementById('vic-hits').textContent = state.correctAnswers + '/' + ROOMS.length;
+  document.getElementById('vic-combo').textContent = 'x' + Math.max(1, state.maxCombo);
+
+  const list = document.getElementById('vic-words-list');
+  list.innerHTML = '';
+  state.learnedWords.forEach((w, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'vic-word-tag';
+    tag.style.animationDelay = (i * 0.15) + 's';
+    tag.textContent = w.eng + ' = ' + w.ukr;
+    list.appendChild(tag);
+  });
+
+  showScreen('victory');
+  spawnCoins();
+}
+
+// ============================================================
+//  UI UPDATES
+// ============================================================
+function updateMonsterHpBar() {
+  const room = ROOMS[state.roomIndex];
+  const pct = (state.monsterHp / state.monsterMaxHp) * 100;
+  document.getElementById('monster-hp-bar').style.width = pct + '%';
+  document.getElementById('monster-hp-label').textContent = state.monsterHp + '/' + state.monsterMaxHp;
+}
+
+function updatePlayerHpBar() {
+  const pct = (state.playerHp / state.playerMaxHp) * 100;
+  document.getElementById('player-hp-bar').style.width = pct + '%';
+  document.getElementById('player-hp-label').textContent = state.playerHp + '/' + state.playerMaxHp;
+
+  // Color shifts
+  const bar = document.getElementById('player-hp-bar');
+  if (pct <= 30) {
+    bar.style.background = 'linear-gradient(90deg, #cc0000, #ff2244)';
+  } else if (pct <= 60) {
+    bar.style.background = 'linear-gradient(90deg, #cc6600, #ffaa00)';
+  } else {
+    bar.style.background = 'linear-gradient(90deg, #0066ff, #00aaff)';
+  }
+}
+
+function updateComboBadge() {
+  const badge = document.getElementById('combo-badge');
+  if (state.combo >= 3) {
+    badge.textContent = 'COMBO x' + Math.floor(state.combo / 3 + 1) + '!';
+    badge.classList.add('visible');
+  } else if (state.combo >= 2) {
+    badge.textContent = state.combo + ' поспіль!';
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+// ============================================================
+//  EFFECTS
+// ============================================================
+function flashGreen() {
+  const overlay = document.getElementById('flash-overlay');
+  overlay.className = 'flash-green';
+  setTimeout(() => {
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.className = '', 300);
+  }, 150);
+}
+
+function flashRed() {
+  const overlay = document.getElementById('flash-overlay');
+  overlay.className = 'flash-red';
+  setTimeout(() => {
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.className = '', 300);
+  }, 200);
+}
+
+function shakeScreen() {
+  const container = document.getElementById('game-container');
+  container.classList.remove('shake');
+  void container.offsetWidth; // reflow
+  container.classList.add('shake');
+  setTimeout(() => container.classList.remove('shake'), 500);
+}
+
+function spawnDamageNum(text, cls, parent) {
+  const el = document.createElement('div');
+  el.className = 'damage-num ' + cls;
+  el.textContent = text;
+  parent.style.position = 'relative';
+  parent.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function spawnXpParticles() {
+  const container = document.getElementById('room-clear');
+  const emojis = ['✨', '⭐', '💫', '🌟', '✦'];
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'xp-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = (10 + Math.random() * 80) + '%';
+      p.style.top = (40 + Math.random() * 40) + '%';
+      p.style.animationDelay = (Math.random() * 0.3) + 's';
+      p.style.animationDuration = (0.8 + Math.random() * 0.7) + 's';
+      container.appendChild(p);
+      setTimeout(() => p.remove(), 1500);
+    }, i * 80);
+  }
+}
+
+function spawnCoins() {
+  const screen = document.getElementById('victory');
+  const coinEmojis = ['🪙', '💰', '⭐', '💫', '✨'];
+  for (let i = 0; i < 20; i++) {
+    setTimeout(() => {
+      const coin = document.createElement('div');
+      coin.className = 'coin';
+      coin.textContent = coinEmojis[Math.floor(Math.random() * coinEmojis.length)];
+      coin.style.left = (Math.random() * 100) + '%';
+      coin.style.top = (-40) + 'px';
+      coin.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+      coin.style.animationDelay = (Math.random() * 0.5) + 's';
+      screen.appendChild(coin);
+      setTimeout(() => coin.remove(), 3500);
+    }, i * 120);
+  }
+}
+</script>
+</body>
+</html>

@@ -95,6 +95,12 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         "/restart [сервіс|all] — перезапуск\n"
         "/logs [сервіс] — логи\n"
         "/killport — звільнити порт 8000\n\n"
+        "<b>☁️ Хмара:</b>\n"
+        "/cloud — статус хмарних серверів\n"
+        "/cloudstart [id] — запустити сервер\n"
+        "/cloudstop [id] — зупинити сервер\n"
+        "/cloudnew — створити новий сервер\n"
+        "/failover — ручний failover\n\n"
         "<b>✅ Апрували:</b>\n"
         "/approvals — черга апрувів\n\n"
         "<b>🤖 Агенти:</b>\n"
@@ -404,6 +410,488 @@ async def cmd_killport(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await db.log_ops("ops_bot", "killport", "8000", msg)
 
 
+async def cmd_retention(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    stats = await db.get_stats()
+    dau = stats["active_today"]
+    wau = stats["active_week"]
+    mau = stats["active_month"]
+    total = stats["total_users"] or 1
+    await update.message.reply_html(
+        f"📈 <b>Retention — {datetime.now().strftime('%d.%m %H:%M')}</b>\n\n"
+        f"DAU: <b>{dau}</b> ({round(dau/total*100,1)}% від бази)\n"
+        f"WAU: <b>{wau}</b> ({round(wau/total*100,1)}%)\n"
+        f"MAU: <b>{mau}</b> ({round(mau/total*100,1)}%)\n\n"
+        f"Stickiness DAU/MAU: <b>{round(dau/max(mau,1)*100,1)}%</b>\n"
+        f"Stickiness DAU/WAU: <b>{round(dau/max(wau,1)*100,1)}%</b>\n\n"
+        f"Всього юзерів: <b>{total}</b> | +{stats['new_today']} сьогодні | +{stats['new_week']} за тиждень"
+    )
+
+
+async def cmd_top(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    stats = await db.get_stats()
+    lines = ["🏆 <b>ТОП-10 гравців</b>\n"]
+    medals = ["🥇", "🥈", "🥉"] + ["🏅"] * 7
+    for i, u in enumerate(stats.get("top10", [])[:10]):
+        un = f"@{u['username']}" if u.get("username") else u.get("first_name", "?")
+        lines.append(f"{medals[i]} {un} — <b>{u['xp']} XP</b> 🔥{u.get('streak',0)}")
+    await update.message.reply_html("\n".join(lines))
+
+
+async def cmd_improve(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    msg = await update.message.reply_text("🤖 Запускаю агента покращення...")
+    from agents.base import run_improvement_agent
+    asyncio.create_task(run_improvement_agent())
+    await msg.edit_text(
+        "🤖 <b>Агент покращення запущений</b>\n\n"
+        "Агент досліджує GitHub і веб → аналізує кодову базу → "
+        "пропонує покращення.\n\n"
+        "Результат прийде в групу 🤖 Agent-Talk.",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_plan(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    msg = await update.message.reply_text("📅 Генерую план тижня...")
+    stats = await db.get_stats()
+    result = await spawn_subagent_async(
+        "ops",
+        OPS_SYSTEM,
+        f"Склади детальний план роботи на наступний тиждень для платформи Voodoo English.\n"
+        f"Поточні дані: {json.dumps(stats, ensure_ascii=False)}\n\n"
+        "Формат: пн-нд по пунктам, з пріоритетами (🔴🟡🟢). "
+        "Включи: технічні завдання, контент, зростання, монетизацію.",
+    )
+    await msg.edit_text(
+        f"📅 <b>План тижня Voodoo</b>\n\n{result.output}",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_html(
+            "📢 <b>Broadcast</b>\n\n"
+            "Використання: <code>/broadcast Текст повідомлення</code>\n\n"
+            "⚠️ Надсилає всім активним юзерам!"
+        )
+        return
+    text = " ".join(ctx.args)
+    await update.message.reply_html(
+        f"⚠️ <b>Підтверди розсилку</b>\n\n<i>{text[:300]}</i>",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("📢 Розіслати", callback_data=f"broadcast_go"),
+            InlineKeyboardButton("❌ Скасувати", callback_data="broadcast_cancel"),
+        ]]),
+    )
+    ctx.user_data["broadcast_text"] = text
+
+
+async def cb_broadcast(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not _is_admin(update):
+        await query.answer("Access denied")
+        return
+    await query.answer()
+
+    if query.data == "broadcast_cancel":
+        await query.edit_message_text("❌ Розсилку скасовано.")
+        return
+
+    text = ctx.user_data.get("broadcast_text", "")
+    if not text:
+        await query.edit_message_text("❌ Текст не знайдено.")
+        return
+
+    conn = db._connect()
+    user_ids = [r[0] for r in conn.execute("SELECT tg_id FROM users").fetchall()]
+    conn.close()
+
+    sent = failed = 0
+    bot = query.get_bot()
+    for uid in user_ids:
+        try:
+            await bot.send_message(chat_id=uid, text=text)
+            sent += 1
+            await asyncio.sleep(0.05)
+        except Exception:
+            failed += 1
+
+    result_msg = f"📢 Розсилка завершена\n✅ Надіслано: {sent}\n❌ Помилок: {failed}"
+    await query.edit_message_text(result_msg)
+    await db.log_ops("ops_bot", "broadcast", "all", result_msg)
+    await ops_report(result_msg)
+
+
+# ── Cloud Server Management ────────────────────────────────────────────────────
+
+CLOUD_PROVIDERS = {
+    "hetzner": os.getenv("HETZNER_API_TOKEN", ""),
+    "digitalocean": os.getenv("DO_API_TOKEN", ""),
+    "vultr": os.getenv("VULTR_API_KEY", ""),
+}
+
+HETZNER_API = "https://api.hetzner.cloud/v1"
+DO_API      = "https://api.digitalocean.com/v2"
+
+
+async def _hetzner_get(path: str) -> dict:
+    import urllib.request
+    token = CLOUD_PROVIDERS["hetzner"]
+    if not token:
+        return {"error": "HETZNER_API_TOKEN not set"}
+    req = urllib.request.Request(
+        f"{HETZNER_API}{path}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            import json as _json
+            return _json.loads(r.read())
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def _hetzner_post(path: str, payload: dict) -> dict:
+    import urllib.request, json as _json
+    token = CLOUD_PROVIDERS["hetzner"]
+    if not token:
+        return {"error": "HETZNER_API_TOKEN not set"}
+    data = _json.dumps(payload).encode()
+    req = urllib.request.Request(
+        f"{HETZNER_API}{path}",
+        data=data,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return _json.loads(r.read())
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def _do_get(path: str) -> dict:
+    import urllib.request
+    token = CLOUD_PROVIDERS["digitalocean"]
+    if not token:
+        return {"error": "DO_API_TOKEN not set"}
+    req = urllib.request.Request(
+        f"{DO_API}{path}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            import json as _json
+            return _json.loads(r.read())
+    except Exception as e:
+        return {"error": str(e)}
+
+
+async def cmd_cloud(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    msg = await update.message.reply_text("☁️ Запитую хмарні провайдери...")
+
+    lines = ["☁️ <b>Хмарні сервери Voodoo</b>\n"]
+    any_configured = False
+
+    # Hetzner
+    if CLOUD_PROVIDERS["hetzner"]:
+        any_configured = True
+        data = await _hetzner_get("/servers")
+        if "error" in data:
+            lines.append(f"🔴 Hetzner: {data['error']}")
+        else:
+            servers = data.get("servers", [])
+            lines.append(f"<b>Hetzner Cloud ({len(servers)} серверів):</b>")
+            for s in servers:
+                status_icon = "🟢" if s["status"] == "running" else "🔴"
+                ip = s.get("public_net", {}).get("ipv4", {}).get("ip", "?")
+                lines.append(
+                    f"  {status_icon} <code>{s['id']}</code> {s['name']} "
+                    f"({s['server_type']['name']}) — {ip} — {s['status']}"
+                )
+
+    # DigitalOcean
+    if CLOUD_PROVIDERS["digitalocean"]:
+        any_configured = True
+        data = await _do_get("/droplets")
+        if "error" in data:
+            lines.append(f"🔴 DigitalOcean: {data['error']}")
+        else:
+            droplets = data.get("droplets", [])
+            lines.append(f"\n<b>DigitalOcean ({len(droplets)} droplets):</b>")
+            for d in droplets:
+                status_icon = "🟢" if d["status"] == "active" else "🔴"
+                ip = d.get("networks", {}).get("v4", [{}])[0].get("ip_address", "?")
+                lines.append(
+                    f"  {status_icon} <code>{d['id']}</code> {d['name']} "
+                    f"({d['size_slug']}) — {ip} — {d['status']}"
+                )
+
+    if not any_configured:
+        lines.append(
+            "⚠️ Жоден хмарний провайдер не налаштований.\n\n"
+            "Додай у .env:\n"
+            "<code>HETZNER_API_TOKEN=xxx</code>\n"
+            "<code>DO_API_TOKEN=xxx</code>\n"
+            "<code>VULTR_API_KEY=xxx</code>"
+        )
+
+    await msg.edit_text("\n".join(lines), parse_mode="HTML")
+
+
+async def cmd_cloudstart(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Використання: /cloudstart [server_id]")
+        return
+    server_id = ctx.args[0]
+    msg = await update.message.reply_text(f"▶️ Запускаю сервер {server_id}...")
+    result = await _hetzner_post(f"/servers/{server_id}/actions/poweron", {})
+    if "error" in result:
+        await msg.edit_text(f"❌ Помилка: {result['error']}")
+    else:
+        action = result.get("action", {})
+        await msg.edit_text(
+            f"✅ Сервер {server_id} запускається\n"
+            f"Action ID: {action.get('id')} | Status: {action.get('status')}"
+        )
+    await db.log_ops("ops_bot", "cloud_start", server_id, str(result))
+
+
+async def cmd_cloudstop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_text("Використання: /cloudstop [server_id]")
+        return
+    server_id = ctx.args[0]
+    await update.message.reply_html(
+        f"⚠️ Зупинити сервер <code>{server_id}</code>?",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("🔴 Зупинити", callback_data=f"cloudstop_confirm_{server_id}"),
+            InlineKeyboardButton("❌ Скасувати", callback_data="cloudstop_cancel"),
+        ]]),
+    )
+
+
+async def cb_cloudstop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not _is_admin(update):
+        await query.answer("Access denied")
+        return
+    await query.answer()
+    if query.data == "cloudstop_cancel":
+        await query.edit_message_text("❌ Скасовано.")
+        return
+    server_id = query.data.replace("cloudstop_confirm_", "")
+    result = await _hetzner_post(f"/servers/{server_id}/actions/poweroff", {})
+    if "error" in result:
+        await query.edit_message_text(f"❌ Помилка: {result['error']}")
+    else:
+        action = result.get("action", {})
+        await query.edit_message_text(
+            f"🔴 Сервер {server_id} зупиняється\n"
+            f"Action: {action.get('id')} | Status: {action.get('status')}"
+        )
+    await db.log_ops("ops_bot", "cloud_stop", server_id, str(result))
+
+
+async def cmd_cloudnew(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    await update.message.reply_html(
+        "🆕 <b>Створити новий сервер</b>\n\n"
+        "Вибери конфігурацію:",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("💰 CX11 — €3.79/міс (2GB RAM)", callback_data="cloudnew_cx11")],
+            [InlineKeyboardButton("⚡ CX21 — €6.49/міс (4GB RAM)", callback_data="cloudnew_cx21")],
+            [InlineKeyboardButton("🚀 CX31 — €11.49/міс (8GB RAM)", callback_data="cloudnew_cx31")],
+            [InlineKeyboardButton("❌ Скасувати", callback_data="cloudnew_cancel")],
+        ]),
+    )
+
+
+async def cb_cloudnew(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not _is_admin(update):
+        await query.answer("Access denied")
+        return
+    await query.answer()
+
+    if query.data == "cloudnew_cancel":
+        await query.edit_message_text("❌ Скасовано.")
+        return
+
+    server_type = query.data.replace("cloudnew_", "")
+    await query.edit_message_text(f"🔄 Створюю сервер {server_type.upper()}...")
+
+    import json as _json
+    payload = {
+        "name": f"voodoo-{server_type}-{datetime.now().strftime('%m%d-%H%M')}",
+        "server_type": server_type,
+        "image": "ubuntu-22.04",
+        "location": "nbg1",
+        "labels": {"project": "voodoo", "auto": "true"},
+    }
+    result = await _hetzner_post("/servers", payload)
+
+    if "error" in result:
+        await query.edit_message_text(f"❌ Помилка: {result['error']}")
+        return
+
+    server = result.get("server", {})
+    ip = server.get("public_net", {}).get("ipv4", {}).get("ip", "?")
+    root_pw = result.get("root_password", "—")
+
+    await query.edit_message_text(
+        f"✅ <b>Новий сервер створено!</b>\n\n"
+        f"ID: <code>{server.get('id')}</code>\n"
+        f"Назва: {server.get('name')}\n"
+        f"IP: <code>{ip}</code>\n"
+        f"Root pw: <code>{root_pw}</code>\n"
+        f"Статус: {server.get('status')}\n\n"
+        f"⚠️ Збережи root password — більше не покажу!"
+    ,
+        parse_mode="HTML"
+    )
+    await db.log_ops("ops_bot", "cloud_new", server.get("name"), f"ip={ip}")
+
+    # Alert deploy topic
+    from agents.group_poster import deploy_report
+    await deploy_report(
+        f"🆕 <b>Новий сервер</b>\n"
+        f"Type: {server_type.upper()} | IP: {ip} | ID: {server.get('id')}"
+    )
+
+
+async def cmd_failover(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    await update.message.reply_html(
+        "🔄 <b>Ручний Failover</b>\n\n"
+        "Ця команда:\n"
+        "1. Перевіряє основний сервер\n"
+        "2. Якщо недоступний — запускає резервний\n"
+        "3. Якщо обидва впали — створює новий автоматично\n\n"
+        "Підтвердити failover?",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ Запустити", callback_data="failover_go"),
+            InlineKeyboardButton("❌ Скасувати", callback_data="failover_cancel"),
+        ]]),
+    )
+
+
+async def cb_failover(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not _is_admin(update):
+        await query.answer("Access denied")
+        return
+    await query.answer()
+
+    if query.data == "failover_cancel":
+        await query.edit_message_text("❌ Скасовано.")
+        return
+
+    await query.edit_message_text("🔄 Виконую failover...")
+    log.info("Manual failover initiated by admin")
+
+    # Get all servers
+    data = await _hetzner_get("/servers")
+    if "error" in data:
+        await query.edit_message_text(f"❌ Не можу отримати список серверів: {data['error']}")
+        return
+
+    servers = data.get("servers", [])
+    running = [s for s in servers if s["status"] == "running"]
+    stopped = [s for s in servers if s["status"] != "running"]
+
+    if running:
+        await query.edit_message_text(
+            f"✅ <b>Failover не потрібен</b>\n\n"
+            f"Активних серверів: {len(running)}\n"
+            + "\n".join(f"  🟢 {s['name']} ({s.get('public_net',{}).get('ipv4',{}).get('ip','?')})"
+                        for s in running)
+        ,
+        parse_mode="HTML"
+    )
+        return
+
+    # Try to start a stopped server
+    if stopped:
+        server = stopped[0]
+        await query.edit_message_text(f"⚡ Запускаю резервний сервер {server['name']}...")
+        result = await _hetzner_post(f"/servers/{server['id']}/actions/poweron", {})
+        if "error" not in result:
+            ip = server.get("public_net", {}).get("ipv4", {}).get("ip", "?")
+            await query.edit_message_text(
+                f"✅ <b>Failover успішний!</b>\n"
+                f"Сервер {server['name']} запускається\nIP: <code>{ip}</code>"
+            ,
+        parse_mode="HTML"
+    )
+            await db.log_ops("ops_bot", "failover", server["name"], "started_stopped_server")
+            return
+
+    # Last resort: create new server
+    await query.edit_message_text("🆕 Усі сервери недоступні. Створюю новий...")
+    payload = {
+        "name": f"voodoo-failover-{datetime.now().strftime('%m%d-%H%M')}",
+        "server_type": "cx11",
+        "image": "ubuntu-22.04",
+        "location": "nbg1",
+        "labels": {"project": "voodoo", "failover": "true"},
+    }
+    result = await _hetzner_post("/servers", payload)
+    if "error" in result:
+        await query.edit_message_text(f"❌ Failover failed: {result['error']}\nЗверніться до провайдера вручну!")
+        return
+
+    server = result.get("server", {})
+    ip = server.get("public_net", {}).get("ipv4", {}).get("ip", "?")
+    await query.edit_message_text(
+        f"🆕 <b>Новий failover-сервер!</b>\n"
+        f"IP: <code>{ip}</code>\nPassword: <code>{result.get('root_password','—')}</code>"
+    ,
+        parse_mode="HTML"
+    )
+    await db.log_ops("ops_bot", "failover_new_server", server.get("name"), f"ip={ip}")
+
+
+async def cmd_raffle(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    if not _is_admin(update):
+        return
+    import random
+    n = int(ctx.args[0]) if ctx.args and ctx.args[0].isdigit() else 1
+    conn = db._connect()
+    users = conn.execute("SELECT tg_id, first_name, username, xp FROM users ORDER BY xp DESC").fetchall()
+    conn.close()
+    if not users:
+        await update.message.reply_text("Юзерів не знайдено.")
+        return
+    winners = random.sample(users, min(n, len(users)))
+    lines = [f"🎰 <b>Розіграш — {n} переможець(ів)</b>\n"]
+    for i, w in enumerate(winners, 1):
+        un = f"@{w[2]}" if w[2] else w[1]
+        lines.append(f"{i}. {un} (ID: <code>{w[0]}</code>) — {w[3]} XP")
+    await update.message.reply_html("\n".join(lines))
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
@@ -422,9 +910,25 @@ async def main() -> None:
     app.add_handler(CommandHandler("stats",     cmd_stats,    filters=admin_filter))
     app.add_handler(CommandHandler("users",     cmd_users,    filters=admin_filter))
     app.add_handler(CommandHandler("killport",  cmd_killport, filters=admin_filter))
+    app.add_handler(CommandHandler("retention", cmd_retention, filters=admin_filter))
+    app.add_handler(CommandHandler("top",       cmd_top,      filters=admin_filter))
+    app.add_handler(CommandHandler("improve",   cmd_improve,  filters=admin_filter))
+    app.add_handler(CommandHandler("plan",      cmd_plan,     filters=admin_filter))
+    app.add_handler(CommandHandler("broadcast", cmd_broadcast, filters=admin_filter))
+    app.add_handler(CommandHandler("raffle",    cmd_raffle,   filters=admin_filter))
 
-    app.add_handler(CallbackQueryHandler(cb_restart,  pattern=r"^restart_"))
-    app.add_handler(CallbackQueryHandler(cb_approval, pattern=r"^(approve|reject)_"))
+    app.add_handler(CommandHandler("cloud",      cmd_cloud,      filters=admin_filter))
+    app.add_handler(CommandHandler("cloudstart", cmd_cloudstart, filters=admin_filter))
+    app.add_handler(CommandHandler("cloudstop",  cmd_cloudstop,  filters=admin_filter))
+    app.add_handler(CommandHandler("cloudnew",   cmd_cloudnew,   filters=admin_filter))
+    app.add_handler(CommandHandler("failover",   cmd_failover,   filters=admin_filter))
+
+    app.add_handler(CallbackQueryHandler(cb_restart,   pattern=r"^restart_"))
+    app.add_handler(CallbackQueryHandler(cb_approval,  pattern=r"^(approve|reject)_"))
+    app.add_handler(CallbackQueryHandler(cb_broadcast, pattern=r"^broadcast_"))
+    app.add_handler(CallbackQueryHandler(cb_cloudstop, pattern=r"^cloudstop_"))
+    app.add_handler(CallbackQueryHandler(cb_cloudnew,  pattern=r"^cloudnew_"))
+    app.add_handler(CallbackQueryHandler(cb_failover,  pattern=r"^failover_"))
 
     await app.initialize()
     await app.start()

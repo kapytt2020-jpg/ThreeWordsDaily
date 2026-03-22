@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bomb Defusal</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; background:#060005; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Mono', 'Courier New', monospace;
+  color:#fff;
+  height:100vh;
+  display:flex; flex-direction:column;
+}
+
+.phase { display:none; flex-direction:column; height:100vh; align-items:center; justify-content:center; }
+.phase.active { display:flex; }
+
+/* ══════ INTRO ══════ */
+#intro { background:radial-gradient(ellipse at 50% 40%, #1a0005 0%, #060005 70%); gap:20px; text-align:center; padding:30px; }
+
+.intro-bomb {
+  font-size:88px;
+  animation:bombIdle 1.5s ease-in-out infinite;
+  filter:drop-shadow(0 0 30px rgba(255,40,0,0.5));
+}
+@keyframes bombIdle {
+  0%,100%{ transform:scale(1) rotate(-3deg); filter:drop-shadow(0 0 20px rgba(255,40,0,0.4)); }
+  50%{ transform:scale(1.04) rotate(3deg); filter:drop-shadow(0 0 50px rgba(255,40,0,0.8)); }
+}
+
+.intro-title {
+  font-size:36px; font-weight:900;
+  letter-spacing:5px; text-transform:uppercase;
+  color:#ff2020;
+  text-shadow:0 0 40px rgba(255,0,0,0.6);
+}
+.intro-sub {
+  font-size:14px; color:rgba(255,255,255,0.4);
+  line-height:1.7; max-width:300px;
+}
+.intro-rules {
+  display:flex; flex-direction:column; gap:8px;
+  width:100%; max-width:300px;
+}
+.rule {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:10px 14px;
+  font-size:13px; color:rgba(255,255,255,0.65);
+  text-align:left;
+}
+.rule-icon { font-size:20px; flex-shrink:0; }
+.start-btn {
+  background:linear-gradient(135deg,#cc0000,#ff2020);
+  color:#fff; border:none;
+  padding:15px 48px; border-radius:14px;
+  font-size:16px; font-weight:800;
+  letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer;
+  box-shadow:0 8px 30px rgba(220,0,0,0.5);
+  transition:all .2s;
+}
+.start-btn:active { transform:scale(.95); }
+
+/* ══════ GAME ══════ */
+#game {
+  background:#060005;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Screen flash overlay */
+.flash-overlay {
+  position:fixed; inset:0; pointer-events:none;
+  opacity:0; z-index:100;
+  transition:opacity .1s;
+}
+.flash-overlay.red { background:rgba(255,0,0,0.35); }
+.flash-overlay.green { background:rgba(0,255,100,0.2); }
+.flash-overlay.active { opacity:1; }
+
+/* HEADER */
+.game-header {
+  position:absolute; top:0; left:0; right:0;
+  padding:16px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  z-index:20;
+  background:linear-gradient(to bottom, rgba(6,0,5,0.95), transparent);
+}
+.wires-status {
+  display:flex; gap:6px;
+}
+.ws-dot {
+  width:10px; height:10px; border-radius:50%;
+  background:rgba(255,255,255,0.15);
+  transition:all .3s;
+}
+.ws-dot.cut { background:#34d399; box-shadow:0 0 8px rgba(52,211,153,0.6); }
+
+.bomb-timer {
+  text-align:center;
+}
+.bt-label { font-size:9px; letter-spacing:3px; color:rgba(255,80,0,0.5); text-transform:uppercase; }
+.bt-count {
+  font-size:32px; font-weight:900; color:#ff2020;
+  font-variant-numeric:tabular-nums; letter-spacing:2px;
+  text-shadow:0 0 20px rgba(255,0,0,0.5);
+  transition:color .2s;
+}
+.bt-count.critical { color:#ff0000; animation:critBlink .4s ease infinite alternate; }
+@keyframes critBlink { from{opacity:1} to{opacity:.4} }
+
+.defuse-count {
+  text-align:right;
+  font-size:12px; color:rgba(255,255,255,0.3);
+}
+.dc-num { font-size:20px; font-weight:900; color:rgba(255,255,255,0.7); display:block; }
+
+/* BOMB AREA */
+.bomb-area {
+  position:absolute;
+  top:80px; left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center;
+  z-index:10;
+}
+.bomb-body {
+  position:relative;
+  width:110px; height:110px;
+  background:radial-gradient(circle at 35% 30%, #333 0%, #111 60%, #000 100%);
+  border-radius:50%;
+  border:3px solid #222;
+  box-shadow:0 10px 40px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.05);
+  display:flex; align-items:center; justify-content:center;
+}
+.bomb-led {
+  width:14px; height:14px; border-radius:50%;
+  background:#ff2020;
+  position:absolute; top:18px; right:22px;
+  animation:ledBlink 1s ease infinite;
+  box-shadow:0 0 12px rgba(255,0,0,0.8);
+}
+@keyframes ledBlink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+.bomb-skull { font-size:40px; }
+.bomb-fuse {
+  width:4px; height:30px;
+  background:linear-gradient(to bottom, #8B4513, #A0522D);
+  border-radius:2px;
+  position:absolute; top:-28px; right:20px;
+  transform:rotate(20deg);
+}
+.fuse-spark {
+  width:8px; height:8px;
+  background:#ffcc00;
+  border-radius:50%;
+  position:absolute; top:-8px; left:-2px;
+  box-shadow:0 0 12px rgba(255,200,0,0.8);
+  animation:sparkFlicker .15s ease infinite alternate;
+}
+@keyframes sparkFlicker {
+  from{transform:scale(1);opacity:1}
+  to{transform:scale(1.6) translateX(2px);opacity:.7}
+}
+
+/* WIRES */
+.wires-container {
+  position:absolute;
+  top:155px; left:50%; transform:translateX(-50%);
+  display:flex; gap:28px;
+  z-index:10;
+}
+.wire-group {
+  display:flex; flex-direction:column; align-items:center; gap:0;
+  cursor:pointer;
+  transition:transform .2s;
+}
+.wire-group:active { transform:scale(.95); }
+.wire-group.cut-wire { pointer-events:none; }
+
+.wire-line {
+  width:6px;
+  height:80px;
+  border-radius:3px;
+  position:relative;
+  transition:all .3s;
+}
+.wire-line::before {
+  content:'';
+  position:absolute; inset:0;
+  border-radius:3px;
+  opacity:0.3;
+}
+.w-red .wire-line { background:linear-gradient(to bottom, #ff3030, #cc0000); box-shadow:0 0 8px rgba(255,0,0,0.4); }
+.w-blue .wire-line { background:linear-gradient(to bottom, #3080ff, #0040cc); box-shadow:0 0 8px rgba(0,80,255,0.4); }
+.w-green .wire-line { background:linear-gradient(to bottom, #20d070, #009940); box-shadow:0 0 8px rgba(0,200,80,0.4); }
+
+.wire-group.active-wire .wire-line { animation:wirePulse .4s ease infinite alternate; }
+@keyframes wirePulse { from{opacity:1} to{opacity:.5} }
+
+.wire-group.cut-wire .wire-line {
+  height:36px;
+  opacity:0.3;
+}
+.wire-cut-mark {
+  display:none;
+  font-size:18px;
+  margin-top:2px;
+}
+.wire-group.cut-wire .wire-cut-mark { display:block; }
+.wire-group.cut-wire .wire-bottom { display:none; }
+
+.wire-bottom {
+  width:34px; height:34px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+  border:2px solid;
+  transition:all .3s;
+}
+.w-red .wire-bottom { border-color:rgba(255,60,60,0.5); background:rgba(255,60,60,0.1); }
+.w-blue .wire-bottom { border-color:rgba(60,130,255,0.5); background:rgba(60,130,255,0.1); }
+.w-green .wire-bottom { border-color:rgba(40,210,120,0.5); background:rgba(40,210,120,0.1); }
+
+.wire-group.active-wire .wire-bottom {
+  transform:scale(1.15);
+}
+
+/* QUESTION PANEL */
+.q-panel {
+  position:absolute;
+  bottom:0; left:0; right:0;
+  background:rgba(6,0,5,0.98);
+  border-top:1px solid rgba(255,255,255,0.08);
+  padding:16px;
+  z-index:20;
+  transform:translateY(100%);
+  transition:transform .35s cubic-bezier(.4,0,.2,1);
+}
+.q-panel.open { transform:translateY(0); }
+
+.q-wire-indicator {
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:10px;
+}
+.qwi-dot {
+  width:10px; height:10px; border-radius:50%;
+}
+.qwi-text { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.3); }
+
+.q-word {
+  font-size:26px; font-weight:900;
+  text-transform:uppercase; letter-spacing:3px;
+  text-align:center; margin-bottom:14px;
+}
+
+.q-options {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  margin-bottom:12px;
+}
+.q-opt {
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px; padding:13px 10px;
+  font-size:14px; font-weight:600;
+  color:rgba(255,255,255,0.8);
+  cursor:pointer; text-align:center;
+  transition:all .15s;
+}
+.q-opt:active { transform:scale(.97); }
+.q-opt:hover { background:rgba(255,255,255,0.1); }
+.q-opt.correct {
+  background:rgba(52,211,153,0.2); border-color:#34d399;
+  color:#34d399; animation:optWin .35s ease;
+}
+.q-opt.wrong {
+  background:rgba(239,68,68,0.2); border-color:#f87171;
+  color:#f87171; animation:optFail .3s ease;
+}
+@keyframes optWin { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+@keyframes optFail { 0%{transform:translateX(0)} 30%{transform:translateX(-7px)} 70%{transform:translateX(7px)} 100%{transform:translateX(0)} }
+
+.q-penalty-note {
+  font-size:11px; color:rgba(255,60,60,0.5); text-align:center;
+  letter-spacing:1px;
+}
+
+/* TOAST */
+.toast {
+  position:fixed; top:75px; left:50%; transform:translateX(-50%);
+  padding:10px 22px; border-radius:12px;
+  font-size:14px; font-weight:700; letter-spacing:1px;
+  z-index:200; opacity:0; pointer-events:none;
+  transition:opacity .2s; white-space:nowrap;
+}
+.toast.show { opacity:1; }
+.toast.t-win { background:rgba(52,211,153,0.95); color:#000; }
+.toast.t-fail { background:rgba(220,30,30,0.95); color:#fff; }
+
+/* ══════ DEFUSED ══════ */
+#defused {
+  background:#020d02;
+  gap:20px; text-align:center;
+}
+.defused-icon { font-size:80px; animation:defusedPop 1s ease; }
+@keyframes defusedPop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2)} 100%{transform:scale(1);opacity:1} }
+.defused-title {
+  font-size:32px; font-weight:900; letter-spacing:4px; text-transform:uppercase;
+  color:#34d399; text-shadow:0 0 30px rgba(52,211,153,0.6);
+}
+.defused-sub { font-size:13px; color:rgba(255,255,255,0.4); }
+.defused-words {
+  background:rgba(52,211,153,0.07);
+  border:1px solid rgba(52,211,153,0.2);
+  border-radius:14px; padding:16px 22px;
+  width:calc(100% - 40px); max-width:320px; text-align:left;
+}
+.dw-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  font-size:13px;
+}
+.dw-row:last-child { border:none; }
+.dw-en { font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+.dw-ua { color:rgba(52,211,153,0.7); }
+.defused-time {
+  font-size:24px; font-weight:900; color:#ffcc00;
+}
+.play-again-btn {
+  background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12);
+  color:rgba(255,255,255,0.6); padding:12px 28px; border-radius:12px;
+  font-size:13px; font-weight:600; cursor:pointer; transition:all .2s;
+}
+.play-again-btn:hover { background:rgba(255,255,255,0.12); color:#fff; }
+
+/* ══════ EXPLODED ══════ */
+#exploded {
+  background:#0d0000;
+  gap:20px; text-align:center;
+}
+.exploded-icon { font-size:80px; }
+.exploded-title {
+  font-size:30px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+  color:#ff2020; text-shadow:0 0 30px rgba(255,0,0,0.6);
+}
+.exploded-sub { font-size:13px; color:rgba(255,255,255,0.4); line-height:1.6; max-width:260px; }
+.exploded-progress {
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px; padding:14px 20px;
+  font-size:14px; color:rgba(255,255,255,0.6);
+}
+
+/* Particles */
+.particle {
+  position:fixed;
+  font-size:20px;
+  pointer-events:none;
+  z-index:150;
+  animation:particleFall 1.2s ease-out forwards;
+}
+@keyframes particleFall {
+  0%  { opacity:1; transform:translateY(0) scale(1); }
+  100%{ opacity:0; transform:translateY(120px) scale(0.5); }
+}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="phase active" id="intro">
+  <div class="intro-bomb">💣</div>
+  <div class="intro-title">BOMB<br>DEFUSAL</div>
+  <div class="intro-sub">Три дроти. Три слова. 90 секунд.</div>
+  <div class="intro-rules">
+    <div class="rule"><div class="rule-icon">🟥🟦🟩</div><div>Натисни на дріт — отримаєш слово для перекладу</div></div>
+    <div class="rule"><div class="rule-icon">✂️</div><div>Правильний переклад = дріт перерізаний</div></div>
+    <div class="rule"><div class="rule-icon">⚠️</div><div>Неправильний = -20 секунд від таймера</div></div>
+    <div class="rule"><div class="rule-icon">💀</div><div>Час вийшов = ВИБУХ</div></div>
+  </div>
+  <button class="start-btn" onclick="startGame()">ЗНЕШКОДИТИ →</button>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="game">
+  <div class="flash-overlay" id="flashOverlay"></div>
+
+  <div class="game-header">
+    <div class="wires-status" id="wiresStatus">
+      <div class="ws-dot" id="ws0"></div>
+      <div class="ws-dot" id="ws1"></div>
+      <div class="ws-dot" id="ws2"></div>
+    </div>
+    <div class="bomb-timer">
+      <div class="bt-label">ДЕТОНАЦІЯ</div>
+      <div class="bt-count" id="timerCount">90</div>
+    </div>
+    <div class="defuse-count">
+      <span class="dc-num" id="cutCount">0</span>
+      перерізано
+    </div>
+  </div>
+
+  <!-- BOMB -->
+  <div class="bomb-area">
+    <div class="bomb-body">
+      <div class="bomb-fuse"><div class="fuse-spark"></div></div>
+      <div class="bomb-led"></div>
+      <div class="bomb-skull">💀</div>
+    </div>
+  </div>
+
+  <!-- WIRES -->
+  <div class="wires-container" id="wiresContainer">
+    <div class="wire-group w-red" id="wire0" onclick="activateWire(0)">
+      <div class="wire-line"></div>
+      <div class="wire-cut-mark">✂️</div>
+      <div class="wire-bottom">🔴</div>
+    </div>
+    <div class="wire-group w-blue" id="wire1" onclick="activateWire(1)">
+      <div class="wire-line"></div>
+      <div class="wire-cut-mark">✂️</div>
+      <div class="wire-bottom">🔵</div>
+    </div>
+    <div class="wire-group w-green" id="wire2" onclick="activateWire(2)">
+      <div class="wire-line"></div>
+      <div class="wire-cut-mark">✂️</div>
+      <div class="wire-bottom">🟢</div>
+    </div>
+  </div>
+
+  <!-- QUESTION PANEL -->
+  <div class="q-panel" id="qPanel">
+    <div class="q-wire-indicator">
+      <div class="qwi-dot" id="qwiDot"></div>
+      <div class="qwi-text" id="qwiText">Дріт 1</div>
+    </div>
+    <div class="q-word" id="qWord">SHADOW</div>
+    <div class="q-options" id="qOptions"></div>
+    <div class="q-penalty-note">❌ Неправильно = -20 секунд</div>
+  </div>
+</div>
+
+<!-- DEFUSED -->
+<div class="phase" id="defused">
+  <div class="defused-icon">✅</div>
+  <div class="defused-title">ЗНЕШКОДЖЕНО!</div>
+  <div class="defused-sub" id="defusedSub">Вибух відвернено! Залишилось 42 сек.</div>
+  <div class="defused-words" id="defusedWords"></div>
+  <div class="defused-time" id="defusedTime">+42 сек</div>
+  <button class="play-again-btn" onclick="location.reload()">Ще раз</button>
+</div>
+
+<!-- EXPLODED -->
+<div class="phase" id="exploded">
+  <div class="exploded-icon">💥</div>
+  <div class="exploded-title">ВИБУХ!</div>
+  <div class="exploded-sub">Не встиг знешкодити. Але тепер ти знаєш ці слова — наступного разу бомба не вибухне.</div>
+  <div class="exploded-progress" id="explodedProgress">Перерізав 1 з 3 дротів</div>
+  <button class="play-again-btn" onclick="location.reload()">Спробувати ще</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const wires = [
+  { word:'SHADOW',   correct:'тінь',      options:['тінь','сонце','вогонь','вода'],         color:'#ff3030', name:'Червоний дріт' },
+  { word:'FIERCE',   correct:'лютий',     options:['добрий','лютий','тихий','малий'],        color:'#3080ff', name:'Синій дріт' },
+  { word:'ANCIENT',  correct:'давній',    options:['новий','швидкий','давній','яскравий'],   color:'#20d070', name:'Зелений дріт' },
+];
+
+let timeLeft = 90;
+let timerInterval = null;
+let activeWireIdx = null;
+let cutWires = 0;
+let learnedWords = [];
+let gameOver = false;
+
+function startGame() {
+  goPhase('game');
+  timerInterval = setInterval(tick, 1000);
+}
+
+function tick() {
+  if (gameOver) return;
+  timeLeft--;
+  const el = document.getElementById('timerCount');
+  el.textContent = timeLeft;
+  if (timeLeft <= 20) el.classList.add('critical');
+  if (timeLeft <= 0) explode();
+}
+
+function activateWire(idx) {
+  if (gameOver) return;
+  const wg = document.getElementById('wire' + idx);
+  if (wg.classList.contains('cut-wire')) return;
+
+  // Deactivate previous
+  document.querySelectorAll('.wire-group').forEach(w => w.classList.remove('active-wire'));
+  wg.classList.add('active-wire');
+  activeWireIdx = idx;
+
+  const w = wires[idx];
+  const dot = document.getElementById('qwiDot');
+  dot.style.background = w.color;
+  document.getElementById('qwiText').textContent = w.name;
+  document.getElementById('qWord').textContent = w.word;
+
+  // Shuffle options
+  const shuffled = [...w.options].sort(() => Math.random() - .5);
+  const grid = document.getElementById('qOptions');
+  grid.innerHTML = '';
+  shuffled.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'q-opt';
+    btn.textContent = opt;
+    btn.onclick = () => answer(btn, opt, w.correct, idx);
+    grid.appendChild(btn);
+  });
+
+  // Open panel
+  document.getElementById('qPanel').classList.add('open');
+}
+
+function answer(btn, chosen, correct, wireIdx) {
+  // Disable all
+  document.querySelectorAll('.q-opt').forEach(b => b.onclick = null);
+
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    cutWires++;
+    document.getElementById('cutCount').textContent = cutWires;
+    learnedWords.push(wires[wireIdx]);
+
+    // Mark wire status dot
+    document.getElementById('ws' + wireIdx).classList.add('cut');
+
+    // Green flash
+    flash('green');
+    showToast('✂️ ' + wires[wireIdx].name + ' перерізано!', 'win');
+    spawnParticles(['✂️','✅','💚']);
+
+    // Cut wire visually
+    setTimeout(() => {
+      document.getElementById('wire' + wireIdx).classList.add('cut-wire');
+      document.getElementById('wire' + wireIdx).classList.remove('active-wire');
+      document.getElementById('qPanel').classList.remove('open');
+      activeWireIdx = null;
+
+      if (cutWires === 3) {
+        setTimeout(() => defused(), 600);
+      }
+    }, 600);
+
+  } else {
+    btn.classList.add('wrong');
+    // Show correct
+    document.querySelectorAll('.q-opt').forEach(b => {
+      if (b.textContent === correct) b.classList.add('correct');
+    });
+    flash('red');
+    timeLeft = Math.max(1, timeLeft - 20);
+    document.getElementById('timerCount').textContent = timeLeft;
+    document.getElementById('timerCount').classList.add('critical');
+    showToast('⚠️ -20 СЕКУНД!', 'fail');
+
+    setTimeout(() => {
+      document.querySelectorAll('.q-opt').forEach(b => {
+        b.classList.remove('wrong','correct');
+        const opt = b.textContent;
+        b.onclick = () => answer(b, opt, correct, wireIdx);
+      });
+    }, 1000);
+  }
+}
+
+function flash(type) {
+  const el = document.getElementById('flashOverlay');
+  el.className = `flash-overlay ${type} active`;
+  setTimeout(() => el.classList.remove('active'), 120);
+}
+
+function showToast(text, type) {
+  const t = document.getElementById('toast');
+  t.textContent = text;
+  t.className = `toast t-${type} show`;
+  setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+function spawnParticles(emojis) {
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = (30 + Math.random() * 40) + '%';
+    p.style.top = (20 + Math.random() * 30) + '%';
+    p.style.animationDelay = (Math.random() * .3) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1500);
+  }
+}
+
+function defused() {
+  clearInterval(timerInterval);
+  gameOver = true;
+  document.getElementById('defusedSub').textContent = `Вибух відвернено! Залишилось ${timeLeft} сек.`;
+  document.getElementById('defusedTime').textContent = `+${timeLeft} сек бонус`;
+
+  const wordsEl = document.getElementById('defusedWords');
+  wordsEl.innerHTML = '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(52,211,153,0.5);margin-bottom:10px">Слова які ти вивчив</div>';
+  learnedWords.forEach(w => {
+    wordsEl.innerHTML += `<div class="dw-row"><span class="dw-en">${w.word}</span><span class="dw-ua">= ${w.correct}</span></div>`;
+  });
+
+  goPhase('defused');
+}
+
+function explode() {
+  clearInterval(timerInterval);
+  gameOver = true;
+  document.getElementById('explodedProgress').textContent = `Перерізав ${cutWires} з 3 дротів`;
+  // Shake
+  document.body.style.animation = 'shake .5s ease';
+  setTimeout(() => { document.body.style.animation=''; goPhase('exploded'); }, 600);
+}
+
+function goPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const el = document.getElementById(id);
+  el.style.display = 'flex'; el.classList.add('active');
+}
+document.querySelectorAll('.phase:not(.active)').forEach(p => p.style.display='none');
+</script>
+<style>
+@keyframes shake {
+  0%{transform:translateX(0)} 20%{transform:translateX(-12px)} 40%{transform:translateX(12px)}
+  60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} 100%{transform:translateX(0)}
+}
+</style>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Word Poker</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; }
+body {
+  font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:#0a1f0a;
+  color:#fff;
+  height:100vh;
+  display:flex; flex-direction:column;
+}
+.phase { display:none; flex-direction:column; height:100vh; align-items:center; justify-content:center; }
+.phase.active { display:flex; }
+
+/* ══════ INTRO ══════ */
+#intro {
+  background:radial-gradient(ellipse at 50% 40%, #0f2f0f 0%, #0a1f0a 70%);
+  gap:18px; text-align:center; padding:30px;
+}
+.intro-icon { font-size:76px; animation:cardFloat 3s ease-in-out infinite; }
+@keyframes cardFloat {
+  0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-10px) rotate(3deg)}
+}
+.intro-title {
+  font-size:38px; font-weight:900; letter-spacing:5px; text-transform:uppercase;
+  background:linear-gradient(135deg,#ffcc00,#ff8800);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.intro-sub { font-size:14px; color:rgba(255,255,255,0.4); line-height:1.7; max-width:290px; }
+.intro-rules { display:flex; flex-direction:column; gap:8px; width:100%; max-width:310px; }
+.rule {
+  display:flex; align-items:center; gap:12px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+  border-radius:10px; padding:10px 14px; font-size:13px; color:rgba(255,255,255,0.65); text-align:left;
+}
+.rule-icon { font-size:20px; flex-shrink:0; }
+.chips-display {
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,200,0,0.08); border:1px solid rgba(255,200,0,0.2);
+  border-radius:12px; padding:10px 20px;
+  font-size:18px; font-weight:800; color:#ffcc00;
+}
+.start-btn {
+  background:linear-gradient(135deg,#1a6600,#22aa00);
+  color:#fff; border:none;
+  padding:15px 48px; border-radius:14px;
+  font-size:16px; font-weight:800; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; box-shadow:0 8px 30px rgba(0,180,0,0.4); transition:all .2s;
+}
+.start-btn:active { transform:scale(.95); }
+
+/* ══════ GAME ══════ */
+#game {
+  background:#0a1f0a;
+  overflow:hidden; position:relative;
+  justify-content:flex-start;
+}
+
+/* FELT TABLE */
+.table-felt {
+  position:absolute; inset:0;
+  background:radial-gradient(ellipse at 50% 50%, #0f2f0f 0%, #081808 100%);
+  border-top:4px solid #1a4010;
+}
+.felt-pattern {
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(
+    45deg, transparent, transparent 30px,
+    rgba(255,255,255,0.01) 30px, rgba(255,255,255,0.01) 31px
+  );
+}
+
+/* HEADER */
+.g-header {
+  position:relative; z-index:10;
+  padding:14px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+.bank-display {
+  display:flex; align-items:center; gap:6px;
+}
+.bank-icon { font-size:18px; }
+.bank-amount {
+  font-size:20px; font-weight:900; color:#ffcc00;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 15px rgba(255,200,0,0.4);
+}
+.round-display {
+  text-align:center;
+}
+.rd-label { font-size:9px; letter-spacing:2px; color:rgba(255,255,255,0.25); text-transform:uppercase; }
+.rd-num { font-size:18px; font-weight:800; color:rgba(255,255,255,0.7); }
+.streak-display {
+  text-align:right;
+  font-size:12px; color:rgba(255,200,0,0.5);
+}
+.streak-num { font-size:20px; font-weight:900; color:#ffcc00; display:block; }
+
+/* OPPONENTS (AI players) */
+.opponents {
+  position:relative; z-index:10;
+  display:flex; justify-content:space-around;
+  padding:0 20px; flex-shrink:0; margin-top:4px;
+}
+.opp {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  opacity:0.7;
+}
+.opp-ava {
+  width:40px; height:40px; border-radius:50%;
+  background:rgba(255,255,255,0.06); border:2px solid rgba(255,255,255,0.1);
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+  transition:all .3s;
+}
+.opp.thinking .opp-ava {
+  border-color:rgba(255,200,0,0.5);
+  box-shadow:0 0 15px rgba(255,200,0,0.3);
+  animation:thinkPulse .8s ease infinite alternate;
+}
+@keyframes thinkPulse { from{transform:scale(1)} to{transform:scale(1.08)} }
+.opp.folded .opp-ava { opacity:0.3; filter:grayscale(1); }
+.opp-name { font-size:9px; color:rgba(255,255,255,0.3); }
+.opp-bet {
+  font-size:10px; font-weight:700; color:#ffcc00;
+  background:rgba(255,200,0,0.1); border-radius:6px;
+  padding:2px 6px; display:none;
+}
+.opp.thinking .opp-bet { display:block; }
+
+/* POT */
+.pot-area {
+  position:relative; z-index:10;
+  text-align:center; padding:6px 0; flex-shrink:0;
+}
+.pot-label { font-size:9px; letter-spacing:2px; color:rgba(255,255,255,0.25); text-transform:uppercase; }
+.pot-amount {
+  font-size:22px; font-weight:900; color:#ffcc00;
+  text-shadow:0 0 20px rgba(255,200,0,0.4);
+}
+.pot-chips { font-size:20px; }
+
+/* CARD IN CENTER */
+.card-center {
+  position:relative; z-index:10;
+  display:flex; justify-content:center;
+  flex-shrink:0; padding:8px 0;
+}
+.play-card {
+  width:120px; height:170px;
+  border-radius:14px;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:8px;
+  position:relative;
+  overflow:hidden;
+  transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+.play-card.face-down {
+  background:linear-gradient(135deg, #1a3a1a, #0d260d);
+  border:2px solid #2a5a2a;
+  cursor:default;
+}
+.play-card.face-down .card-pattern {
+  font-size:44px; opacity:0.15;
+}
+.play-card.face-up {
+  background:linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+  border:2px solid #ddd;
+  color:#111;
+}
+.card-suit-tl, .card-suit-br {
+  position:absolute;
+  font-size:14px; font-weight:900; color:#cc0000;
+}
+.card-suit-tl { top:8px; left:10px; }
+.card-suit-br { bottom:8px; right:10px; transform:rotate(180deg); }
+.card-word-en {
+  font-size:18px; font-weight:900;
+  letter-spacing:2px; text-transform:uppercase;
+  color:#111;
+}
+.card-word-sub {
+  font-size:10px; color:rgba(0,0,0,0.35);
+  letter-spacing:1px;
+}
+.card-question { font-size:36px; opacity:0.2; }
+
+/* BET SECTION */
+.bet-section {
+  position:relative; z-index:10;
+  padding:0 16px; flex-shrink:0;
+}
+.bet-label {
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,255,255,0.25); text-align:center; margin-bottom:8px;
+}
+.bet-options {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+}
+.bet-btn {
+  background:rgba(255,200,0,0.08); border:1px solid rgba(255,200,0,0.2);
+  color:#ffcc00; border-radius:12px; padding:12px 6px;
+  font-size:13px; font-weight:800;
+  cursor:pointer; text-align:center; transition:all .2s;
+}
+.bet-btn:active { transform:scale(.95); }
+.bet-btn:hover { background:rgba(255,200,0,0.15); border-color:rgba(255,200,0,0.4); }
+.bet-btn.selected {
+  background:rgba(255,200,0,0.25); border-color:#ffcc00;
+  box-shadow:0 0 16px rgba(255,200,0,0.3);
+  transform:scale(1.04);
+}
+.bet-btn.disabled { opacity:.3; pointer-events:none; }
+.bet-chips { font-size:18px; display:block; }
+.bet-risk { font-size:9px; color:rgba(255,200,0,0.5); margin-top:2px; }
+
+/* ANSWER SECTION */
+.answer-section {
+  position:relative; z-index:10;
+  padding:0 16px; flex-shrink:0;
+}
+.ans-label {
+  font-size:10px; letter-spacing:2px; text-transform:uppercase;
+  color:rgba(255,255,255,0.25); text-align:center; margin-bottom:8px;
+}
+.ans-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.ans-btn {
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.8); border-radius:12px; padding:13px;
+  font-size:14px; font-weight:600; cursor:pointer; text-align:center;
+  transition:all .15s;
+}
+.ans-btn:active { transform:scale(.97); }
+.ans-btn:hover { background:rgba(255,255,255,0.1); }
+.ans-btn.correct { background:rgba(52,211,153,0.2); border-color:#34d399; color:#34d399; animation:ansWin .35s ease; }
+.ans-btn.wrong   { background:rgba(239,68,68,0.2);  border-color:#f87171; color:#f87171; animation:ansFail .3s ease; }
+@keyframes ansWin  { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+@keyframes ansFail { 0%,100%{transform:translateX(0)} 30%{transform:translateX(-6px)} 70%{transform:translateX(6px)} }
+
+/* WIN/LOSE POPUP */
+.result-popup {
+  position:fixed; inset:0; z-index:50;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.75);
+  opacity:0; pointer-events:none;
+  transition:opacity .3s;
+}
+.result-popup.show { opacity:1; pointer-events:all; }
+.rp-box {
+  background:#0f2f0f; border-radius:20px;
+  padding:28px 32px; text-align:center;
+  border:1px solid rgba(255,255,255,0.1);
+  min-width:260px;
+}
+.rp-icon { font-size:52px; margin-bottom:8px; }
+.rp-title { font-size:22px; font-weight:900; margin-bottom:6px; }
+.rp-win-title { color:#34d399; }
+.rp-lose-title { color:#f87171; }
+.rp-amount {
+  font-size:32px; font-weight:900; color:#ffcc00;
+  text-shadow:0 0 20px rgba(255,200,0,0.4);
+  margin-bottom:4px;
+}
+.rp-amount.neg { color:#f87171; }
+.rp-word { font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:16px; }
+.rp-next-btn {
+  background:linear-gradient(135deg,#1a6600,#22aa00);
+  color:#fff; border:none;
+  padding:12px 28px; border-radius:12px;
+  font-size:14px; font-weight:700;
+  cursor:pointer; width:100%;
+}
+
+/* GAME OVER */
+#gameover {
+  background:radial-gradient(ellipse at 50% 40%, #1a1000 0%, #0a0800 70%);
+  gap:20px; text-align:center; padding:30px;
+}
+.go-icon { font-size:72px; }
+.go-title { font-size:28px; font-weight:900; letter-spacing:3px; text-transform:uppercase; color:#ffcc00; }
+.go-sub { font-size:13px; color:rgba(255,255,255,0.4); }
+.go-stats {
+  background:rgba(255,200,0,0.07); border:1px solid rgba(255,200,0,0.2);
+  border-radius:14px; padding:16px 24px; width:100%; max-width:300px;
+}
+.go-stat-row {
+  display:flex; justify-content:space-between;
+  font-size:13px; padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.go-stat-row:last-child { border:none; }
+.go-stat-val { font-weight:800; color:#ffcc00; }
+.go-replay-btn {
+  background:linear-gradient(135deg,#cc8800,#ffcc00);
+  color:#000; border:none; padding:14px 44px; border-radius:14px;
+  font-size:15px; font-weight:800; cursor:pointer;
+}
+
+/* Particles */
+.particle { position:fixed; font-size:22px; pointer-events:none; z-index:200; animation:pFall 1s ease-out forwards; }
+@keyframes pFall { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(100px) scale(.4)} }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="phase active" id="intro">
+  <div class="intro-icon">🃏</div>
+  <div class="intro-title">Word<br>Poker</div>
+  <div class="intro-sub">Постав фішки на своє знання слова. Більший ризик — більший виграш. Блефуй або знай напевно.</div>
+  <div class="intro-rules">
+    <div class="rule"><div class="rule-icon">🃏</div><div>Карта перевернута. Постав фішки ДО того як побачиш слово</div></div>
+    <div class="rule"><div class="rule-icon">💰</div><div>Правильно + великий ставок = великий виграш</div></div>
+    <div class="rule"><div class="rule-icon">💸</div><div>Неправильно = втрачаєш ставку</div></div>
+    <div class="rule"><div class="rule-icon">🏆</div><div>Мета: накопичити якомога більше фішок за 10 раундів</div></div>
+  </div>
+  <div class="chips-display">🟡 Стартовий банк: <span id="startChips">500</span> фішок</div>
+  <button class="start-btn" onclick="startGame()">СІСТИ ЗА СТІЛ →</button>
+</div>
+
+<!-- GAME -->
+<div class="phase" id="game">
+  <div class="table-felt"><div class="felt-pattern"></div></div>
+
+  <div class="g-header">
+    <div class="bank-display">
+      <div class="bank-icon">🟡</div>
+      <div class="bank-amount" id="bankAmount">500</div>
+    </div>
+    <div class="round-display">
+      <div class="rd-label">Раунд</div>
+      <div class="rd-num" id="roundNum">1 / 10</div>
+    </div>
+    <div class="streak-display">
+      <span class="streak-num" id="streakNum">0🔥</span>
+      поспіль
+    </div>
+  </div>
+
+  <!-- Opponents -->
+  <div class="opponents">
+    <div class="opp" id="opp0">
+      <div class="opp-ava">🐺</div>
+      <div class="opp-name">Олексій</div>
+      <div class="opp-bet" id="oppBet0">ставка: ?</div>
+    </div>
+    <div class="opp" id="opp1">
+      <div class="opp-ava">🦊</div>
+      <div class="opp-name">Марія</div>
+      <div class="opp-bet" id="oppBet1">ставка: ?</div>
+    </div>
+    <div class="opp" id="opp2">
+      <div class="opp-ava">🦅</div>
+      <div class="opp-name">Ігор</div>
+      <div class="opp-bet" id="oppBet2">ставка: ?</div>
+    </div>
+  </div>
+
+  <!-- Pot -->
+  <div class="pot-area">
+    <div class="pot-label">Банк раунду</div>
+    <div class="pot-amount"><span class="pot-chips">🟡</span> <span id="potAmount">0</span></div>
+  </div>
+
+  <!-- Card -->
+  <div class="card-center">
+    <div class="play-card face-down" id="playCard">
+      <div class="card-question">🃏</div>
+    </div>
+  </div>
+
+  <!-- BET SECTION -->
+  <div class="bet-section" id="betSection">
+    <div class="bet-label">Постав ставку — потім побачиш слово</div>
+    <div class="bet-options">
+      <div class="bet-btn" onclick="selectBet(this,10)">
+        <span class="bet-chips">🟡 10</span>
+        <span class="bet-risk">обережно</span>
+      </div>
+      <div class="bet-btn" onclick="selectBet(this,25)">
+        <span class="bet-chips">🟡 25</span>
+        <span class="bet-risk">помірно</span>
+      </div>
+      <div class="bet-btn" onclick="selectBet(this,50)">
+        <span class="bet-chips">🟡 50</span>
+        <span class="bet-risk">сміливо</span>
+      </div>
+      <div class="bet-btn" onclick="selectBet(this,100)">
+        <span class="bet-chips">🟡 100</span>
+        <span class="bet-risk">ва-банк!</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANSWER SECTION (hidden until bet placed) -->
+  <div class="answer-section" id="ansSection" style="display:none">
+    <div class="ans-label" id="ansLabel">Що означає це слово?</div>
+    <div class="ans-grid" id="ansGrid"></div>
+  </div>
+
+  <!-- Result popup -->
+  <div class="result-popup" id="resultPopup">
+    <div class="rp-box">
+      <div class="rp-icon" id="rpIcon">✅</div>
+      <div class="rp-title" id="rpTitle">Правильно!</div>
+      <div class="rp-amount" id="rpAmount">+100</div>
+      <div class="rp-word" id="rpWord"></div>
+      <button class="rp-next-btn" id="rpNextBtn" onclick="nextRound()">Далі →</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="phase" id="gameover">
+  <div class="go-icon" id="goIcon">🏆</div>
+  <div class="go-title" id="goTitle">Чудова гра!</div>
+  <div class="go-sub" id="goSub">Ти майстер слова!</div>
+  <div class="go-stats">
+    <div class="go-stat-row"><span>Фінальний банк</span><span class="go-stat-val" id="goFinal">-</span></div>
+    <div class="go-stat-row"><span>Прибуток</span><span class="go-stat-val" id="goProfit">-</span></div>
+    <div class="go-stat-row"><span>Правильних</span><span class="go-stat-val" id="goCorrect">-</span></div>
+    <div class="go-stat-row"><span>Найбільша ставка</span><span class="go-stat-val" id="goBiggest">-</span></div>
+  </div>
+  <button class="go-replay-btn" onclick="location.reload()">Зіграти знову</button>
+</div>
+
+<script>
+const words = [
+  { word:'HAPPY',       correct:'щасливий',    options:['щасливий','сумний','злий','голодний'] },
+  { word:'JOURNEY',     correct:'подорож',     options:['зупинка','подорож','відпочинок','швидкість'] },
+  { word:'BRAVE',       correct:'сміливий',    options:['боягузливий','сміливий','мудрий','добрий'] },
+  { word:'SHADOW',      correct:'тінь',        options:['тінь','сонце','вогонь','вода'] },
+  { word:'FIERCE',      correct:'лютий',       options:['добрий','лютий','тихий','малий'] },
+  { word:'ANCIENT',     correct:'давній',      options:['новий','давній','швидкий','яскравий'] },
+  { word:'TRIUMPH',     correct:'тріумф',      options:['поразка','мир','тріумф','зусилля'] },
+  { word:'ELOQUENT',    correct:'красномовний',options:['мовчазний','красномовний','грубий','повільний'] },
+  { word:'RESILIENT',   correct:'стійкий',     options:['крихкий','гнучкий','стійкий','слабкий'] },
+  { word:'EPHEMERAL',   correct:'ефемерний',   options:['вічний','ефемерний','реальний','постійний'] },
+];
+
+let bank = 500;
+let round = 0;
+let currentBet = 0;
+let betSelected = false;
+let cardRevealed = false;
+let streak = 0;
+let biggestBet = 0;
+let correctCount = 0;
+const shuffled = [...words].sort(() => Math.random() - .5);
+
+function startGame() { goPhase('game'); loadRound(); }
+
+function loadRound() {
+  if (round >= 10) { endGame(); return; }
+  const w = shuffled[round];
+  betSelected = false;
+  cardRevealed = false;
+  currentBet = 0;
+
+  document.getElementById('roundNum').textContent = `${round + 1} / 10`;
+  document.getElementById('bankAmount').textContent = bank;
+  document.getElementById('streakNum').textContent = streak + '🔥';
+  document.getElementById('potAmount').textContent = '0';
+
+  // Reset card
+  const card = document.getElementById('playCard');
+  card.className = 'play-card face-down';
+  card.innerHTML = '<div class="card-question">🃏</div>';
+
+  // Reset bet
+  document.getElementById('betSection').style.display = 'block';
+  document.getElementById('ansSection').style.display = 'none';
+  document.querySelectorAll('.bet-btn').forEach(b => {
+    b.classList.remove('selected','disabled');
+    // Disable bets higher than bank
+    const val = parseInt(b.onclick.toString().match(/\d+/)[0]);
+    if (val > bank) b.classList.add('disabled');
+  });
+
+  // AI opponents "thinking"
+  setTimeout(() => {
+    [0,1,2].forEach(i => {
+      const opp = document.getElementById('opp'+i);
+      if (Math.random() > 0.3) {
+        opp.classList.add('thinking');
+        const bets = [10,25,50,100];
+        document.getElementById('oppBet'+i).textContent = '🟡 ' + bets[Math.floor(Math.random()*3)];
+      } else {
+        opp.classList.add('folded');
+      }
+    });
+  }, 500);
+}
+
+function selectBet(btn, amount) {
+  if (betSelected) return;
+  if (amount > bank) return;
+  currentBet = amount;
+  if (amount > biggestBet) biggestBet = amount;
+  document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  betSelected = true;
+
+  // Calculate pot (our bet + AI bets)
+  const oppTotal = [0,1,2].reduce((sum,i) => {
+    const opp = document.getElementById('opp'+i);
+    if (opp.classList.contains('thinking')) {
+      const t = document.getElementById('oppBet'+i).textContent;
+      const m = t.match(/\d+/);
+      return sum + (m ? parseInt(m[0]) : 0);
+    }
+    return sum;
+  }, 0);
+  document.getElementById('potAmount').textContent = currentBet + oppTotal;
+
+  // Reveal card after short delay
+  setTimeout(() => revealCard(), 600);
+}
+
+function revealCard() {
+  const w = shuffled[round];
+  const card = document.getElementById('playCard');
+  card.className = 'play-card face-up';
+  card.innerHTML = `
+    <div class="card-suit-tl">♠</div>
+    <div class="card-word-en">${w.word}</div>
+    <div class="card-word-sub">= ?</div>
+    <div class="card-suit-br">♠</div>
+  `;
+
+  // Show answers
+  document.getElementById('betSection').style.display = 'none';
+  document.getElementById('ansSection').style.display = 'block';
+  const grid = document.getElementById('ansGrid');
+  grid.innerHTML = '';
+  [...w.options].sort(() => Math.random() - .5).forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'ans-btn';
+    btn.textContent = opt;
+    btn.onclick = () => answer(btn, opt, w.correct, w.word);
+    grid.appendChild(btn);
+  });
+}
+
+function answer(btn, chosen, correct, wordEn) {
+  document.querySelectorAll('.ans-btn').forEach(b => b.onclick = null);
+  const isRight = chosen === correct;
+
+  if (isRight) {
+    btn.classList.add('correct');
+    const multiplier = currentBet >= 100 ? 3 : currentBet >= 50 ? 2.5 : currentBet >= 25 ? 2 : 1.5;
+    const won = Math.round(currentBet * multiplier);
+    bank += won;
+    streak++;
+    correctCount++;
+    spawnParticles(['🟡','💰','✨','🎰']);
+    showResult(true, `+${won}`, `${wordEn} = ${correct}`, `x${multiplier} бонус`);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.ans-btn').forEach(b => { if (b.textContent === correct) b.classList.add('correct'); });
+    bank -= currentBet;
+    streak = 0;
+    showResult(false, `-${currentBet}`, `${wordEn} = ${correct}`, 'Правильна відповідь показана');
+  }
+
+  document.getElementById('bankAmount').textContent = bank;
+  document.getElementById('streakNum').textContent = streak + '🔥';
+  [0,1,2].forEach(i => {
+    document.getElementById('opp'+i).classList.remove('thinking','folded');
+  });
+}
+
+function showResult(win, amount, word, sub) {
+  document.getElementById('rpIcon').textContent = win ? '🏆' : '💸';
+  document.getElementById('rpTitle').textContent = win ? 'Правильно!' : 'Не вгадав';
+  document.getElementById('rpTitle').className = `rp-title ${win ? 'rp-win-title' : 'rp-lose-title'}`;
+  document.getElementById('rpAmount').textContent = amount;
+  document.getElementById('rpAmount').className = `rp-amount ${win ? '' : 'neg'}`;
+  document.getElementById('rpWord').textContent = word + (sub ? ' · ' + sub : '');
+  document.getElementById('rpNextBtn').textContent = round < 9 ? 'Наступне слово →' : '🏁 Фінал';
+  document.getElementById('resultPopup').classList.add('show');
+}
+
+function nextRound() {
+  document.getElementById('resultPopup').classList.remove('show');
+  if (bank <= 0) { endGame(); return; }
+  round++;
+  loadRound();
+}
+
+function endGame() {
+  const profit = bank - 500;
+  document.getElementById('goIcon').textContent = bank >= 500 ? '🏆' : '💸';
+  document.getElementById('goTitle').textContent = bank >= 1000 ? 'Покерний гуру!' : bank >= 500 ? 'Хороша гра!' : 'Спробуй ще';
+  document.getElementById('goSub').textContent = bank >= 750 ? 'Ти знаєш свій словниковий запас!' : 'Практика робить майстра.';
+  document.getElementById('goFinal').textContent = '🟡 ' + bank;
+  document.getElementById('goProfit').textContent = (profit >= 0 ? '+' : '') + profit;
+  document.getElementById('goCorrect').textContent = correctCount + ' / 10';
+  document.getElementById('goBiggest').textContent = '🟡 ' + biggestBet;
+  goPhase('gameover');
+}
+
+function spawnParticles(emojis) {
+  for (let i = 0; i < 10; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = (20 + Math.random() * 60) + '%';
+    p.style.top = (10 + Math.random() * 40) + '%';
+    p.style.animationDelay = (Math.random() * .4) + 's';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1400);
+  }
+}
+
+function goPhase(id) {
+  document.querySelectorAll('.phase').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const el = document.getElementById(id);
+  el.style.display = 'flex'; el.classList.add('active');
+}
+document.querySelectorAll('.phase:not(.active)').forEach(p => p.style.display='none');
+</script>
+</body>
+</html>

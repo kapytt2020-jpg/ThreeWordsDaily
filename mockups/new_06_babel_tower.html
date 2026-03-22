@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 · Babel Tower — Разом будуємо</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0a1628;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:20px;font-family:'Segoe UI',system-ui,sans-serif}
+.phone{width:390px;min-height:844px;background:#0c1a2e;border-radius:44px;overflow:hidden;border:1.5px solid #1e3a5a;box-shadow:0 0 60px rgba(14,165,233,0.2),0 40px 120px rgba(0,0,0,0.6);display:flex;flex-direction:column;position:relative}
+.status{display:flex;justify-content:space-between;padding:14px 24px 6px;font-size:12px;color:#334155}
+
+/* HEADER */
+.bt-header{padding:6px 18px 10px;display:flex;align-items:center;justify-content:space-between}
+.bt-title{font-size:18px;font-weight:800;color:#fff}
+.bt-sub{font-size:10px;color:#0ea5e9;margin-top:1px}
+.online-pill{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);border-radius:100px;padding:5px 12px;font-size:11px;color:#4ade80;font-weight:700}
+
+/* TOWER VISUAL */
+.tower-wrap{position:relative;margin:4px 16px 8px;background:linear-gradient(180deg,#0a1628,#0f2040,#0c1a2e);border:1px solid #1e3a5a;border-radius:20px;overflow:hidden;height:220px;display:flex;flex-direction:column;justify-content:flex-end}
+.tower-sky{position:absolute;top:0;left:0;right:0;height:100%;background:radial-gradient(ellipse at 50% 0%,rgba(14,165,233,0.15),transparent 60%)}
+.tower-stars{position:absolute;top:0;left:0;right:0;bottom:0}
+.ts{position:absolute;border-radius:50%;background:#fff;animation:ts 3s ease-in-out infinite}
+@keyframes ts{0%,100%{opacity:0.15}50%{opacity:0.7}}
+.tower-body{position:relative;z-index:2;display:flex;flex-direction:column-reverse;align-items:center;padding-bottom:8px;gap:2px}
+.tower-floor{border-radius:6px;display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 8px;font-size:9px;font-weight:700;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden}
+.tower-floor::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent);animation:floorShimmer 3s linear infinite}
+@keyframes floorShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.tf-mine{outline:2px solid rgba(14,165,233,0.6);outline-offset:1px}
+
+.progress-beam{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:2px;background:linear-gradient(180deg,rgba(14,165,233,0),rgba(14,165,233,0.4),rgba(14,165,233,0));height:100%;pointer-events:none}
+
+/* GLOBAL COUNTER */
+.global-bar{margin:0 16px 10px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:16px;padding:12px 14px}
+.gb-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.gb-title{font-size:12px;font-weight:700;color:#fff}
+.gb-count{font-size:12px;color:#0ea5e9;font-weight:700}
+.gb-prog{height:6px;background:rgba(255,255,255,0.07);border-radius:100px;overflow:hidden}
+.gb-fill{height:6px;background:linear-gradient(90deg,#0ea5e9,#6366f1);border-radius:100px;width:73%;transition:width 0.5s}
+.gb-sub{font-size:10px;color:#475569;margin-top:4px}
+
+/* YOUR BRICK */
+.your-brick{margin:0 16px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:12px 14px}
+.yb-label{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.word-learn{background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.25);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.wl-word{font-size:22px;font-weight:800;color:#fff;margin-bottom:2px}
+.wl-ipa{font-size:11px;color:#0ea5e9;margin-bottom:6px}
+.wl-ua{font-size:13px;color:#94a3b8}
+.add-brick-btn{width:100%;padding:11px;border-radius:12px;border:none;background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(14,165,233,0.3)}
+
+/* RECENT BRICKS FEED */
+.feed-wrap{margin:0 16px;flex:1}
+.feed-label{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;display:flex;justify-content:space-between}
+.feed-label span{font-size:10px;color:#0ea5e9;font-weight:700}
+.feed-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.fi-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.fi-text{flex:1;font-size:11px;color:#94a3b8}
+.fi-text b{color:#e2e8f0}
+.fi-word{background:rgba(14,165,233,0.15);border-radius:6px;padding:1px 6px;font-size:10px;color:#7dd3fc;font-weight:700}
+.fi-time{font-size:9px;color:#334155}
+
+/* TAB */
+.tabbar{display:flex;background:rgba(12,26,46,0.97);border-top:1px solid rgba(255,255,255,0.04);padding:8px 0 22px;flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+.tab .ti{font-size:22px}
+.tab .tl{font-size:10px;color:#334155;font-weight:500}
+.tab.on .tl{color:#0ea5e9}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status"><span>9:41</span><span>●●● 100%</span></div>
+
+  <div class="bt-header">
+    <div>
+      <div class="bt-title">🗼 Babel Tower</div>
+      <div class="bt-sub">Спільна вежа знань · Весь світ будує</div>
+    </div>
+    <div class="online-pill">🟢 48,291 зараз</div>
+  </div>
+
+  <!-- TOWER -->
+  <div class="tower-wrap">
+    <div class="tower-sky"></div>
+    <div class="tower-stars" id="ts"></div>
+    <div class="progress-beam"></div>
+    <div class="tower-body" id="tower">
+      <!-- Generated by JS -->
+    </div>
+  </div>
+
+  <!-- GLOBAL PROGRESS -->
+  <div class="global-bar">
+    <div class="gb-row">
+      <div class="gb-title">🌍 Слів вивчено сьогодні</div>
+      <div class="gb-count">1,847,293 / 2,500,000</div>
+    </div>
+    <div class="gb-prog"><div class="gb-fill" id="gb-fill"></div></div>
+    <div class="gb-sub">73% до наступного поверху · Ти додав 12 цеглин сьогодні</div>
+  </div>
+
+  <!-- YOUR NEXT BRICK -->
+  <div class="your-brick">
+    <div class="yb-label">🧱 Твоя наступна цеглина</div>
+    <div class="word-learn">
+      <div class="wl-word">Eloquent</div>
+      <div class="wl-ipa">/ˈeləkwənt/ · прикметник</div>
+      <div class="wl-ua">красномовний, переконливий</div>
+    </div>
+    <button class="add-brick-btn" onclick="addBrick()">🧱 Вивчити і додати цеглину до вежі</button>
+  </div>
+
+  <!-- LIVE FEED -->
+  <div class="feed-wrap">
+    <div class="feed-label">⚡ Зараз будують <span>+1 цеглина / 0.3 сек</span></div>
+    <div id="feed">
+      <div class="feed-item"><div class="fi-avatar" style="background:#1e3a5a">🇺🇦</div><div class="fi-text"><b>Оля_Kyiv</b> вивчила <span class="fi-word">resilient</span></div><div class="fi-time">щойно</div></div>
+      <div class="feed-item"><div class="fi-avatar" style="background:#1e2a5a">🇵🇱</div><div class="fi-text"><b>Marek_PL</b> вивчив <span class="fi-word">ambitious</span></div><div class="fi-time">1с</div></div>
+      <div class="feed-item"><div class="fi-avatar" style="background:#1e3a4a">🇩🇪</div><div class="fi-text"><b>Klaus_DE</b> вивчив <span class="fi-word">brilliant</span></div><div class="fi-time">2с</div></div>
+      <div class="feed-item"><div class="fi-avatar" style="background:#2a1e5a">🇬🇧</div><div class="fi-text"><b>Sarah_UK</b> вивчила <span class="fi-word">grateful</span></div><div class="fi-time">3с</div></div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <div class="tab on"><div class="ti">🗼</div><div class="tl">Вежа</div></div>
+    <div class="tab"><div class="ti">📖</div><div class="tl">Вчити</div></div>
+    <div class="tab"><div class="ti">🌍</div><div class="tl">Країни</div></div>
+    <div class="tab"><div class="ti">🏆</div><div class="tl">Топ</div></div>
+    <div class="tab"><div class="ti">👤</div><div class="tl">Я</div></div>
+  </div>
+</div>
+
+<div style="position:fixed;top:20px;left:20px;background:#0c1a2e;border:1px solid #1e3a5a;border-radius:14px;padding:14px 18px;max-width:265px;font-size:12px;color:#475569;line-height:1.7;box-shadow:0 4px 20px rgba(14,165,233,0.1)">
+  <strong style="color:#7dd3fc">06 · Babel Tower 🗼 (ОРИГІНАЛЬНО)</strong><br><br>
+  <strong style="color:#e2e8f0">Концепт:</strong> Весь світ будує одну вежу разом<br>
+  <strong style="color:#e2e8f0">Механіка:</strong> Кожне слово = цеглина у спільній вежі<br>
+  <strong style="color:#e2e8f0">Соціальне:</strong> Лайв-фід хто що вивчає зараз<br>
+  <strong style="color:#e2e8f0">FOMO:</strong> "Вежа зростає без тебе" = відкриваєш апку<br>
+  <strong style="color:#e2e8f0">Унікальність:</strong> Перший такий у language learning<br><br>
+  <a href="new_index.html" style="color:#0ea5e9">← Всі мокапи</a>
+</div>
+
+<script>
+// Stars
+const ts=document.getElementById('ts');
+for(let i=0;i<25;i++){
+  const s=document.createElement('div');
+  s.className='ts';
+  const sz=Math.random()*2+1;
+  s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*60}%;animation-delay:${(Math.random()*3).toFixed(1)}s;animation-duration:${(Math.random()*2+2).toFixed(1)}s`;
+  ts.appendChild(s);
+}
+
+// Tower floors
+const floors=[
+  {words:['hello','world','English'],color:'#1e3a5a',w:280},
+  {words:['learn','speak','read'],color:'#1a3050',w:260},
+  {words:['dream','goal','future'],color:'#162840',w:240},
+  {words:['smart','grow','know'],color:'#122035',w:220},
+  {words:['hope','shine'],color:'#0e1a2e',w:190},
+  {words:['rise'],color:'#0a1428',w:150,mine:true},
+];
+
+const tower=document.getElementById('tower');
+floors.forEach(f=>{
+  const fl=document.createElement('div');
+  fl.className='tower-floor'+(f.mine?' tf-mine':'');
+  fl.style.cssText=`width:${f.w}px;background:${f.color};height:22px;`;
+  f.words.forEach(w=>{
+    const span=document.createElement('span');
+    span.style.cssText='color:rgba(255,255,255,0.5);font-size:9px;font-weight:700';
+    span.textContent=w;
+    fl.appendChild(span);
+  });
+  if(f.mine){
+    const badge=document.createElement('span');
+    badge.style.cssText='color:#0ea5e9;font-size:8px;margin-left:4px';
+    badge.textContent='← ТИ';
+    fl.appendChild(badge);
+  }
+  tower.appendChild(fl);
+});
+
+let brickCount=12;
+function addBrick(){
+  brickCount++;
+  const fill=document.getElementById('gb-fill');
+  const cur=parseFloat(fill.style.width);
+  fill.style.width=Math.min(100,cur+0.1)+'%';
+
+  // Add to feed
+  const feed=document.getElementById('feed');
+  const item=document.createElement('div');
+  item.className='feed-item';
+  item.innerHTML=`<div class="fi-avatar" style="background:#0e4a6a">🇺🇦</div><div class="fi-text"><b>Ти</b> вивчив/ла <span class="fi-word">eloquent</span></div><div class="fi-time">щойно</div>`;
+  feed.insertBefore(item,feed.firstChild);
+
+  // New word on button
+  const newWords=[{w:'Vivid',ipa:'/ˈvɪvɪd/',ua:'яскравий'},{w:'Serene',ipa:'/səˈriːn/',ua:'спокійний'},{w:'Tenacious',ipa:'/təˈneɪʃəs/',ua:'наполегливий'}];
+  const nw=newWords[Math.floor(Math.random()*newWords.length)];
+  document.querySelector('.wl-word').textContent=nw.w;
+  document.querySelector('.wl-ipa').textContent=nw.ipa+' · прикметник';
+  document.querySelector('.wl-ua').textContent=nw.ua;
+
+  alert(`🧱 Цеглину додано!\n"eloquent" = красномовний\n\nВежа тепер: ${1847293+brickCount} слів\nТвій внесок: ${brickCount} цеглин`);
+}
+
+// Live feed animation
+const feedUsers=['Андрій_UA','Daria_PL','Lena_DE','Max_FR','Sasha_UA','Tom_UK'];
+const feedWords=['curious','peaceful','confident','energetic','honest','talented'];
+setInterval(()=>{
+  const feed=document.getElementById('feed');
+  if(feed.children.length>5) feed.removeChild(feed.lastChild);
+  const item=document.createElement('div');
+  item.className='feed-item';
+  const u=feedUsers[Math.floor(Math.random()*feedUsers.length)];
+  const w=feedWords[Math.floor(Math.random()*feedWords.length)];
+  item.innerHTML=`<div class="fi-avatar" style="background:#${Math.floor(Math.random()*0x0a+0x0a).toString(16)}${Math.floor(Math.random()*0x1e+0x1e).toString(16)}${Math.floor(Math.random()*0x5a+0x2a).toString(16)}">🌍</div><div class="fi-text"><b>${u}</b> вивчив/ла <span class="fi-word">${w}</span></div><div class="fi-time">щойно</div>`;
+  item.style.opacity='0';
+  feed.insertBefore(item,feed.firstChild);
+  setTimeout(()=>item.style.cssText+=';opacity:1;transition:opacity 0.3s',50);
+},2500);
+</script>
+</body>
+</html>
