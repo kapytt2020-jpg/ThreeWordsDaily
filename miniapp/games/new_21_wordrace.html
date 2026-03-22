@@ -1259,6 +1259,7 @@ function endGame() {
   // Rank
   const rank = getRank(finalWpm);
 
+  try { window.parent.postMessage({ type: 'GAME_OVER', xp: 35 }, '*'); } catch(e) {}
   showScreen('results');
   $('hud-timer').classList.remove('urgent');
 

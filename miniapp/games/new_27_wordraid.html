@@ -1539,6 +1539,7 @@ function endGame(victory, fled = false) {
     titleEl.textContent = '🏆 РЕЙД ЗАВЕРШЕНО!';
     titleEl.className = 'end-title victory';
     subtitleEl.textContent = 'Ви перемогли всіх босів!';
+    try { window.parent.postMessage({ type: 'GAME_OVER', xp: 60 }, '*'); } catch(e) {}
     fireConfetti();
     setTimeout(fireConfetti, 600);
   } else if (fled) {

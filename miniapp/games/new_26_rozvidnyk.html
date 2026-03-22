@@ -1398,6 +1398,7 @@ function showDebrief() {
   const totalScore = state.score;
   const missionsCompleted = state.allDecodedPhrases.length;
   const success = missionsCompleted >= 3;
+  if (success) { try { window.parent.postMessage({ type: 'GAME_OVER', xp: 45 }, '*'); } catch(e) {} }
 
   // Result
   document.getElementById('result-icon').textContent = success ? '🏅' : '💀';

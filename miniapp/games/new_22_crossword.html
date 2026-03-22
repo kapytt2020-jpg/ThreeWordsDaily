@@ -1292,6 +1292,7 @@ function showWinScreen() {
   shareEl.textContent = `"${shareStr}"`;
   shareEl.dataset.text = shareStr;
 
+  try { window.parent.postMessage({ type: 'GAME_OVER', xp: 50 }, '*'); } catch(e) {}
   startCountdown();
   refreshCellVisuals();
 }
