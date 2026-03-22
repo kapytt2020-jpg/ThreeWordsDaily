@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⛓️ Word Chain — Voodoo English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-dim: #4c1d95;
+    --gold: #f59e0b;
+    --gold-dim: #78350f;
+    --green: #10b981;
+    --green-dim: #064e3b;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --border: #1e293b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    display: none;
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    padding: 0 16px 32px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .screen.active { display: flex; }
+
+  /* ===== MENU SCREEN ===== */
+  #menuScreen {
+    justify-content: center;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Animated chain background */
+  .chain-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.06;
+  }
+  .chain-row {
+    display: flex;
+    gap: 0;
+    animation: chainScroll 8s linear infinite;
+    white-space: nowrap;
+  }
+  .chain-row:nth-child(even) { animation-direction: reverse; animation-duration: 10s; }
+  .chain-row:nth-child(3) { animation-duration: 12s; }
+  @keyframes chainScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  .chain-link-bg {
+    display: inline-block;
+    width: 48px;
+    height: 28px;
+    border: 4px solid var(--green);
+    border-radius: 14px;
+    margin: 4px 2px;
+    flex-shrink: 0;
+  }
+
+  .menu-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 28px;
+    padding: 40px 0;
+  }
+
+  .logo-area {
+    text-align: center;
+  }
+
+  .logo-emoji {
+    font-size: 72px;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 24px rgba(16,185,129,0.5));
+    animation: logoPulse 2s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 24px rgba(16,185,129,0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 40px rgba(16,185,129,0.8)); }
+  }
+
+  .logo-title {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--green) 0%, var(--purple-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .tagline {
+    font-size: 16px;
+    color: var(--text-dim);
+    text-align: center;
+    font-style: italic;
+  }
+
+  /* Chain demo animation */
+  .chain-demo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .chain-demo-word {
+    background: var(--bg3);
+    border: 2px solid var(--green);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    position: relative;
+    animation: fadeSlideIn 0.5s ease both;
+  }
+  .chain-demo-word .last-letter {
+    color: var(--gold);
+  }
+  .chain-arrow {
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+
+  /* Mode selector */
+  .mode-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    align-self: flex-start;
+  }
+  .mode-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mode-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(124,58,237,0.05));
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .mode-btn:hover::before, .mode-btn.selected::before { opacity: 1; }
+  .mode-btn:hover { border-color: var(--purple); transform: translateX(4px); }
+  .mode-btn.selected {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.08);
+  }
+  .mode-icon { font-size: 28px; }
+  .mode-info { flex: 1; text-align: left; }
+  .mode-name {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+  .mode-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .mode-time {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--gold);
+  }
+  .mode-check {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .mode-btn.selected .mode-check {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+  }
+
+  .high-score-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  .hs-label { font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  .hs-value { font-size: 22px; font-weight: 900; color: var(--gold); }
+
+  .start-btn {
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--green), #059669);
+    border: none;
+    border-radius: 18px;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 8px 32px rgba(16,185,129,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .start-btn::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: rgba(255,255,255,0.15);
+    transform: skewX(-20deg);
+    animation: shimmer 3s ease infinite;
+  }
+  @keyframes shimmer { 0% { left: -60%; } 100% { left: 160%; } }
+  .start-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(16,185,129,0.5); }
+  .start-btn:active { transform: translateY(0); }
+
+  /* ===== GAME SCREEN ===== */
+  #gameScreen {
+    padding: 0;
+    gap: 0;
+    justify-content: flex-start;
+  }
+
+  /* Header bar */
+  .game-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* Timer circle */
+  .timer-wrap {
+    position: relative;
+    width: 56px;
+    height: 56px;
+  }
+  .timer-svg {
+    width: 56px;
+    height: 56px;
+    transform: rotate(-90deg);
+  }
+  .timer-track {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 4;
+  }
+  .timer-progress {
+    fill: none;
+    stroke: var(--green);
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.1s linear, stroke 0.3s;
+  }
+  .timer-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--text);
+  }
+
+  .score-display {
+    text-align: center;
+  }
+  .score-val {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    line-height: 1;
+  }
+  .score-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .chain-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .chain-count-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--green);
+  }
+  .chain-icon { font-size: 16px; }
+  .lives-row {
+    display: flex;
+    gap: 3px;
+    font-size: 14px;
+  }
+
+  /* Chain display strip */
+  .chain-strip-wrap {
+    width: 100%;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    overflow: hidden;
+  }
+  .chain-strip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    scroll-behavior: smooth;
+  }
+  .chain-strip::-webkit-scrollbar { display: none; }
+  .chain-word {
+    flex-shrink: 0;
+    background: var(--bg3);
+    border: 2px solid var(--green-dim);
+    border-radius: 16px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    white-space: nowrap;
+    animation: wordPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+  .chain-word.current {
+    border-color: var(--gold);
+    background: rgba(245,158,11,0.1);
+    color: var(--gold);
+  }
+  .chain-word .last-l {
+    color: var(--gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .chain-sep {
+    flex-shrink: 0;
+    color: var(--text-dim);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  @keyframes wordPop {
+    from { transform: scale(0.5) translateY(-10px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+  }
+
+  /* Game body */
+  .game-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    gap: 24px;
+    width: 100%;
+  }
+
+  /* Letter display */
+  .letter-display {
+    text-align: center;
+    position: relative;
+  }
+  .letter-hint {
+    font-size: 13px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .big-letter {
+    font-size: 96px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+    animation: letterPulse 1.5s ease-in-out infinite;
+    text-shadow: 0 0 40px rgba(245,158,11,0.5);
+    display: block;
+  }
+  @keyframes letterPulse {
+    0%, 100% { transform: scale(1); text-shadow: 0 0 40px rgba(245,158,11,0.5); }
+    50% { transform: scale(1.08); text-shadow: 0 0 60px rgba(245,158,11,0.8); }
+  }
+  .letter-subhint {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .letter-subhint strong { color: var(--gold); }
+
+  /* Input area */
+  .input-area {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .word-input {
+    width: 100%;
+    padding: 18px 20px;
+    background: var(--bg2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .word-input::placeholder {
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    text-transform: none;
+    font-weight: 400;
+  }
+  .word-input:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+  }
+  .word-input.input-valid { border-color: var(--green); box-shadow: 0 0 0 3px rgba(16,185,129,0.15); }
+  .word-input.input-error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,0.15); animation: shake 0.4s ease; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-light));
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(124,58,237,0.5); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .error-msg {
+    text-align: center;
+    font-size: 13px;
+    color: var(--red);
+    font-weight: 600;
+    min-height: 20px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+  /* Bot sidebar (compact, below input on mobile) */
+  .bot-strip {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .bot-avatar { font-size: 24px; }
+  .bot-info { flex: 1; }
+  .bot-name { font-size: 12px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .bot-chain-display {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--purple-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+  .bot-count { font-size: 16px; font-weight: 900; color: var(--purple-light); }
+
+  /* Total time bar */
+  .time-bar-wrap {
+    width: 100%;
+    padding: 0 16px 8px;
+  }
+  .time-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .time-bar-track {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .time-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--red));
+    border-radius: 2px;
+    transition: width 1s linear;
+  }
+
+  /* ===== OVERLAYS ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .overlay.show {
+    pointer-events: all;
+    opacity: 1;
+  }
+
+  .celebration {
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    inset: 0;
+  }
+
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--bg3);
+    border-radius: 40px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 800;
+    border: 2px solid var(--green);
+    color: var(--green);
+    z-index: 200;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  .toast.gold { border-color: var(--gold); color: var(--gold); }
+  .toast.red { border-color: var(--red); color: var(--red); }
+  .toast.purple { border-color: var(--purple-light); color: var(--purple-light); }
+
+  /* Score pop */
+  .score-pop {
+    position: fixed;
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--gold);
+    pointer-events: none;
+    z-index: 300;
+    animation: scorePop 1.2s ease forwards;
+  }
+  @keyframes scorePop {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+  }
+
+  /* Chain milestone */
+  .milestone-popup {
+    background: var(--bg2);
+    border: 2px solid var(--gold);
+    border-radius: 24px;
+    padding: 28px 40px;
+    text-align: center;
+    animation: milestoneIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    box-shadow: 0 0 60px rgba(245,158,11,0.3);
+  }
+  @keyframes milestoneIn {
+    from { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+    to { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .milestone-emoji { font-size: 64px; display: block; margin-bottom: 8px; }
+  .milestone-text { font-size: 28px; font-weight: 900; color: var(--gold); }
+  .milestone-sub { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+  /* Timeout flash */
+  .timeout-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(239,68,68,0.15);
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .timeout-overlay.show { opacity: 1; }
+
+  /* ===== RESULTS SCREEN ===== */
+  #resultsScreen {
+    gap: 0;
+    padding: 24px 16px 40px;
+    justify-content: flex-start;
+  }
+
+  .results-header {
+    text-align: center;
+    padding: 20px 0 16px;
+    width: 100%;
+  }
+  .results-grade {
+    font-size: 80px;
+    line-height: 1;
+  }
+  .results-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    margin-top: 8px;
+  }
+  .results-subtitle {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card.full { grid-column: 1 / -1; }
+  .stat-icon { font-size: 24px; margin-bottom: 6px; }
+  .stat-val { font-size: 28px; font-weight: 900; color: var(--text); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .stat-sub { font-size: 12px; color: var(--purple-light); margin-top: 4px; font-weight: 600; }
+
+  .results-chain-display {
+    width: 100%;
+    margin-top: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+  }
+  .results-chain-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .results-chain-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .result-word {
+    background: var(--bg3);
+    border: 1px solid var(--green-dim);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+  }
+  .result-arrow {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .xp-bar-wrap {
+    width: 100%;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+  .xp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .xp-label { font-size: 13px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .xp-amount { font-size: 22px; font-weight: 900; color: var(--purple-light); }
+  .xp-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    border-radius: 4px;
+    transition: width 1s ease;
+    width: 0;
+  }
+
+  .share-box {
+    width: 100%;
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--purple-dim);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .share-box:hover { border-color: var(--purple-light); }
+  .share-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .share-btn-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .copy-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--purple-dim);
+    border: 1px solid var(--purple);
+    border-radius: 10px;
+    color: var(--purple-light);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .copy-btn:hover { background: var(--purple); color: #fff; }
+
+  .results-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .new-game-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--green), #059669);
+    border: none;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(16,185,129,0.4);
+  }
+  .new-game-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(16,185,129,0.5); }
+
+  .menu-btn {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .menu-btn:hover { border-color: var(--purple); color: var(--purple-light); }
+
+  /* New record banner */
+  .new-record {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--gold-dim), rgba(245,158,11,0.15));
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--gold);
+    margin-top: 12px;
+    animation: recordPulse 2s ease-in-out infinite;
+    display: none;
+  }
+  .new-record.show { display: block; }
+  @keyframes recordPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+    50% { box-shadow: 0 0 40px rgba(245,158,11,0.6); }
+  }
+
+  /* Multiplier badge */
+  .mult-badge {
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--gold-dim), rgba(245,158,11,0.2));
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 8px 12px;
+    text-align: center;
+    z-index: 20;
+    transition: all 0.3s;
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  .mult-badge.show { opacity: 1; transform: scale(1); }
+  .mult-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .mult-val { font-size: 22px; font-weight: 900; color: var(--gold); line-height: 1; }
+
+  /* Particle effects */
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 500;
+  }
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: particleFall 1s ease-out forwards;
+  }
+  @keyframes particleFall {
+    0% { opacity: 1; transform: translate(0, 0) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+  }
+
+  /* Responsive */
+  @media (max-width: 380px) {
+    .big-letter { font-size: 72px; }
+    .logo-title { font-size: 34px; }
+    .word-input { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- TIMEOUT OVERLAY -->
+<div class="timeout-overlay" id="timeoutOverlay"></div>
+
+<!-- MILESTONE POPUP -->
+<div class="overlay celebration" id="milestoneOverlay">
+  <div class="milestone-popup" id="milestoneBox"></div>
+</div>
+
+<!-- MULTIPLIER BADGE -->
+<div class="mult-badge" id="multBadge">
+  <div class="mult-label">Множник</div>
+  <div class="mult-val" id="multVal">×1</div>
+</div>
+
+<!-- PARTICLES -->
+<div class="particles" id="particles"></div>
+
+<!-- ============================= -->
+<!-- SCREEN 1: MENU               -->
+<!-- ============================= -->
+<div class="screen active" id="menuScreen">
+
+  <div class="chain-bg" id="chainBg"></div>
+
+  <div class="menu-content">
+
+    <div class="logo-area">
+      <span class="logo-emoji">⛓️</span>
+      <div class="logo-title">WORD CHAIN</div>
+      <div class="logo-sub">Voodoo English</div>
+    </div>
+
+    <div class="tagline">"Останні літери — нові початки"</div>
+
+    <!-- Chain demo -->
+    <div class="chain-demo" id="chainDemo"></div>
+
+    <!-- Mode selector -->
+    <div class="mode-label">Обери режим</div>
+    <div class="mode-grid">
+      <div class="mode-btn" onclick="selectMode('blisk')" id="mode-blisk">
+        <div class="mode-icon">⚡</div>
+        <div class="mode-info">
+          <div class="mode-name">БЛИСК</div>
+          <div class="mode-desc">Максимальна швидкість</div>
+        </div>
+        <div class="mode-time">10с</div>
+        <div class="mode-check">✓</div>
+      </div>
+      <div class="mode-btn selected" onclick="selectMode('klasik')" id="mode-klasik">
+        <div class="mode-icon">🎯</div>
+        <div class="mode-info">
+          <div class="mode-name">КЛАСИК</div>
+          <div class="mode-desc">Час для роздумів</div>
+        </div>
+        <div class="mode-time">20с</div>
+        <div class="mode-check">✓</div>
+      </div>
+      <div class="mode-btn" onclick="selectMode('strateg')" id="mode-strateg">
+        <div class="mode-icon">🧠</div>
+        <div class="mode-info">
+          <div class="mode-name">СТРАТЕГ</div>
+          <div class="mode-desc">Продумані слова</div>
+        </div>
+        <div class="mode-time">30с</div>
+        <div class="mode-check">✓</div>
+      </div>
+    </div>
+
+    <div class="high-score-bar">
+      <div>
+        <div class="hs-label">🏆 Рекорд (<span id="hsModeLabel">КЛАСИК</span>)</div>
+        <div class="hs-value" id="hsValue">—</div>
+      </div>
+      <div style="text-align:right">
+        <div class="hs-label">Найдовший ланцюг</div>
+        <div class="hs-value" id="hsChain">—</div>
+      </div>
+    </div>
+
+    <button class="start-btn" onclick="startGame()">⛓️ ПОЧАТИ ЛАНЦЮГ</button>
+
+  </div>
+</div>
+
+<!-- ============================= -->
+<!-- SCREEN 2: GAME               -->
+<!-- ============================= -->
+<div class="screen" id="gameScreen">
+
+  <!-- Header -->
+  <div class="game-header">
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <svg class="timer-svg" viewBox="0 0 56 56">
+        <circle class="timer-track" cx="28" cy="28" r="24"/>
+        <circle class="timer-progress" id="timerProgress" cx="28" cy="28" r="24"
+          stroke-dasharray="150.796"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-text" id="timerText">20</div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-display">
+      <div class="score-val" id="scoreVal">0</div>
+      <div class="score-label">очків</div>
+    </div>
+
+    <!-- Chain info -->
+    <div class="chain-info">
+      <div class="chain-count-row">
+        <span class="chain-icon">⛓️</span>
+        <span id="chainCount">0</span>
+      </div>
+      <div class="lives-row" id="livesRow">❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <!-- Total time bar -->
+  <div class="time-bar-wrap">
+    <div class="time-bar-label">
+      <span>Загальний час</span>
+      <span id="totalTimeLeft">60с</span>
+    </div>
+    <div class="time-bar-track">
+      <div class="time-bar-fill" id="totalTimeFill" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- Chain strip -->
+  <div class="chain-strip-wrap">
+    <div class="chain-strip" id="chainStrip">
+      <span style="font-size:12px;color:var(--text-dim);white-space:nowrap">Початок ланцюга...</span>
+    </div>
+  </div>
+
+  <!-- Game body -->
+  <div class="game-body">
+
+    <!-- Letter display -->
+    <div class="letter-display">
+      <div class="letter-hint">Остання літера</div>
+      <span class="big-letter" id="bigLetter">?</span>
+      <div class="letter-subhint">Починається з літери <strong id="hintLetter">?</strong></div>
+    </div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <input
+        type="text"
+        class="word-input"
+        id="wordInput"
+        placeholder="Введи слово..."
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        maxlength="30"
+      />
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="submit-btn" id="submitBtn" onclick="submitWord()">⛓️ ПІДТВЕРДИТИ</button>
+    </div>
+
+    <!-- Bot strip -->
+    <div class="bot-strip">
+      <div class="bot-avatar">🤖</div>
+      <div class="bot-info">
+        <div class="bot-name">Бот-суперник</div>
+        <div class="bot-chain-display" id="botChainDisplay">Чекає...</div>
+      </div>
+      <div class="bot-count">⛓️ <span id="botCount">0</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================= -->
+<!-- SCREEN 3: RESULTS            -->
+<!-- ============================= -->
+<div class="screen" id="resultsScreen">
+
+  <div class="results-header">
+    <div class="results-grade" id="resultsGrade">🥇</div>
+    <div class="results-title" id="resultsTitle">Чудовий результат!</div>
+    <div class="results-subtitle" id="resultsSubtitle">Ти показав майстерність Word Chain</div>
+  </div>
+
+  <div class="new-record" id="newRecord">💎 НОВИЙ РЕКОРД!</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-val" id="rScore">0</div>
+      <div class="stat-label">Очки</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⛓️</div>
+      <div class="stat-val" id="rChain">0</div>
+      <div class="stat-label">Найдовший ланцюг</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📝</div>
+      <div class="stat-val" id="rWords">0</div>
+      <div class="stat-label">Всього слів</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-val" id="rBestWord">—</div>
+      <div class="stat-label">Найкраще слово</div>
+      <div class="stat-sub" id="rBestWordScore"></div>
+    </div>
+    <div class="stat-card full">
+      <div class="stat-icon">🤖</div>
+      <div class="stat-val" id="rBotChain">0</div>
+      <div class="stat-label">Ланцюг бота</div>
+      <div class="stat-sub" id="rVsBot"></div>
+    </div>
+  </div>
+
+  <!-- Words chain display -->
+  <div class="results-chain-display">
+    <div class="results-chain-title">⛓️ Твій найдовший ланцюг</div>
+    <div class="results-chain-words" id="resultsChainWords"></div>
+  </div>
+
+  <!-- XP -->
+  <div class="xp-bar-wrap">
+    <div class="xp-header">
+      <div class="xp-label">✨ XP зароблено</div>
+      <div class="xp-amount" id="xpAmount">+0 XP</div>
+    </div>
+    <div class="xp-track">
+      <div class="xp-fill" id="xpFill"></div>
+    </div>
+  </div>
+
+  <!-- Share -->
+  <div class="share-box">
+    <div class="share-text" id="shareText">⛓️ Завантаження...</div>
+    <div class="share-btn-row">
+      <button class="copy-btn" onclick="copyShare()">📋 Копіювати</button>
+      <button class="copy-btn" onclick="shareToTg()">✈️ Telegram</button>
+    </div>
+  </div>
+
+  <div class="results-actions">
+    <button class="new-game-btn" onclick="newGame()">⛓️ НОВА ГРА</button>
+    <button class="menu-btn" onclick="goMenu()">← Головне меню</button>
+  </div>
+
+</div>
+
+<script>
+// =====================================================
+// WORD LIST — 300+ words organized by starting letter
+// =====================================================
+const WORDS = new Set([
+  // A
+  'apple','animal','arm','art','ask','act','age','air','add','ago','aid','aim','ant','ape',
+  'arch','area','army','aunt','able','above','about','after','again','agree','ahead','along',
+  'also','always','among','anger','angle','angry','ankle','answer','apart','arise',
+  // B
+  'ball','book','big','bird','blue','buy','bad','ban','bay','born','bold','bow','box','boy',
+  'bug','bus','but','bed','bet','bit','blow','boat','body','bond','bone','boom','boot',
+  'both','bowl','burn','back','bank','bare','bark','barn','base','bath','beam','bean','beat',
+  'beef','beer','bell','belt','bend','best','bind','bite','blade','blame','blank','blast',
+  'bleed','blend','bless','blind','block','blood','bloom','board','boss','bound','brain',
+  // C
+  'cat','car','cup','cut','can','cold','call','calm','care','cave','come','cap','cod','cog',
+  'core','cow','cry','cake','camp','card','cash','cast','cave','cell','chat','chef','chip',
+  'city','clap','clay','clip','club','clue','coal','coat','code','coin','cook','cool','copy',
+  'cord','corn','cost','cozy','crab','crew','crop','crow','curl','curve','cycle','catch','claim',
+  // D
+  'dog','day','door','down','dark','data','date','deal','deep','dear','dive','dip','dot','due',
+  'dune','dust','deed','deem','deny','desk','dial','diet','dirt','dish','disk','damp','dance',
+  'dare','dawn','days','dead','deaf','deck','demo','dew','dice','dine','dome','done','dose',
+  'dove','down','draw','dream','drew','drip','drop','drum','dual','dull','dump','dusk',
+  // E
+  'egg','ear','eat','end','eye','each','easy','earn','edge','else','ever','elm','era','elf',
+  'echo','edge','emit','epic','even','evil','exam','exec','exit','envy','earl','east','elbow',
+  'enter','error','event','exact','extra','eager','early','earth','eight','elite','empty',
+  'enjoy','epoch','equal','erase','excel','exist',
+  // F
+  'fox','fly','far','fat','few','fit','fix','fog','fun','fur','face','fact','fade','fail',
+  'fair','fake','fall','fame','farm','fast','fear','feel','fell','felt','file','fill','film',
+  'find','fine','fire','firm','fish','fist','flag','flat','flaw','flea','flew','flip','fist',
+  'flow','foam','fold','folk','fond','font','food','fool','foot','ford','fore','fork','form',
+  'fort','foul','four','free','frog','from','fuel','full','fund','fuse',
+  // G
+  'god','gap','gel','gem','get','gig','glow','goal','gold','gone','good','grab','gram','gray',
+  'grew','grid','grin','grip','grow','gulf','game','gate','gave','gaze','gear','gift','girl',
+  'give','glad','glue','goat','gore','gown','grade','grain','grand','grant','grape','grass',
+  'grave','great','green','greet','grief','grind','groan','group','grove','growl','guard','guide',
+  'guilt','guise','gulf','gust','gutter',
+  // H
+  'hat','hen','hip','hit','hop','hot','how','hub','hug','hum','hand','hang','hard','harm',
+  'harp','have','head','heal','heap','hear','heat','heel','held','help','here','hero','hide',
+  'high','hill','hint','hold','hole','home','hook','hope','horn','host','hour','huge','hull',
+  'hunt','hurt','half','hall','halt','haze','herb','herd','hire','hive','hoist','honor',
+  // I
+  'ice','ill','ink','inn','ion','iron','idea','idle','inch','into','iris','item','itch',
+  'icon','isle','icy','indeed','index','inner','input','issue',
+  // J
+  'jar','jaw','jet','joy','job','jot','jug','jump','just','jade','jail','jamb','jest','join',
+  'joke','jolt','junk','jury',
+  // K
+  'key','kid','kin','kit','keen','keep','kick','kill','kind','king','knew','kneel','knife',
+  'knock','knot','know',
+  // L
+  'lab','lag','lap','law','lay','leg','let','lid','lip','log','lot','low','lace','lack','lake',
+  'lamp','land','lane','last','late','lawn','lead','leaf','lean','leap','left','lend','lens',
+  'lest','lick','life','lift','like','limb','lime','line','link','lion','list','live','load',
+  'loan','lock','loft','lone','long','look','loop','lore','lose','loss','lost','loud','love',
+  'luck','lung','lure','lust',
+  // M
+  'map','mad','man','mat','max','mob','mod','mop','mud','mug','make','male','mall','mane',
+  'many','mark','mars','mask','mass','mast','mate','maze','meal','mean','meat','meet','melt',
+  'memo','mend','mere','mesh','mild','mile','milk','mill','mind','mine','miss','mist','mode',
+  'mole','moon','more','most','move','much','muse','must','myth','march','marsh','match','merge',
+  'might','mixed','model','money','month','moral','motor','mount','mouse','mouth','music',
+  // N
+  'nab','nap','nod','nor','now','nut','nail','name','nape','nark','need','nest','news','next',
+  'nice','nine','node','none','noon','norm','nose','note','noun','nude','numb','nurse',
+  'nature','never','night','noble','north','novel','nudge',
+  // O
+  'oak','oar','oat','odd','oil','old','one','orb','ore','our','out','own','oath','obey','once',
+  'only','open','orca','oven','over','owed','oxen','orbit','order','other','ought','outer','oxide',
+  // P
+  'pad','pan','paw','pay','pea','peg','pen','pet','pie','pig','pin','pit','pod','pop','pot',
+  'pun','pup','pace','pack','page','paid','pain','pair','pale','palm','park','part','pass',
+  'past','path','pave','peak','peel','peer','pelt','pest','pick','pile','pine','pink','pipe',
+  'plan','play','plot','plow','plum','plus','poem','poet','pole','poll','pond','pool','poor',
+  'pore','port','pose','post','pour','prey','prim','prod','prop','pull','pump','pure','push',
+  'place','plain','plane','plate','plaza','plead','pluck','plume','point','power','press','price',
+  'pride','prime','print','prove','pulse',
+  // Q
+  'quad','quiz','quit','quite','queue','queen','query','quest','quick','quiet','quote',
+  // R
+  'rag','ram','ran','rap','rat','raw','ray','red','rid','rig','rip','rob','rod','row','rub',
+  'rug','run','race','rack','raid','rail','rain','rake','rang','rank','rant','rash','rate',
+  'read','real','reap','rear','reed','reel','rend','rent','rest','rich','ride','ring','riot',
+  'rise','risk','road','roam','roar','robe','rock','role','roll','roof','room','root','rope',
+  'rose','rote','rout','rove','ruin','rule','rush','range','reach','realm','rebel','reign',
+  'rider','ridge','right','risky','rival','river','roast','robin','rough','round','route','royal',
+  // S
+  'sad','sap','saw','say','sea','set','sew','shy','sin','sip','sit','six','ski','sky','sly',
+  'sob','son','sow','spa','spy','sum','sun','sup','safe','sage','sail','sake','sale','same',
+  'sand','sane','sang','sank','save','scan','scar','seal','seam','seat','seed','seek','seem',
+  'self','sell','send','shed','ship','shop','shot','show','shut','sick','side','sigh','sign',
+  'silk','sill','sing','sink','site','size','skin','skip','slab','slap','slim','slip','slot',
+  'slow','slug','slum','snap','snow','soak','soap','sock','soft','soil','sole','some','song',
+  'soon','sore','sort','soul','soup','sour','span','spit','spot','spun','stab','star','stay',
+  'stem','step','stir','stop','stub','such','suit','sung','sunk','sure','swam','swear','sweet',
+  'swift','swing','sword','seven','shade','shake','shall','shame','share','shark','sharp','sheet',
+  'shelf','shell','shift','shine','shirt','shock','shore','short','shout','sight','skill','skull',
+  'sleep','slice','slide','slope','smile','smoke','solid','solve','south','space','spare','spark',
+  'speak','speed','spell','spend','spice','spill','spine','spite','split','spoke','spoon','spray',
+  'squad','stack','staff','stage','stain','stale','stall','stamp','stand','start','state','stake',
+  'steak','steal','steam','steel','steep','steer','stern','stone','store','storm','story','strap',
+  'straw','strip','stuck','study','style','sugar','super','surge','scope','score','shack','slick',
+  // T
+  'tab','tan','tap','tar','tax','ten','the','tie','tip','toe','ton','too','top','toy','try',
+  'tub','tug','tale','tall','tame','tape','task','team','tear','tell','tend','tent','term','text',
+  'than','that','then','they','thin','this','thus','tick','tide','time','tiny','tire','toad',
+  'told','toll','tomb','tone','took','tool','tore','torn','toss','tour','town','trap','tray',
+  'tree','trim','trio','trip','trot','true','tube','tuck','tune','turf','turn','twin','type',
+  'table','taste','teeth','theme','thick','thing','think','third','thorn','those','three','throw',
+  'thumb','tiger','tidal','tiger','tight','timer','tired','title','today','token','total','touch',
+  'tough','tower','track','trade','trail','train','trait','trend','trial','tribe','trick','tried',
+  'truck','trunk','truth','twice','twist','trace','toxic',
+  // U
+  'use','urge','upon','unit','used','ugly','ulna','undo','unify','union','until','upper','upset',
+  'urban','usher','usual','ultra','uncle','under','unite','unity','unrest',
+  // V
+  'van','vat','via','vet','vow','vale','vane','vary','vase','vast','vein','vent','verb','very',
+  'vest','view','vile','vine','visa','void','volt','vote','vibe','vibe','value','valve','vapor',
+  'vault','video','vigor','viral','visit','vital','vivid','voice','vodka','voter',
+  // W
+  'wag','war','was','wax','web','wed','wit','woe','won','woo','wok','wake','walk','wall',
+  'wand','want','ward','warm','warn','warp','wart','wash','wave','weak','weal','wear','weed',
+  'week','well','welt','went','were','west','when','whip','whom','wide','wife','wild','will',
+  'wilt','wind','wine','wing','wink','wire','wise','wish','with','wolf','wood','word','wore',
+  'work','worm','worn','wrap','wren','writ','wade','wage','wail','wasp','watch','water','weave',
+  'wedge','weigh','weird','whale','wheat','wheel','where','which','while','white','whole','whose',
+  'witch','woman','women','world','worry','worse','worst','worth','would','wound','write','wrong',
+  // X
+  'xray',
+  // Y
+  'yam','yap','yaw','yes','yet','yew','yak','yell','your','yard','yarn','year','yell','yoga',
+  'yolk','young','youth',
+  // Z
+  'zap','zen','zip','zoo','zeal','zero','zone','zoom','zinc','zest','zebra',
+]);
+
+// =====================================================
+// GAME STATE
+// =====================================================
+const MODES = {
+  blisk:   { label: 'БЛИСК',   time: 10, totalTime: 60 },
+  klasik:  { label: 'КЛАСИК',  time: 20, totalTime: 60 },
+  strateg: { label: 'СТРАТЕГ', time: 30, totalTime: 60 },
+};
+
+let state = {
+  mode: 'klasik',
+  running: false,
+  score: 0,
+  chain: [],          // all words this run
+  longestChain: [],   // track longest chain segment
+  currentChain: [],   // current consecutive chain
+  usedWords: new Set(),
+  lives: 3,
+  currentLetter: '',
+  wordTimer: null,
+  totalTimer: null,
+  wordTimeLeft: 0,
+  totalTimeLeft: 60,
+  totalTimeMax: 60,
+  chainBreaks: 0,
+  botChain: [],
+  botTimer: null,
+  startingWords: ['apple','door','rock','table','lake','king','night','rain','star','moon','bird','fire','gold','blue','song','name','game','time','love','word'],
+  wordScores: {},  // word -> score
+};
+
+// =====================================================
+// BOT WORD LISTS (pre-built chains)
+// =====================================================
+const BOT_WORDS = [
+  'cat','table','eat','trail','leg','grow','walk','king','gate','elephant','train','nose','egg','great','time','end','dog','grow','wild','dare',
+  'rock','king','grow','wild','love','even','never','run','night','tiger','rope','east','teach','hair','rest','try','yarn','name','ear','run',
+  'ball','lamp','pop','pen','nod','dog','gold','door','rain','nap','pen','name','exit','time','eye','ear','rag','great','tall','last',
+];
+let botWordIdx = 0;
+
+// =====================================================
+// UTILITY
+// =====================================================
+function $(id) { return document.getElementById(id); }
+
+function showToast(msg, type='', duration=2000) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => { t.className = 'toast'; }, duration);
+}
+
+function spawnScorePop(pts, el) {
+  const pop = document.createElement('div');
+  pop.className = 'score-pop';
+  const rect = el ? el.getBoundingClientRect() : { top: 200, left: 200 };
+  pop.style.top = (rect.top - 10) + 'px';
+  pop.style.left = rect.left + 'px';
+  pop.textContent = '+' + pts;
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 1200);
+}
+
+function spawnParticles(x, y, color='#f59e0b') {
+  const container = $('particles');
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    p.style.background = color;
+    const angle = (Math.PI * 2 / 12) * i;
+    const dist = 60 + Math.random() * 60;
+    p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+    p.style.animationDuration = (0.8 + Math.random() * 0.4) + 's';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 1400);
+  }
+}
+
+function getLives() {
+  const h = ['❤️', '❤️', '❤️'];
+  for (let i = 0; i < 3 - state.lives; i++) h[2 - i] = '🖤';
+  return h.join('');
+}
+
+// =====================================================
+// CHAIN BG ANIMATION (menu)
+// =====================================================
+function buildChainBg() {
+  const bg = $('chainBg');
+  bg.innerHTML = '';
+  for (let r = 0; r < 8; r++) {
+    const row = document.createElement('div');
+    row.className = 'chain-row';
+    for (let c = 0; c < 30; c++) {
+      const lk = document.createElement('div');
+      lk.className = 'chain-link-bg';
+      row.appendChild(lk);
+    }
+    // duplicate for seamless scroll
+    for (let c = 0; c < 30; c++) {
+      const lk = document.createElement('div');
+      lk.className = 'chain-link-bg';
+      row.appendChild(lk);
+    }
+    bg.appendChild(row);
+  }
+}
+
+// =====================================================
+// CHAIN DEMO ANIMATION (menu)
+// =====================================================
+const DEMO_WORDS = ['CAT','TIGER','ROCK','KING','GREAT','TABLE','EAGLE','EGG'];
+let demoIdx = 0;
+let demoInterval = null;
+
+function buildChainDemo() {
+  const demo = $('chainDemo');
+  demo.innerHTML = '';
+  const visible = DEMO_WORDS.slice(0, Math.min(demoIdx + 1, 4));
+  visible.forEach((w, i) => {
+    if (i > 0) {
+      const arr = document.createElement('span');
+      arr.className = 'chain-arrow';
+      arr.textContent = '→';
+      demo.appendChild(arr);
+    }
+    const el = document.createElement('div');
+    el.className = 'chain-demo-word';
+    el.style.animationDelay = (i * 0.1) + 's';
+    const last = w.slice(-1);
+    const rest = w.slice(0, -1);
+    el.innerHTML = rest + `<span class="last-letter">${last}</span>`;
+    demo.appendChild(el);
+  });
+  if (demoIdx < DEMO_WORDS.length - 1) {
+    demoIdx++;
+  } else {
+    demoIdx = 0;
+  }
+}
+
+// =====================================================
+// MODE SELECTION
+// =====================================================
+function selectMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  $('mode-' + mode).classList.add('selected');
+  updateHighScoreDisplay();
+}
+
+function updateHighScoreDisplay() {
+  const hs = parseInt(localStorage.getItem('wc_hs_' + state.mode) || '0');
+  const hc = parseInt(localStorage.getItem('wc_hchain_' + state.mode) || '0');
+  $('hsValue').textContent = hs > 0 ? hs.toLocaleString() : '—';
+  $('hsChain').textContent = hc > 0 ? hc + ' слів' : '—';
+  $('hsModeLabel').textContent = MODES[state.mode].label;
+}
+
+// =====================================================
+// START GAME
+// =====================================================
+function startGame() {
+  const modeData = MODES[state.mode];
+
+  // Reset state
+  state.running = true;
+  state.score = 0;
+  state.chain = [];
+  state.longestChain = [];
+  state.currentChain = [];
+  state.usedWords = new Set();
+  state.lives = 3;
+  state.chainBreaks = 0;
+  state.wordTimeLeft = modeData.time;
+  state.totalTimeLeft = modeData.totalTime;
+  state.totalTimeMax = modeData.totalTime;
+  state.wordScores = {};
+  state.botChain = [];
+  botWordIdx = Math.floor(Math.random() * 5);
+
+  showScreen('gameScreen');
+
+  // Pick a random starting word
+  const starters = state.startingWords.filter(w => WORDS.has(w));
+  const firstWord = starters[Math.floor(Math.random() * starters.length)];
+  addWordToChain(firstWord, true);
+
+  // Update UI
+  updateScoreUI();
+  updateLives();
+  updateMultBadge();
+
+  // Start timers
+  startWordTimer();
+  startTotalTimer();
+  startBotTimer();
+
+  // Focus input
+  setTimeout(() => $('wordInput').focus(), 100);
+}
+
+function addWordToChain(word, isStart = false) {
+  word = word.toLowerCase();
+  if (!isStart) {
+    state.chain.push(word);
+    state.currentChain.push(word);
+    state.usedWords.add(word);
+    if (state.currentChain.length > state.longestChain.length) {
+      state.longestChain = [...state.currentChain];
+    }
+  } else {
+    // Starting word — just set the letter, don't count it
+    state.chain.push(word);
+    state.usedWords.add(word);
+  }
+
+  state.currentLetter = word.slice(-1).toUpperCase();
+  updateLetterDisplay();
+  updateChainStrip();
+  updateChainCount();
+}
+
+// =====================================================
+// WORD TIMER
+// =====================================================
+const CIRCUMFERENCE = 150.796; // 2π × 24
+
+function startWordTimer() {
+  clearInterval(state.wordTimer);
+  const modeData = MODES[state.mode];
+  state.wordTimeLeft = modeData.time;
+  updateTimerUI();
+
+  state.wordTimer = setInterval(() => {
+    state.wordTimeLeft -= 0.1;
+    if (state.wordTimeLeft <= 0) {
+      state.wordTimeLeft = 0;
+      updateTimerUI();
+      onTimeOut();
+    } else {
+      updateTimerUI();
+    }
+  }, 100);
+}
+
+function updateTimerUI() {
+  const total = MODES[state.mode].time;
+  const ratio = state.wordTimeLeft / total;
+  const offset = CIRCUMFERENCE * (1 - ratio);
+  const prog = $('timerProgress');
+  prog.style.strokeDashoffset = offset;
+
+  // Color
+  if (ratio > 0.5) prog.style.stroke = 'var(--green)';
+  else if (ratio > 0.25) prog.style.stroke = 'var(--gold)';
+  else prog.style.stroke = 'var(--red)';
+
+  $('timerText').textContent = Math.ceil(state.wordTimeLeft);
+}
+
+function onTimeOut() {
+  clearInterval(state.wordTimer);
+  if (!state.running) return;
+
+  // Flash red
+  $('timeoutOverlay').classList.add('show');
+  setTimeout(() => $('timeoutOverlay').classList.remove('show'), 800);
+
+  showToast('⏰ Час вийшов!', 'red', 2000);
+
+  // Chain break
+  state.chainBreaks++;
+  state.currentChain = [];
+  updateMultBadge();
+
+  state.lives--;
+  updateLives();
+
+  if (state.lives <= 0 || state.chainBreaks >= 3) {
+    endGame();
+    return;
+  }
+
+  // New starting word
+  giveNewStartWord();
+  startWordTimer();
+}
+
+function giveNewStartWord() {
+  const candidates = [...WORDS].filter(w =>
+    !state.usedWords.has(w) &&
+    w.length >= 3
+  );
+  if (candidates.length === 0) {
+    endGame();
+    return;
+  }
+  const word = candidates[Math.floor(Math.random() * Math.min(candidates.length, 20))];
+  addWordToChain(word, true);
+  $('wordInput').value = '';
+  clearError();
+  $('wordInput').focus();
+}
+
+// =====================================================
+// TOTAL TIMER
+// =====================================================
+function startTotalTimer() {
+  clearInterval(state.totalTimer);
+  state.totalTimer = setInterval(() => {
+    state.totalTimeLeft--;
+    updateTotalTimerUI();
+    if (state.totalTimeLeft <= 0) {
+      clearInterval(state.totalTimer);
+      endGame();
+    }
+  }, 1000);
+}
+
+function updateTotalTimerUI() {
+  $('totalTimeLeft').textContent = state.totalTimeLeft + 'с';
+  const pct = (state.totalTimeLeft / state.totalTimeMax) * 100;
+  $('totalTimeFill').style.width = pct + '%';
+}
+
+// =====================================================
+// SUBMIT WORD
+// =====================================================
+function submitWord() {
+  const input = $('wordInput');
+  const raw = input.value.trim().toLowerCase();
+
+  if (!raw) return;
+
+  // Validate
+  if (raw.length < 3) {
+    showError('Мінімум 3 літери!');
+    shakeInput();
+    return;
+  }
+
+  if (raw[0] !== state.currentLetter.toLowerCase()) {
+    showError(`Слово має починатися з «${state.currentLetter}»!`);
+    shakeInput();
+    return;
+  }
+
+  if (state.usedWords.has(raw)) {
+    showError('Це слово вже використано!');
+    shakeInput();
+    return;
+  }
+
+  if (!WORDS.has(raw)) {
+    showError('Слово не знайдено у словнику!');
+    shakeInput();
+    return;
+  }
+
+  // Valid!
+  clearError();
+  const pts = calcScore(raw);
+  state.score += pts;
+  state.wordScores[raw] = pts;
+
+  addWordToChain(raw);
+  input.value = '';
+
+  // Particles at button
+  const btn = $('submitBtn');
+  const rect = btn.getBoundingClientRect();
+  spawnParticles(rect.left + rect.width / 2, rect.top, '#10b981');
+  spawnScorePop(pts, btn);
+
+  updateScoreUI();
+
+  // Chain milestones
+  const cl = state.currentChain.length;
+  if (cl === 5) showMilestone('🔥', 'Ланцюг ×5!', 'Множник ×1.5!');
+  if (cl === 10) showMilestone('💥', 'Ланцюг ×10!', 'Множник ×2!');
+  if (cl === 15) showMilestone('🌟', 'Ланцюг ×15!', 'Множник ×3!');
+  if (cl > 0 && cl % 5 === 0 && cl > 15) showToast(`⛓️ Ланцюг ${cl}!`, 'gold', 1500);
+
+  updateMultBadge();
+
+  // Double points for long words
+  if (raw.length >= 7) showToast(`⚡ ${raw.toUpperCase()} — подвійні очки!`, 'gold', 1500);
+
+  // Check new record
+  const hs = parseInt(localStorage.getItem('wc_hs_' + state.mode) || '0');
+  if (state.score > hs) showToast('💎 Рекорд!', 'gold', 1500);
+
+  // Restart word timer
+  startWordTimer();
+}
+
+function calcScore(word) {
+  const modeData = MODES[state.mode];
+  let base = 10;
+  let lengthBonus = word.length * 2;
+  let speedBonus = base * (state.wordTimeLeft / modeData.time);
+
+  // Double for 7+ letters
+  if (word.length >= 7) { base *= 2; lengthBonus *= 2; }
+
+  let chainMult = 1;
+  const cl = state.currentChain.length; // before adding
+  if (cl >= 15) chainMult = 3;
+  else if (cl >= 10) chainMult = 2;
+  else if (cl >= 5) chainMult = 1.5;
+
+  return Math.round((base + lengthBonus + speedBonus) * chainMult);
+}
+
+// =====================================================
+// BOT
+// =====================================================
+function startBotTimer() {
+  clearInterval(state.botTimer);
+  state.botTimer = setInterval(() => {
+    if (!state.running) { clearInterval(state.botTimer); return; }
+    addBotWord();
+  }, 3000 + Math.random() * 1500);
+}
+
+function addBotWord() {
+  // Find a valid bot word
+  let lastLetter = state.botChain.length > 0
+    ? state.botChain[state.botChain.length - 1].slice(-1)
+    : 'c';
+
+  const candidates = [...WORDS].filter(w =>
+    w[0] === lastLetter &&
+    !state.botChain.includes(w) &&
+    w.length >= 3
+  );
+
+  if (candidates.length === 0) {
+    // Bot restarts chain
+    const starters = state.startingWords.filter(w => !state.botChain.includes(w));
+    if (starters.length > 0) {
+      state.botChain = [starters[Math.floor(Math.random() * starters.length)]];
+    }
+    updateBotUI();
+    return;
+  }
+
+  const word = candidates[Math.floor(Math.random() * Math.min(candidates.length, 10))];
+  state.botChain.push(word);
+  updateBotUI();
+}
+
+function updateBotUI() {
+  const chain = state.botChain;
+  const last3 = chain.slice(-3);
+  $('botChainDisplay').textContent = last3.join(' → ') || 'Формує ланцюг...';
+  $('botCount').textContent = chain.length;
+}
+
+// =====================================================
+// UI UPDATES
+// =====================================================
+function updateLetterDisplay() {
+  $('bigLetter').textContent = state.currentLetter;
+  $('hintLetter').textContent = state.currentLetter;
+  $('wordInput').placeholder = `Введи слово на ${state.currentLetter}...`;
+}
+
+function updateChainStrip() {
+  const strip = $('chainStrip');
+  strip.innerHTML = '';
+
+  const words = state.chain;
+  const visible = words.slice(-8); // show last 8
+
+  visible.forEach((w, i) => {
+    if (i > 0) {
+      const sep = document.createElement('span');
+      sep.className = 'chain-sep';
+      sep.textContent = '→';
+      strip.appendChild(sep);
+    }
+    const el = document.createElement('div');
+    el.className = 'chain-word' + (i === visible.length - 1 ? ' current' : '');
+
+    if (i === visible.length - 1) {
+      const rest = w.slice(0, -1).toUpperCase();
+      const last = w.slice(-1).toUpperCase();
+      el.innerHTML = rest + `<span class="last-l">${last}</span>`;
+    } else {
+      el.textContent = w.toUpperCase();
+    }
+    strip.appendChild(el);
+  });
+
+  // Scroll to end
+  strip.scrollLeft = strip.scrollWidth;
+}
+
+function updateChainCount() {
+  $('chainCount').textContent = state.currentChain.length;
+}
+
+function updateScoreUI() {
+  $('scoreVal').textContent = state.score.toLocaleString();
+}
+
+function updateLives() {
+  $('livesRow').textContent = getLives();
+}
+
+function updateMultBadge() {
+  const cl = state.currentChain.length;
+  let mult = 1;
+  if (cl >= 15) mult = 3;
+  else if (cl >= 10) mult = 2;
+  else if (cl >= 5) mult = 1.5;
+
+  const badge = $('multBadge');
+  $('multVal').textContent = '×' + mult;
+
+  if (mult > 1) {
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function showError(msg) {
+  $('errorMsg').textContent = msg;
+}
+
+function clearError() {
+  $('errorMsg').textContent = '';
+}
+
+function shakeInput() {
+  const inp = $('wordInput');
+  inp.classList.remove('input-error');
+  void inp.offsetWidth;
+  inp.classList.add('input-error');
+  setTimeout(() => inp.classList.remove('input-error'), 500);
+}
+
+// =====================================================
+// MILESTONES
+// =====================================================
+function showMilestone(emoji, title, sub) {
+  const box = $('milestoneBox');
+  box.innerHTML = `
+    <span class="milestone-emoji">${emoji}</span>
+    <div class="milestone-text">${title}</div>
+    <div class="milestone-sub">${sub}</div>
+  `;
+  const ov = $('milestoneOverlay');
+  ov.classList.add('show');
+
+  // Particles in center
+  spawnParticles(window.innerWidth / 2, window.innerHeight / 2, '#f59e0b');
+
+  setTimeout(() => {
+    ov.classList.remove('show');
+    $('wordInput').focus();
+  }, 1800);
+}
+
+// =====================================================
+// END GAME
+// =====================================================
+function endGame() {
+  if (!state.running) return;
+  state.running = false;
+  clearInterval(state.wordTimer);
+  clearInterval(state.totalTimer);
+  clearInterval(state.botTimer);
+
+  // Save high score
+  const hs = parseInt(localStorage.getItem('wc_hs_' + state.mode) || '0');
+  const hc = parseInt(localStorage.getItem('wc_hchain_' + state.mode) || '0');
+  const isNewRecord = state.score > hs;
+  const isNewChain = state.longestChain.length > hc;
+
+  if (isNewRecord) localStorage.setItem('wc_hs_' + state.mode, state.score);
+  if (isNewChain) localStorage.setItem('wc_hchain_' + state.mode, state.longestChain.length);
+
+  // Build results
+  buildResults(isNewRecord || isNewChain);
+  showScreen('resultsScreen');
+}
+
+function buildResults(isNew) {
+  // Grade
+  const score = state.score;
+  let grade, title, subtitle;
+  if (score >= 500) { grade = '🏆'; title = 'Легендарний!'; subtitle = 'Майстер ланцюгів Word Chain'; }
+  else if (score >= 300) { grade = '🥇'; title = 'Відмінно!'; subtitle = 'Ти будуєш ланцюги як профі'; }
+  else if (score >= 150) { grade = '🥈'; title = 'Добре!'; subtitle = 'Гарний результат, продовжуй'; }
+  else if (score >= 50)  { grade = '🥉'; title = 'Непогано!'; subtitle = 'Наступного разу буде краще'; }
+  else { grade = '🌱'; title = 'Початківець'; subtitle = 'Практикуйся і ставай кращим'; }
+
+  $('resultsGrade').textContent = grade;
+  $('resultsTitle').textContent = title;
+  $('resultsSubtitle').textContent = subtitle;
+
+  // Stats
+  $('rScore').textContent = score.toLocaleString();
+  $('rChain').textContent = state.longestChain.length;
+  $('rWords').textContent = state.chain.length;
+
+  // Best word
+  let bestWord = '', bestPts = 0;
+  for (const [w, pts] of Object.entries(state.wordScores)) {
+    if (pts > bestPts) { bestPts = pts; bestWord = w; }
+  }
+  $('rBestWord').textContent = bestWord ? bestWord.toUpperCase() : '—';
+  $('rBestWordScore').textContent = bestWord ? '+' + bestPts + ' очків' : '';
+
+  // Bot comparison
+  $('rBotChain').textContent = state.botChain.length;
+  const diff = state.longestChain.length - state.botChain.length;
+  if (diff > 0) $('rVsBot').textContent = `Ти виграв на ${diff} слів! 🎉`;
+  else if (diff < 0) $('rVsBot').textContent = `Бот випередив на ${Math.abs(diff)} слів`;
+  else $('rVsBot').textContent = 'Нічия! 🤝';
+
+  // Record
+  $('newRecord').classList.toggle('show', isNew);
+
+  // Chain display
+  const chainEl = $('resultsChainWords');
+  chainEl.innerHTML = '';
+  const display = state.longestChain.length > 0 ? state.longestChain : state.chain.slice(0, 10);
+  display.forEach((w, i) => {
+    if (i > 0) {
+      const arr = document.createElement('span');
+      arr.className = 'result-arrow';
+      arr.textContent = '→';
+      chainEl.appendChild(arr);
+    }
+    const el = document.createElement('div');
+    el.className = 'result-word';
+    el.textContent = w.toUpperCase();
+    chainEl.appendChild(el);
+  });
+
+  // XP
+  const xp = Math.round(score * 0.5 + state.longestChain.length * 10);
+  $('xpAmount').textContent = '+' + xp + ' XP';
+  setTimeout(() => {
+    $('xpFill').style.width = Math.min(100, xp / 3) + '%';
+  }, 500);
+
+  // Share text
+  const chainStr = state.longestChain.slice(0, 8).map(w => w.toUpperCase()).join('→');
+  const shareStr = `⛓️ Word Chain — Voodoo English\nМій ланцюг: ${chainStr}... (${state.longestChain.length} слів!)\nРахунок: ${score} очків\nСпробуй сам: voodoo.english`;
+  $('shareText').textContent = shareStr;
+  window._shareStr = shareStr;
+}
+
+// =====================================================
+// SHARE
+// =====================================================
+function copyShare() {
+  navigator.clipboard.writeText(window._shareStr || '').then(() => {
+    showToast('📋 Скопійовано!', '', 1500);
+  }).catch(() => {
+    showToast('Не вдалося скопіювати', 'red', 1500);
+  });
+}
+
+function shareToTg() {
+  const text = encodeURIComponent(window._shareStr || '');
+  window.open('https://t.me/share/url?url=https://voodoo.english&text=' + text, '_blank');
+}
+
+// =====================================================
+// NAVIGATION
+// =====================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+
+  if (id === 'menuScreen') {
+    updateHighScoreDisplay();
+    demoIdx = 0;
+    clearInterval(demoInterval);
+    buildChainDemo();
+    demoInterval = setInterval(buildChainDemo, 1200);
+  }
+}
+
+function newGame() {
+  startGame();
+}
+
+function goMenu() {
+  state.running = false;
+  clearInterval(state.wordTimer);
+  clearInterval(state.totalTimer);
+  clearInterval(state.botTimer);
+  showScreen('menuScreen');
+}
+
+// =====================================================
+// KEYBOARD
+// =====================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const gameScreen = $('gameScreen');
+    if (gameScreen.classList.contains('active') && state.running) {
+      submitWord();
+    }
+  }
+});
+
+// Input live validation hint
+$('wordInput').addEventListener('input', () => {
+  const val = $('wordInput').value.toLowerCase();
+  const inp = $('wordInput');
+  if (!val) {
+    inp.className = 'word-input';
+    return;
+  }
+  if (val.length >= 3 && val[0] === state.currentLetter.toLowerCase() && WORDS.has(val) && !state.usedWords.has(val)) {
+    inp.className = 'word-input input-valid';
+    clearError();
+  } else {
+    inp.className = 'word-input';
+    if (val.length > 0 && val[0] !== state.currentLetter.toLowerCase()) {
+      showError(`Починається з «${state.currentLetter}»`);
+    } else {
+      clearError();
+    }
+  }
+});
+
+// =====================================================
+// INIT
+// =====================================================
+buildChainBg();
+buildChainDemo();
+demoInterval = setInterval(buildChainDemo, 1200);
+updateHighScoreDisplay();
+selectMode('klasik');
+</script>
+</body>
+</html>

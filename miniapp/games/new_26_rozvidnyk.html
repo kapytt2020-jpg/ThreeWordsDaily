@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>РОЗВІДНИК — Voodoo English</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --green: #00ff88;
+    --green-dim: #00aa55;
+    --green-glow: rgba(0,255,136,0.15);
+    --red: #ef4444;
+    --red-dim: #991b1b;
+    --purple: #7c3aed;
+    --purple-dim: #4c1d95;
+    --gold: #f59e0b;
+    --gold-dim: #92400e;
+    --text: #c0c0c0;
+    --text-dim: #606060;
+    --border: #1a2a1a;
+    --panel: #0d1a0d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Scanlines overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes glitch {
+    0%, 90%, 100% { transform: translate(0); clip-path: none; }
+    91% { transform: translate(-3px, 1px); clip-path: inset(20% 0 60% 0); }
+    92% { transform: translate(3px, -1px); clip-path: inset(60% 0 20% 0); color: var(--red); }
+    93% { transform: translate(-2px, 2px); clip-path: inset(40% 0 40% 0); color: var(--purple); }
+    94% { transform: translate(0); clip-path: none; }
+  }
+
+  @keyframes glitch2 {
+    0%, 85%, 100% { transform: translate(0); opacity: 1; }
+    86% { transform: translate(4px, 0); opacity: 0.8; color: var(--red); }
+    87% { transform: translate(-4px, 0); opacity: 0.9; color: var(--purple); }
+    88% { transform: translate(0); opacity: 1; }
+  }
+
+  @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+  @keyframes pulse-green { 0%,100% { box-shadow: 0 0 5px var(--green), 0 0 10px var(--green-glow); } 50% { box-shadow: 0 0 15px var(--green), 0 0 30px var(--green-glow), 0 0 45px var(--green-glow); } }
+  @keyframes flash-green { 0%,100% { background: transparent; } 30% { background: rgba(0,255,136,0.3); } }
+  @keyframes flash-red { 0%,100% { background: transparent; } 30% { background: rgba(239,68,68,0.3); } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  @keyframes stamp-in { 0% { transform: scale(3) rotate(-15deg); opacity: 0; } 60% { transform: scale(0.9) rotate(-10deg); opacity: 1; } 100% { transform: scale(1) rotate(-12deg); opacity: 1; } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+  @keyframes scan { 0% { top: -5%; } 100% { top: 105%; } }
+  @keyframes success-burst { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.8; } 100% { transform: scale(1.2); opacity: 0; } }
+  @keyframes rotate-border { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } }
+  @keyframes matrix-rain { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(40px); } }
+  @keyframes classified-stamp { 0% { transform: rotate(-12deg) scale(3); opacity: 0; } 70% { transform: rotate(-12deg) scale(0.95); opacity: 1; } 85% { transform: rotate(-12deg) scale(1.05); } 100% { transform: rotate(-12deg) scale(1); opacity: 1; } }
+
+  /* ─── LAYOUT ─── */
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+  /* ─── TICKER BAR ─── */
+  .ticker-wrap {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #000; border-bottom: 1px solid var(--green);
+    overflow: hidden; height: 28px; display: flex; align-items: center;
+  }
+  .ticker-label {
+    background: var(--green); color: #000; padding: 0 10px;
+    font-size: 11px; font-weight: bold; white-space: nowrap; height: 100%;
+    display: flex; align-items: center; flex-shrink: 0; letter-spacing: 2px;
+  }
+  .ticker-text {
+    white-space: nowrap; animation: ticker 30s linear infinite;
+    font-size: 11px; color: var(--green); padding-left: 20px;
+    opacity: 0.8;
+  }
+
+  /* ─── SCREEN 1: BRIEFING ─── */
+  #screen-briefing {
+    background: radial-gradient(ellipse at center, #0a1a0a 0%, var(--bg) 70%);
+    padding-top: 40px;
+  }
+
+  .classified-stamp {
+    position: fixed; top: 60px; right: 40px; z-index: 200;
+    color: var(--red); border: 4px solid var(--red);
+    padding: 8px 16px; font-size: 22px; letter-spacing: 6px;
+    transform: rotate(-12deg);
+    text-shadow: 0 0 10px var(--red);
+    box-shadow: 0 0 20px rgba(239,68,68,0.4), inset 0 0 10px rgba(239,68,68,0.1);
+    opacity: 0;
+    animation: classified-stamp 0.6s ease-out 0.3s forwards;
+    font-weight: bold;
+  }
+
+  .game-title {
+    font-size: clamp(36px, 6vw, 64px);
+    color: var(--green);
+    text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-glow);
+    animation: glitch 4s infinite;
+    letter-spacing: 4px;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .game-title-2 {
+    animation: glitch2 5s infinite 1s;
+  }
+
+  .subtitle {
+    color: var(--text-dim); font-size: 13px; letter-spacing: 6px;
+    text-align: center; margin-bottom: 32px; text-transform: uppercase;
+  }
+  .subtitle span { color: var(--purple); }
+
+  .terminal-box {
+    background: var(--panel); border: 1px solid var(--green-dim);
+    box-shadow: 0 0 20px var(--green-glow), inset 0 0 30px rgba(0,0,0,0.5);
+    padding: 24px 32px; max-width: 600px; width: 100%;
+    margin-bottom: 32px; position: relative;
+    border-radius: 2px;
+  }
+
+  .terminal-box::before {
+    content: '● ● ●';
+    position: absolute; top: 8px; left: 12px;
+    color: var(--text-dim); font-size: 10px;
+    letter-spacing: 4px;
+  }
+
+  .terminal-prompt {
+    color: var(--green-dim); font-size: 13px; line-height: 1.8;
+    min-height: 60px;
+  }
+
+  .cursor {
+    display: inline-block; width: 8px; height: 16px;
+    background: var(--green); animation: blink 1s step-end infinite;
+    vertical-align: middle; margin-left: 2px;
+  }
+
+  .difficulty-label {
+    color: var(--text-dim); font-size: 11px; letter-spacing: 4px;
+    text-align: center; margin-bottom: 16px; text-transform: uppercase;
+  }
+
+  .difficulty-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; max-width: 600px; width: 100%; margin-bottom: 32px;
+  }
+
+  .diff-btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); padding: 16px 8px; cursor: pointer;
+    transition: all 0.2s; text-align: center; font-family: inherit;
+    font-size: 12px; letter-spacing: 1px; border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+
+  .diff-btn::before {
+    content: ''; position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+    transition: left 0.4s;
+  }
+
+  .diff-btn:hover::before { left: 100%; }
+
+  .diff-btn .diff-icon { font-size: 20px; display: block; margin-bottom: 6px; }
+  .diff-btn .diff-name { color: var(--green); display: block; font-size: 13px; margin-bottom: 4px; letter-spacing: 2px; }
+  .diff-btn .diff-desc { color: var(--text-dim); font-size: 10px; display: block; line-height: 1.3; }
+
+  .diff-btn.rookie { border-color: var(--green-dim); }
+  .diff-btn.agent { border-color: var(--gold); }
+  .diff-btn.ghost { border-color: var(--red); }
+
+  .diff-btn.selected.rookie { background: rgba(0,255,136,0.1); box-shadow: 0 0 15px var(--green-glow); border-color: var(--green); }
+  .diff-btn.selected.agent { background: rgba(245,158,11,0.1); box-shadow: 0 0 15px rgba(245,158,11,0.2); border-color: var(--gold); }
+  .diff-btn.selected.ghost { background: rgba(239,68,68,0.1); box-shadow: 0 0 15px rgba(239,68,68,0.2); border-color: var(--red); }
+
+  .diff-btn:hover { transform: translateY(-2px); }
+
+  .accept-btn {
+    background: linear-gradient(135deg, #0d2a1a, #0a1a0f);
+    border: 2px solid var(--green); color: var(--green);
+    padding: 16px 48px; font-family: inherit; font-size: 16px;
+    letter-spacing: 4px; cursor: pointer; text-transform: uppercase;
+    transition: all 0.3s; box-shadow: 0 0 20px var(--green-glow);
+    animation: pulse-green 2s ease-in-out infinite;
+    border-radius: 2px;
+    position: relative; overflow: hidden;
+  }
+
+  .accept-btn:hover {
+    background: var(--green); color: #000;
+    box-shadow: 0 0 40px var(--green), 0 0 60px var(--green-glow);
+    transform: scale(1.05);
+  }
+
+  /* ─── SCREEN 2: MISSION ─── */
+  #screen-mission {
+    padding: 50px 20px 20px;
+    align-items: stretch;
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .hud {
+    display: grid; grid-template-columns: 1fr auto auto;
+    gap: 16px; align-items: center; margin-bottom: 16px;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 12px 16px; border-radius: 2px;
+    box-shadow: 0 0 10px var(--green-glow);
+  }
+
+  .hud-mission { color: var(--green); font-size: 13px; letter-spacing: 2px; }
+  .hud-mission span { color: var(--gold); }
+
+  .hud-timer {
+    color: var(--gold); font-size: 22px; letter-spacing: 3px;
+    font-weight: bold; text-shadow: 0 0 10px var(--gold);
+    min-width: 80px; text-align: center;
+  }
+
+  .hud-timer.danger { color: var(--red); text-shadow: 0 0 10px var(--red); animation: blink 0.5s step-end infinite; }
+
+  .hud-score { color: var(--green); font-size: 13px; letter-spacing: 2px; text-align: right; }
+  .hud-score .score-val { color: var(--gold); font-size: 20px; display: block; }
+
+  .clearance-bar-wrap {
+    margin-bottom: 16px;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 10px 16px; border-radius: 2px;
+  }
+
+  .clearance-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--text-dim); letter-spacing: 3px;
+    margin-bottom: 6px;
+  }
+
+  .clearance-bar {
+    height: 8px; background: #111;
+    border: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+
+  .clearance-fill {
+    height: 100%; background: linear-gradient(90deg, var(--green-dim), var(--green));
+    transition: width 0.5s ease; position: relative;
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .clearance-fill::after {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+    width: 3px; background: #fff; box-shadow: 0 0 6px #fff;
+  }
+
+  .mission-area {
+    display: grid; grid-template-columns: 1fr 280px;
+    gap: 16px; flex: 1;
+  }
+
+  .mission-main { display: flex; flex-direction: column; gap: 16px; }
+
+  .mission-header {
+    color: var(--text-dim); font-size: 11px; letter-spacing: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .mission-header::before { content: '◆'; color: var(--red); font-size: 8px; }
+
+  .encrypted-box {
+    background: var(--panel); border: 1px solid var(--green-dim);
+    box-shadow: 0 0 20px var(--green-glow), inset 0 0 40px rgba(0,0,0,0.3);
+    padding: 20px; position: relative; border-radius: 2px;
+    min-height: 120px;
+  }
+
+  .encrypted-box::before {
+    content: '┌─ ENCRYPTED MESSAGE ─┐';
+    color: var(--green-dim); font-size: 10px;
+    position: absolute; top: -10px; left: 16px;
+    background: var(--panel); padding: 0 8px;
+    letter-spacing: 2px;
+  }
+
+  .encrypted-line {
+    font-size: clamp(14px, 2.5vw, 18px);
+    line-height: 2;
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: center;
+  }
+
+  .enc-word {
+    cursor: pointer; padding: 4px 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s; position: relative;
+    border-radius: 2px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .enc-word:hover { border-color: var(--green-dim); background: var(--green-glow); }
+  .enc-word.selected { border-color: var(--green); background: rgba(0,255,136,0.15); box-shadow: 0 0 10px var(--green-glow); color: #fff; }
+  .enc-word.solved { color: var(--green); cursor: default; border-color: transparent; font-weight: bold; text-shadow: 0 0 8px var(--green); }
+  .enc-word.solved:hover { border-color: transparent; background: transparent; }
+  .enc-word.flash-correct { animation: flash-green 0.6s ease-out; }
+  .enc-word.flash-wrong { animation: flash-red 0.4s ease-out, shake 0.4s ease-out; }
+
+  .decode-panel {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 20px; border-radius: 2px;
+    display: none; flex-direction: column; gap: 14px;
+  }
+
+  .decode-panel.visible { display: flex; animation: slideIn 0.3s ease-out; }
+
+  .decode-title {
+    color: var(--text-dim); font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .decode-word-display {
+    color: var(--green); font-size: clamp(16px, 3vw, 22px);
+    letter-spacing: 3px; text-shadow: 0 0 10px var(--green);
+    word-break: break-all; line-height: 1.5;
+    min-height: 30px;
+  }
+
+  .decode-breakdown {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+
+  .decode-pair {
+    background: #111; border: 1px solid var(--border);
+    padding: 4px 8px; font-size: 11px;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  .decode-pair .sym { color: var(--gold); letter-spacing: 1px; }
+  .decode-pair .arrow { color: var(--text-dim); font-size: 10px; }
+  .decode-pair .letter { color: var(--green); font-weight: bold; }
+
+  .decode-input-wrap { display: flex; gap: 8px; }
+
+  .decode-input {
+    flex: 1; background: #000; border: 1px solid var(--green-dim);
+    color: var(--green); font-family: inherit; font-size: 16px;
+    padding: 10px 14px; letter-spacing: 3px; text-transform: uppercase;
+    outline: none; border-radius: 2px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  .decode-input:focus { border-color: var(--green); box-shadow: 0 0 10px var(--green-glow), inset 0 0 10px rgba(0,0,0,0.5); }
+
+  .confirm-btn {
+    background: var(--green); color: #000; border: none;
+    padding: 10px 16px; font-family: inherit; font-size: 13px;
+    letter-spacing: 2px; cursor: pointer; font-weight: bold;
+    transition: all 0.2s; border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .confirm-btn:hover { background: #fff; box-shadow: 0 0 15px var(--green); }
+  .confirm-btn:disabled { background: var(--text-dim); cursor: not-allowed; }
+
+  .decode-feedback {
+    font-size: 12px; min-height: 18px; letter-spacing: 1px;
+  }
+
+  .decode-feedback.correct { color: var(--green); }
+  .decode-feedback.wrong { color: var(--red); }
+
+  .attempts-display {
+    display: flex; gap: 6px; align-items: center;
+  }
+
+  .attempt-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--green); border: 1px solid var(--green);
+    transition: all 0.2s;
+  }
+
+  .attempt-dot.used { background: var(--red); border-color: var(--red); }
+
+  /* ─── SIDE PANEL ─── */
+  .side-panel { display: flex; flex-direction: column; gap: 12px; }
+
+  .cipher-ref {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 14px; border-radius: 2px;
+  }
+
+  .cipher-ref-header {
+    display: flex; justify-content: space-between; align-items: center;
+    cursor: pointer; margin-bottom: 0;
+    color: var(--text-dim); font-size: 11px; letter-spacing: 3px;
+    user-select: none;
+  }
+
+  .cipher-ref-header:hover { color: var(--green); }
+  .cipher-toggle { transition: transform 0.2s; }
+  .cipher-toggle.open { transform: rotate(180deg); }
+
+  .cipher-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 4px; margin-top: 12px;
+  }
+
+  .cipher-item {
+    background: #111; padding: 4px 6px; font-size: 10px;
+    display: flex; gap: 4px; align-items: center;
+  }
+
+  .cipher-item .c-sym { color: var(--gold); min-width: 24px; font-size: 9px; }
+  .cipher-item .c-eq { color: var(--text-dim); }
+  .cipher-item .c-let { color: var(--green); font-weight: bold; }
+
+  .mission-log {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 14px; border-radius: 2px; flex: 1;
+  }
+
+  .log-title { color: var(--text-dim); font-size: 11px; letter-spacing: 3px; margin-bottom: 10px; }
+
+  .log-entries { display: flex; flex-direction: column; gap: 4px; max-height: 200px; overflow-y: auto; }
+
+  .log-entry {
+    font-size: 11px; line-height: 1.4; padding: 4px 0;
+    border-bottom: 1px solid #111;
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .log-entry.success { color: var(--green); }
+  .log-entry.fail { color: var(--red); }
+  .log-entry.info { color: var(--text-dim); }
+  .log-entry.special { color: var(--gold); }
+
+  .action-bar {
+    display: flex; gap: 12px; margin-top: 8px;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 12px 16px; border-radius: 2px; align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .hint-btn {
+    background: transparent; border: 1px solid var(--gold);
+    color: var(--gold); padding: 8px 16px; font-family: inherit;
+    font-size: 12px; letter-spacing: 2px; cursor: pointer;
+    transition: all 0.2s; border-radius: 2px;
+  }
+
+  .hint-btn:hover { background: rgba(245,158,11,0.1); box-shadow: 0 0 10px rgba(245,158,11,0.2); }
+  .hint-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .progress-words {
+    flex: 1; display: flex; gap: 8px; align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .word-chip {
+    padding: 4px 10px; font-size: 11px; border-radius: 2px;
+    border: 1px solid var(--border); color: var(--text-dim);
+    letter-spacing: 1px;
+    transition: all 0.3s;
+  }
+
+  .word-chip.done { border-color: var(--green-dim); color: var(--green); background: rgba(0,255,136,0.05); }
+
+  /* ─── SCREEN 3: DEBRIEF ─── */
+  #screen-debrief { background: radial-gradient(ellipse at center, #0f0a1a 0%, var(--bg) 70%); }
+
+  .debrief-container { max-width: 700px; width: 100%; }
+
+  .mission-result {
+    text-align: center; margin-bottom: 32px; animation: fadeIn 0.5s ease-out;
+  }
+
+  .result-icon { font-size: 64px; margin-bottom: 12px; display: block; }
+
+  .result-title {
+    font-size: clamp(22px, 4vw, 36px); letter-spacing: 4px;
+    margin-bottom: 8px;
+    animation: glitch 3s infinite 1s;
+  }
+
+  .result-title.success { color: var(--green); text-shadow: 0 0 20px var(--green); }
+  .result-title.fail { color: var(--red); text-shadow: 0 0 20px var(--red); }
+
+  .rank-display {
+    background: var(--panel); border: 2px solid var(--gold);
+    padding: 20px 32px; text-align: center; margin-bottom: 24px;
+    box-shadow: 0 0 30px rgba(245,158,11,0.2);
+    animation: fadeIn 0.5s ease-out 0.3s both;
+    border-radius: 2px;
+  }
+
+  .rank-label { color: var(--text-dim); font-size: 11px; letter-spacing: 4px; margin-bottom: 8px; }
+  .rank-value { color: var(--gold); font-size: 32px; letter-spacing: 4px; text-shadow: 0 0 15px var(--gold); }
+  .rank-score { color: var(--text); font-size: 20px; margin-top: 8px; }
+  .rank-score span { color: var(--green); }
+
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 12px; margin-bottom: 24px;
+    animation: fadeIn 0.5s ease-out 0.5s both;
+  }
+
+  .stat-card {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 16px; text-align: center; border-radius: 2px;
+  }
+
+  .stat-val { color: var(--green); font-size: 28px; letter-spacing: 2px; display: block; margin-bottom: 4px; }
+  .stat-label { color: var(--text-dim); font-size: 10px; letter-spacing: 3px; }
+
+  .declassified-section {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 20px; margin-bottom: 24px;
+    animation: fadeIn 0.5s ease-out 0.7s both;
+    border-radius: 2px;
+  }
+
+  .declassified-title {
+    color: var(--red); font-size: 12px; letter-spacing: 4px;
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+
+  .declassified-title::before { content: '■'; font-size: 8px; }
+
+  .declassified-item {
+    padding: 8px 12px; margin-bottom: 6px;
+    border-left: 3px solid var(--green-dim);
+    font-size: 12px; color: var(--text);
+    background: rgba(0,255,136,0.03);
+  }
+
+  .declassified-item .mission-num { color: var(--text-dim); font-size: 10px; display: block; margin-bottom: 2px; letter-spacing: 2px; }
+  .declassified-item .mission-text { color: var(--green); letter-spacing: 2px; }
+
+  .new-mission-btn {
+    background: transparent; border: 2px solid var(--purple);
+    color: var(--purple); padding: 16px 48px; font-family: inherit;
+    font-size: 16px; letter-spacing: 4px; cursor: pointer;
+    text-transform: uppercase; transition: all 0.3s;
+    display: block; width: 100%; border-radius: 2px;
+    animation: fadeIn 0.5s ease-out 0.9s both;
+  }
+
+  .new-mission-btn:hover {
+    background: var(--purple); color: #fff;
+    box-shadow: 0 0 30px rgba(124,58,237,0.4);
+    transform: scale(1.02);
+  }
+
+  /* ─── SPECIAL EFFECTS ─── */
+  .voodoo-bonus {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000; text-align: center;
+    background: var(--panel); border: 2px solid var(--gold);
+    padding: 32px 48px; box-shadow: 0 0 60px rgba(245,158,11,0.5);
+    display: none; border-radius: 2px;
+  }
+
+  .voodoo-bonus.show { display: block; animation: fadeIn 0.3s ease-out; }
+  .voodoo-bonus .vb-title { color: var(--gold); font-size: 24px; letter-spacing: 4px; margin-bottom: 8px; }
+  .voodoo-bonus .vb-pts { color: var(--green); font-size: 48px; letter-spacing: 2px; }
+  .voodoo-bonus .vb-sub { color: var(--text-dim); font-size: 12px; letter-spacing: 2px; margin-top: 8px; }
+
+  .scan-line {
+    position: fixed; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0.4; pointer-events: none; z-index: 200;
+    animation: scan 4s linear infinite;
+  }
+
+  .matrix-char {
+    position: fixed; font-size: 14px; color: var(--green);
+    opacity: 0; animation: matrix-rain 1s ease-out forwards;
+    pointer-events: none; z-index: 500;
+  }
+
+  /* ─── OVERLAY ─── */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    z-index: 800; display: none; align-items: center; justify-content: center;
+  }
+
+  .overlay.show { display: flex; }
+
+  .overlay-box {
+    background: var(--panel); border: 2px solid var(--green);
+    padding: 40px 48px; text-align: center; max-width: 400px;
+    box-shadow: 0 0 60px var(--green-glow);
+    animation: fadeIn 0.3s ease-out;
+    border-radius: 2px;
+  }
+
+  .overlay-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+  .overlay-title { color: var(--green); font-size: 20px; letter-spacing: 4px; margin-bottom: 8px; }
+  .overlay-sub { color: var(--text-dim); font-size: 13px; letter-spacing: 2px; margin-bottom: 24px; line-height: 1.6; }
+
+  .overlay-btn {
+    background: var(--green); color: #000; border: none;
+    padding: 12px 32px; font-family: inherit; font-size: 14px;
+    letter-spacing: 3px; cursor: pointer; font-weight: bold;
+    transition: all 0.2s; border-radius: 2px;
+  }
+
+  .overlay-btn:hover { background: #fff; box-shadow: 0 0 20px var(--green); }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .mission-area { grid-template-columns: 1fr; }
+    .side-panel { display: none; }
+    .difficulty-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr; }
+    #screen-mission { padding: 50px 12px 12px; max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Scan line effect -->
+<div class="scan-line"></div>
+
+<!-- Ticker bar -->
+<div class="ticker-wrap">
+  <div class="ticker-label">CLASSIFIED</div>
+  <div class="ticker-text" id="ticker">
+    ▶ ОПЕРАЦІЯ "АНГЛІЙСЬКА МОВА" АКТИВОВАНА ▶ РІВЕНЬ ДОПУСКУ: МАКСИМАЛЬНИЙ ▶ ВСІ АГЕНТИ НА ПОЗИЦІЇ ▶ ШИФР ЗМІНЕНО ▶ МІСІЯ ПРИЙНЯТА ▶ РОЗВІДНИК В ЕФІРІ ▶ VOODOO PLATFORM — CLASSIFIED ▶
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SCREEN 1: BRIEFING ══════════════════════════════ -->
+<div id="screen-briefing" class="screen active">
+  <div class="classified-stamp">CLASSIFIED</div>
+
+  <h1 class="game-title game-title-2">🕵️ РОЗВІДНИК</h1>
+  <p class="subtitle">Операція: <span>АНГЛІЙСЬКА МОВА</span></p>
+
+  <div class="terminal-box">
+    <div class="terminal-prompt" id="terminal-text"></div>
+    <span class="cursor" id="terminal-cursor" style="display:none"></span>
+  </div>
+
+  <div class="difficulty-label">◆ ОБЕРІТЬ РІВЕНЬ ДОПУСКУ ◆</div>
+
+  <div class="difficulty-grid">
+    <div class="diff-btn rookie selected" onclick="selectDifficulty('rookie', this)">
+      <span class="diff-icon">🟢</span>
+      <span class="diff-name">НОВАК</span>
+      <span class="diff-desc">Тільки голосні<br>закодовані</span>
+    </div>
+    <div class="diff-btn agent" onclick="selectDifficulty('agent', this)">
+      <span class="diff-icon">🟡</span>
+      <span class="diff-name">АГЕНТ</span>
+      <span class="diff-desc">Половина літер<br>замінена</span>
+    </div>
+    <div class="diff-btn ghost" onclick="selectDifficulty('ghost', this)">
+      <span class="diff-icon">🔴</span>
+      <span class="diff-name">ПРИВИД</span>
+      <span class="diff-desc">Всі літери<br>зашифровані</span>
+    </div>
+  </div>
+
+  <button class="accept-btn" onclick="startGame()">▶ ПРИЙНЯТИ МІСІЮ</button>
+</div>
+
+<!-- ══════════════════════════════ SCREEN 2: MISSION ══════════════════════════════ -->
+<div id="screen-mission" class="screen">
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-mission">МІСІЯ <span id="hud-mission-num">1</span> / 5</div>
+    <div class="hud-timer" id="hud-timer">⏱ 45s</div>
+    <div class="hud-score">РАХУНОК<span class="score-val" id="hud-score">0</span></div>
+  </div>
+
+  <!-- Clearance bar -->
+  <div class="clearance-bar-wrap">
+    <div class="clearance-label">
+      <span>◆ РІВЕНЬ ДОПУСКУ</span>
+      <span id="clearance-pct">0%</span>
+    </div>
+    <div class="clearance-bar">
+      <div class="clearance-fill" id="clearance-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Mission area -->
+  <div class="mission-area">
+    <div class="mission-main">
+      <div class="mission-header">🔐 ЗАШИФРОВАНЕ ПОВІДОМЛЕННЯ</div>
+
+      <div class="encrypted-box" id="encrypted-box">
+        <div class="encrypted-line" id="encrypted-line"></div>
+      </div>
+
+      <!-- Decode panel (inline, below encrypted) -->
+      <div class="decode-panel" id="decode-panel">
+        <div class="decode-title">◆ ДЕКОДУВАННЯ СЛОВА</div>
+        <div class="decode-word-display" id="decode-word-display"></div>
+        <div class="decode-breakdown" id="decode-breakdown"></div>
+        <div class="attempts-display" id="attempts-display"></div>
+        <div class="decode-input-wrap">
+          <input type="text" class="decode-input" id="decode-input"
+            placeholder="ВВЕДІТЬ СЛОВО..." maxlength="20"
+            onkeydown="if(event.key==='Enter') confirmDecode()">
+          <button class="confirm-btn" id="confirm-btn" onclick="confirmDecode()">✓</button>
+        </div>
+        <div class="decode-feedback" id="decode-feedback"></div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <button class="hint-btn" id="hint-btn" onclick="useHint()">💡 ПІДКАЗКА (-5 pts)</button>
+        <div class="progress-words" id="progress-words"></div>
+      </div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side-panel">
+      <!-- Cipher reference -->
+      <div class="cipher-ref">
+        <div class="cipher-ref-header" onclick="toggleCipher()">
+          <span>◆ ТАБЛИЦЯ ШИФРУ</span>
+          <span class="cipher-toggle" id="cipher-toggle">▼</span>
+        </div>
+        <div class="cipher-grid" id="cipher-grid"></div>
+      </div>
+
+      <!-- Mission log -->
+      <div class="mission-log">
+        <div class="log-title">◆ ЖУРНАЛ АГЕНТА</div>
+        <div class="log-entries" id="log-entries"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ SCREEN 3: DEBRIEF ══════════════════════════════ -->
+<div id="screen-debrief" class="screen">
+  <div class="debrief-container">
+    <div class="mission-result" id="mission-result">
+      <span class="result-icon" id="result-icon">🏅</span>
+      <div class="result-title success" id="result-title">МІСІЯ ВИКОНАНА!</div>
+    </div>
+
+    <div class="rank-display">
+      <div class="rank-label">◆ ЗВАННЯ АГЕНТА ◆</div>
+      <div class="rank-value" id="rank-value">АГЕНТ</div>
+      <div class="rank-score">Фінальний рахунок: <span id="final-score">0</span></div>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="declassified-section">
+      <div class="declassified-title">РОЗСЕКРЕЧЕНІ ПОВІДОМЛЕННЯ</div>
+      <div id="declassified-items"></div>
+    </div>
+
+    <button class="new-mission-btn" onclick="newMission()">↺ НОВА МІСІЯ</button>
+  </div>
+</div>
+
+<!-- Voodoo Bonus Overlay -->
+<div class="voodoo-bonus" id="voodoo-bonus">
+  <div class="vb-title">🎰 VOODOO ACTIVATED!</div>
+  <div class="vb-pts">+50</div>
+  <div class="vb-sub">СЕКРЕТНИЙ КОД РОЗКРИТО</div>
+</div>
+
+<!-- Mission Complete Overlay -->
+<div class="overlay" id="mission-overlay">
+  <div class="overlay-box">
+    <span class="overlay-icon" id="ol-icon">✅</span>
+    <div class="overlay-title" id="ol-title">МІСІЯ ВИКОНАНА</div>
+    <div class="overlay-sub" id="ol-sub">Повідомлення розшифровано</div>
+    <button class="overlay-btn" id="ol-btn" onclick="nextMission()">НАСТУПНА МІСІЯ →</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// CIPHER SYSTEM
+// ══════════════════════════════════════════════════════════════════════════
+
+const CIPHER = {
+  A:'@', E:'3', I:'!', O:'0', U:'^',
+  B:'|3', C:'<', D:'|)', F:'|=', G:'9', H:'|-|', J:'_|', K:'|<',
+  L:'|_', M:'|\\/|', N:'|\\|', P:'|°', Q:'0_', R:'|2', S:'5',
+  T:'7', V:'\\/', W:'\\/\\/', X:'><', Y:'`/', Z:'2'
+};
+
+const REVERSE_CIPHER = {};
+for (const [letter, sym] of Object.entries(CIPHER)) {
+  REVERSE_CIPHER[sym] = letter;
+}
+
+// All cipher entries sorted by symbol length descending (for proper parsing)
+const CIPHER_ENTRIES = Object.entries(CIPHER).sort((a,b) => b[1].length - a[1].length);
+
+function encodeWord(word, difficulty) {
+  const upper = word.toUpperCase();
+  let result = '';
+  let i = 0;
+  const vowels = 'AEIOU';
+
+  while (i < upper.length) {
+    const ch = upper[i];
+    if (!/[A-Z]/.test(ch)) { result += ch; i++; continue; }
+
+    let shouldEncode = false;
+    if (difficulty === 'ghost') {
+      shouldEncode = true;
+    } else if (difficulty === 'agent') {
+      shouldEncode = (i % 2 === 0) || vowels.includes(ch);
+    } else { // rookie
+      shouldEncode = vowels.includes(ch);
+    }
+
+    if (shouldEncode && CIPHER[ch]) {
+      result += CIPHER[ch];
+    } else {
+      result += ch;
+    }
+    i++;
+  }
+  return result;
+}
+
+function decodeSymbols(encoded) {
+  // Try to decode a fully encoded symbol string back to letters
+  const upper = encoded.toUpperCase();
+  let result = '';
+  let i = 0;
+  while (i < upper.length) {
+    let matched = false;
+    // Try longest match first
+    for (const [letter, sym] of CIPHER_ENTRIES) {
+      if (upper.startsWith(sym, i)) {
+        result += letter;
+        i += sym.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      result += upper[i];
+      i++;
+    }
+  }
+  return result;
+}
+
+// Build symbol breakdown for a word
+function getBreakdown(encodedWord, originalWord) {
+  const upper = originalWord.toUpperCase();
+  const pairs = [];
+  let encIdx = 0;
+  let origIdx = 0;
+
+  while (origIdx < upper.length) {
+    const ch = upper[origIdx];
+    if (!/[A-Z]/.test(ch)) {
+      origIdx++;
+      encIdx++;
+      continue;
+    }
+    const sym = CIPHER[ch];
+    if (sym && encodedWord.slice(encIdx).startsWith(sym)) {
+      pairs.push({ sym, letter: ch });
+      encIdx += sym.length;
+    } else {
+      pairs.push({ sym: ch, letter: ch });
+      encIdx += 1;
+    }
+    origIdx++;
+  }
+  return pairs;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MISSIONS DATA
+// ══════════════════════════════════════════════════════════════════════════
+
+const MISSIONS = [
+  { id: 1, phrase: "THE AGENT READS THE SKY",    theme: "Вхід у систему",      timeLimit: 45 },
+  { id: 2, phrase: "DANGER COMES AT NIGHT",      theme: "Бойова тривога",      timeLimit: 40 },
+  { id: 3, phrase: "SPEAK THE CODE WORD",         theme: "Комунікація",        timeLimit: 40 },
+  { id: 4, phrase: "FIND THE SECRET BASE",        theme: "Пошук об'єкту",      timeLimit: 38 },
+  { id: 5, phrase: "MISSION COMPLETE VICTORY",   theme: "Фінальна операція",   timeLimit: 50 }
+];
+
+// ══════════════════════════════════════════════════════════════════════════
+// GAME STATE
+// ══════════════════════════════════════════════════════════════════════════
+
+let state = {
+  difficulty: 'rookie',
+  currentMission: 0,
+  score: 0,
+  totalScore: 0,
+  clearance: 0,
+  timer: 45,
+  timerInterval: null,
+  selectedWordIdx: null,
+  wordAttempts: {},
+  wordSolved: {},
+  hintsUsed: 0,
+  wrongGuesses: 0,
+  correctGuesses: 0,
+  missionStartTime: 0,
+  missionTimes: [],
+  bonusMissionUnlocked: false,
+  currentEncodedWords: [],
+  currentOriginalWords: [],
+  missionComplete: false,
+  allDecodedPhrases: []
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// BRIEFING / TERMINAL
+// ══════════════════════════════════════════════════════════════════════════
+
+const terminalLines = [
+  '> ПІДКЛЮЧЕННЯ ДО БАЗИ...',
+  '> АВТЕНТИФІКАЦІЯ... OK',
+  '> РІВЕНЬ ДОПУСКУ: МАКСИМАЛЬНИЙ',
+  '> Агент, ваша місія — розшифрувати',
+  '  перехоплені повідомлення ворога.',
+  '> Кожне слово закодоване символами.',
+  '> Час обмежений. Точність критична.',
+  '> Провалу бути не може. Удачі.',
+  '> _'
+];
+
+let termIdx = 0, charIdx = 0, termDone = false;
+
+function typeTerminal() {
+  const el = document.getElementById('terminal-text');
+  const cur = document.getElementById('terminal-cursor');
+  if (termIdx >= terminalLines.length) {
+    cur.style.display = 'inline-block';
+    return;
+  }
+  const line = terminalLines[termIdx];
+  if (charIdx < line.length) {
+    el.textContent += line[charIdx];
+    charIdx++;
+    setTimeout(typeTerminal, charIdx === 1 ? 40 : 25);
+  } else {
+    el.textContent += '\n';
+    termIdx++;
+    charIdx = 0;
+    setTimeout(typeTerminal, termIdx < 3 ? 120 : 60);
+  }
+}
+
+function selectDifficulty(diff, el) {
+  state.difficulty = diff;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function startGame() {
+  state.currentMission = 0;
+  state.score = 0;
+  state.clearance = 0;
+  state.hintsUsed = 0;
+  state.wrongGuesses = 0;
+  state.correctGuesses = 0;
+  state.allDecodedPhrases = [];
+  state.bonusMissionUnlocked = false;
+  showScreen('screen-mission');
+  buildCipherRef();
+  loadMission(0);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MISSION LOADING
+// ══════════════════════════════════════════════════════════════════════════
+
+function loadMission(idx) {
+  if (idx >= MISSIONS.length) {
+    showDebrief();
+    return;
+  }
+
+  const mission = MISSIONS[idx];
+  state.selectedWordIdx = null;
+  state.wordAttempts = {};
+  state.wordSolved = {};
+  state.missionComplete = false;
+  state.missionStartTime = Date.now();
+
+  // Split phrase into words
+  const words = mission.phrase.split(' ');
+  state.currentOriginalWords = words;
+  state.currentEncodedWords = words.map(w => encodeWord(w, state.difficulty));
+
+  // HUD
+  document.getElementById('hud-mission-num').textContent = idx + 1;
+  document.getElementById('hud-score').textContent = state.score;
+
+  // Timer
+  clearInterval(state.timerInterval);
+  state.timer = mission.timeLimit;
+  updateTimerDisplay();
+  state.timerInterval = setInterval(timerTick, 1000);
+
+  // Render encrypted words
+  renderEncryptedLine();
+
+  // Word progress chips
+  renderProgressChips();
+
+  // Decode panel hidden
+  hideDecodePanel();
+
+  // Clear log
+  document.getElementById('log-entries').innerHTML = '';
+  addLog(`info`, `◆ МІСІЯ ${idx+1}: ${mission.theme}`);
+  addLog(`info`, `> Оперативний час: ${mission.timeLimit}с`);
+
+  // Hint btn
+  document.getElementById('hint-btn').disabled = false;
+}
+
+function renderEncryptedLine() {
+  const el = document.getElementById('encrypted-line');
+  el.innerHTML = '';
+
+  state.currentEncodedWords.forEach((encWord, i) => {
+    const div = document.createElement('div');
+    div.className = 'enc-word';
+    div.id = `enc-word-${i}`;
+
+    if (state.wordSolved[i]) {
+      div.classList.add('solved');
+      div.textContent = state.currentOriginalWords[i];
+    } else {
+      div.textContent = encWord;
+      div.onclick = () => selectWord(i);
+    }
+
+    el.appendChild(div);
+  });
+}
+
+function renderProgressChips() {
+  const el = document.getElementById('progress-words');
+  el.innerHTML = '';
+  state.currentOriginalWords.forEach((w, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'word-chip' + (state.wordSolved[i] ? ' done' : '');
+    chip.id = `chip-${i}`;
+    chip.textContent = state.wordSolved[i] ? w : `W${i+1}`;
+    el.appendChild(chip);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// TIMER
+// ══════════════════════════════════════════════════════════════════════════
+
+function timerTick() {
+  if (state.missionComplete) return;
+  state.timer--;
+  updateTimerDisplay();
+  if (state.timer <= 0) {
+    clearInterval(state.timerInterval);
+    handleTimeout();
+  }
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('hud-timer');
+  el.textContent = `⏱ ${state.timer}s`;
+  el.classList.toggle('danger', state.timer <= 10);
+}
+
+function handleTimeout() {
+  addLog('fail', `⚠ ЧАС ВИЙШОВ!`);
+  // Still show mission failed overlay but continue
+  showMissionOverlay(false, 'ЧАС ВИЙШОВ', 'Шифр не розкрито вчасно. Продовжити?');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// WORD SELECTION & DECODE
+// ══════════════════════════════════════════════════════════════════════════
+
+function selectWord(idx) {
+  if (state.wordSolved[idx]) return;
+  if (state.missionComplete) return;
+
+  state.selectedWordIdx = idx;
+
+  // Update visual selection
+  document.querySelectorAll('.enc-word').forEach((el, i) => {
+    el.classList.toggle('selected', i === idx);
+  });
+
+  showDecodePanel(idx);
+}
+
+function showDecodePanel(idx) {
+  const panel = document.getElementById('decode-panel');
+  panel.classList.add('visible');
+
+  const encWord = state.currentEncodedWords[idx];
+  const origWord = state.currentOriginalWords[idx];
+
+  // Show encoded word
+  document.getElementById('decode-word-display').textContent = encWord;
+
+  // Build breakdown
+  const breakdownEl = document.getElementById('decode-breakdown');
+  breakdownEl.innerHTML = '';
+  const pairs = getBreakdown(encWord, origWord);
+  pairs.forEach(pair => {
+    if (pair.sym === pair.letter) return; // not encoded
+    const div = document.createElement('div');
+    div.className = 'decode-pair';
+    div.innerHTML = `<span class="sym">${escHtml(pair.sym)}</span><span class="arrow">→</span><span class="letter">${pair.letter}</span>`;
+    breakdownEl.appendChild(div);
+  });
+
+  if (breakdownEl.children.length === 0) {
+    breakdownEl.innerHTML = `<span style="color:var(--text-dim);font-size:11px">Символи відповідають літерам без змін</span>`;
+  }
+
+  // Attempts
+  const attempts = state.wordAttempts[idx] || 0;
+  const attEl = document.getElementById('attempts-display');
+  attEl.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'attempt-dot' + (i < attempts ? ' used' : '');
+    attEl.appendChild(dot);
+  }
+
+  // Input
+  const input = document.getElementById('decode-input');
+  input.value = '';
+  input.focus();
+
+  // Feedback
+  document.getElementById('decode-feedback').textContent = '';
+  document.getElementById('decode-feedback').className = 'decode-feedback';
+}
+
+function hideDecodePanel() {
+  document.getElementById('decode-panel').classList.remove('visible');
+  document.querySelectorAll('.enc-word').forEach(el => el.classList.remove('selected'));
+  state.selectedWordIdx = null;
+}
+
+function confirmDecode() {
+  if (state.selectedWordIdx === null) return;
+
+  const idx = state.selectedWordIdx;
+  const input = document.getElementById('decode-input');
+  const guess = input.value.trim().toUpperCase();
+
+  if (!guess) return;
+
+  const correct = state.currentOriginalWords[idx].toUpperCase();
+
+  // Easter egg: VOODOO
+  if (guess === 'VOODOO') {
+    triggerVoodooBonus();
+    input.value = '';
+    return;
+  }
+
+  if (guess === correct) {
+    // Correct!
+    state.wordSolved[idx] = true;
+    state.correctGuesses++;
+    state.score += 10;
+    document.getElementById('hud-score').textContent = state.score;
+
+    // Flash correct
+    const wordEl = document.getElementById(`enc-word-${idx}`);
+    wordEl.classList.add('flash-correct');
+    setTimeout(() => {
+      wordEl.classList.remove('flash-correct');
+      wordEl.classList.add('solved');
+      wordEl.textContent = correct;
+      wordEl.onclick = null;
+    }, 400);
+
+    // Update chip
+    const chip = document.getElementById(`chip-${idx}`);
+    chip.classList.add('done');
+    chip.textContent = correct;
+
+    // Clearance
+    const totalWords = state.currentOriginalWords.length;
+    const solvedCount = Object.keys(state.wordSolved).length;
+    const missionClearance = Math.floor((solvedCount / totalWords) * 20);
+    state.clearance = Math.min(100, state.clearance + missionClearance);
+    updateClearanceBar();
+
+    addLog('success', `✓ "${correct}" — +10 pts`);
+
+    // Matrix rain effect
+    spawnMatrixChars(wordEl);
+
+    // Reveal typewriter
+    typewriterReveal(wordEl, correct);
+
+    // Check if mission complete
+    hideDecodePanel();
+
+    if (Object.keys(state.wordSolved).length === state.currentOriginalWords.length) {
+      completeMission();
+    }
+
+    // Check clearance 100%
+    if (state.clearance >= 100 && !state.bonusMissionUnlocked) {
+      state.bonusMissionUnlocked = true;
+      addLog('special', `🔓 СЕКРЕТНА МІСІЯ РОЗБЛОКОВАНА!`);
+    }
+
+  } else {
+    // Wrong
+    state.wordAttempts[idx] = (state.wordAttempts[idx] || 0) + 1;
+    state.wrongGuesses++;
+    state.score = Math.max(0, state.score - 2);
+    document.getElementById('hud-score').textContent = state.score;
+
+    const wordEl = document.getElementById(`enc-word-${idx}`);
+    wordEl.classList.add('flash-wrong');
+    setTimeout(() => wordEl.classList.remove('flash-wrong'), 500);
+
+    const attempts = state.wordAttempts[idx];
+    const fb = document.getElementById('decode-feedback');
+    fb.className = 'decode-feedback wrong';
+    fb.textContent = attempts >= 3 ? `✗ Невірно (3/3) — авто-підказка` : `✗ Невірно (${attempts}/3) — спробуй знову`;
+
+    addLog('fail', `✗ "${guess}" невірно — -2 pts`);
+
+    // Update attempt dots
+    const attEl = document.getElementById('attempts-display');
+    const dots = attEl.querySelectorAll('.attempt-dot');
+    dots.forEach((d, i) => d.classList.toggle('used', i < attempts));
+
+    if (attempts >= 3) {
+      // Auto-hint
+      setTimeout(() => useHint(true), 400);
+    }
+
+    input.value = '';
+    input.focus();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// HINT
+// ══════════════════════════════════════════════════════════════════════════
+
+function useHint(auto = false) {
+  if (state.selectedWordIdx === null) return;
+  const idx = state.selectedWordIdx;
+  if (state.wordSolved[idx]) return;
+
+  state.hintsUsed++;
+  if (!auto) {
+    state.score = Math.max(0, state.score - 5);
+    document.getElementById('hud-score').textContent = state.score;
+    addLog('info', `💡 Підказка використана — -5 pts`);
+  }
+
+  const correct = state.currentOriginalWords[idx];
+  const hint = correct.length <= 3
+    ? correct[0] + '_'.repeat(correct.length - 1)
+    : correct[0] + correct[1] + '_'.repeat(correct.length - 2);
+
+  const fb = document.getElementById('decode-feedback');
+  fb.className = 'decode-feedback';
+  fb.style.color = 'var(--gold)';
+  fb.textContent = `💡 Підказка: ${hint} (${correct.length} літер)`;
+
+  const input = document.getElementById('decode-input');
+  input.focus();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// MISSION COMPLETE
+// ══════════════════════════════════════════════════════════════════════════
+
+function completeMission() {
+  state.missionComplete = true;
+  clearInterval(state.timerInterval);
+
+  const timeBonus = state.timer;
+  const missionBase = 50;
+  const missionTotal = missionBase + timeBonus;
+  state.score += missionTotal;
+  document.getElementById('hud-score').textContent = state.score;
+
+  const elapsed = Math.floor((Date.now() - state.missionStartTime) / 1000);
+  state.missionTimes.push(elapsed);
+
+  // Store phrase
+  state.allDecodedPhrases.push({
+    missionId: state.currentMission + 1,
+    phrase: MISSIONS[state.currentMission].phrase
+  });
+
+  addLog('success', `✅ МІСІЯ ${state.currentMission + 1} ВИКОНАНА!`);
+  addLog('special', `🏅 +${missionBase} базових + +${timeBonus} бонус швидкості`);
+
+  setTimeout(() => {
+    showMissionOverlay(true,
+      state.currentMission < MISSIONS.length - 1 ? 'МІСІЯ ВИКОНАНА' : 'ВСІ МІСІЇ ВИКОНАНІ',
+      `+${missionBase} базових очків\n+${timeBonus} за швидкість`
+    );
+  }, 600);
+}
+
+function showMissionOverlay(success, title, sub) {
+  document.getElementById('ol-icon').textContent = success ? '✅' : '⏰';
+  document.getElementById('ol-title').textContent = title;
+  document.getElementById('ol-sub').textContent = sub;
+
+  const btn = document.getElementById('ol-btn');
+  if (state.currentMission >= MISSIONS.length - 1) {
+    btn.textContent = 'ДЕБРИФІНГ →';
+  } else {
+    btn.textContent = success ? 'НАСТУПНА МІСІЯ →' : 'ПРОПУСТИТИ →';
+  }
+
+  document.getElementById('mission-overlay').classList.add('show');
+}
+
+function nextMission() {
+  document.getElementById('mission-overlay').classList.remove('show');
+  state.currentMission++;
+  if (state.currentMission >= MISSIONS.length) {
+    showDebrief();
+  } else {
+    loadMission(state.currentMission);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// DEBRIEF
+// ══════════════════════════════════════════════════════════════════════════
+
+function showDebrief() {
+  clearInterval(state.timerInterval);
+  showScreen('screen-debrief');
+
+  const totalScore = state.score;
+  const missionsCompleted = state.allDecodedPhrases.length;
+  const success = missionsCompleted >= 3;
+
+  // Result
+  document.getElementById('result-icon').textContent = success ? '🏅' : '💀';
+  const titleEl = document.getElementById('result-title');
+  titleEl.textContent = success ? 'МІСІЯ ВИКОНАНА!' : 'ПРОВАЛ ОПЕРАЦІЇ';
+  titleEl.className = 'result-title ' + (success ? 'success' : 'fail');
+
+  // Rank
+  let rank = 'Стажер';
+  if (totalScore >= 400) rank = 'Генерал Розвідки';
+  else if (totalScore >= 250) rank = 'Старший Агент';
+  else if (totalScore >= 100) rank = 'Агент';
+
+  document.getElementById('rank-value').textContent = rank;
+  document.getElementById('final-score').textContent = totalScore;
+
+  // Stats
+  const accuracy = state.correctGuesses + state.wrongGuesses > 0
+    ? Math.round((state.correctGuesses / (state.correctGuesses + state.wrongGuesses)) * 100)
+    : 0;
+  const avgTime = state.missionTimes.length > 0
+    ? Math.round(state.missionTimes.reduce((a,b) => a+b, 0) / state.missionTimes.length)
+    : 0;
+
+  const statsEl = document.getElementById('stats-grid');
+  statsEl.innerHTML = `
+    <div class="stat-card"><span class="stat-val">${missionsCompleted}</span><span class="stat-label">МІСІЙ ВИКОНАНО</span></div>
+    <div class="stat-card"><span class="stat-val">${accuracy}%</span><span class="stat-label">ТОЧНІСТЬ</span></div>
+    <div class="stat-card"><span class="stat-val">${state.hintsUsed}</span><span class="stat-label">ПІДКАЗОК ВИКОРИСТАНО</span></div>
+    <div class="stat-card"><span class="stat-val">${avgTime}с</span><span class="stat-label">СЕР. ЧАС НА МІСІЮ</span></div>
+  `;
+
+  // Declassified
+  const declEl = document.getElementById('declassified-items');
+  declEl.innerHTML = '';
+  MISSIONS.forEach((m, i) => {
+    const decoded = state.allDecodedPhrases.find(p => p.missionId === i + 1);
+    const div = document.createElement('div');
+    div.className = 'declassified-item';
+    div.innerHTML = `
+      <span class="mission-num">МІСІЯ ${i+1} — ${m.theme}</span>
+      <span class="mission-text">${decoded ? m.phrase : '[ЗАШИФРОВАНО]'}</span>
+    `;
+    if (!decoded) div.style.opacity = '0.4';
+    declEl.appendChild(div);
+  });
+}
+
+function newMission() {
+  showScreen('screen-briefing');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// CLEARANCE BAR
+// ══════════════════════════════════════════════════════════════════════════
+
+function updateClearanceBar() {
+  const pct = Math.min(100, state.clearance);
+  document.getElementById('clearance-fill').style.width = pct + '%';
+  document.getElementById('clearance-pct').textContent = pct + '%';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// CIPHER REFERENCE
+// ══════════════════════════════════════════════════════════════════════════
+
+function buildCipherRef() {
+  const grid = document.getElementById('cipher-grid');
+  grid.innerHTML = '';
+  const entries = Object.entries(CIPHER);
+  entries.forEach(([letter, sym]) => {
+    const div = document.createElement('div');
+    div.className = 'cipher-item';
+    div.innerHTML = `<span class="c-sym">${escHtml(sym)}</span><span class="c-eq">=</span><span class="c-let">${letter}</span>`;
+    grid.appendChild(div);
+  });
+}
+
+let cipherOpen = true;
+function toggleCipher() {
+  cipherOpen = !cipherOpen;
+  const grid = document.getElementById('cipher-grid');
+  const toggle = document.getElementById('cipher-toggle');
+  grid.style.display = cipherOpen ? 'grid' : 'none';
+  toggle.textContent = cipherOpen ? '▼' : '▶';
+  toggle.classList.toggle('open', cipherOpen);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// VOODOO EASTER EGG
+// ══════════════════════════════════════════════════════════════════════════
+
+function triggerVoodooBonus() {
+  state.score += 50;
+  document.getElementById('hud-score').textContent = state.score;
+  addLog('special', `🎰 VOODOO БОНУС! +50 pts`);
+
+  const bonus = document.getElementById('voodoo-bonus');
+  bonus.classList.add('show');
+
+  // Spawn matrix chars
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => spawnRandomMatrixChar(), i * 50);
+  }
+
+  setTimeout(() => bonus.classList.remove('show'), 3000);
+  document.getElementById('decode-input').value = '';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ══════════════════════════════════════════════════════════════════════════
+
+function spawnMatrixChars(el) {
+  const rect = el.getBoundingClientRect();
+  const chars = '01@#$%^&*!<>[]{}';
+  for (let i = 0; i < 8; i++) {
+    setTimeout(() => {
+      const c = document.createElement('div');
+      c.className = 'matrix-char';
+      c.textContent = chars[Math.floor(Math.random() * chars.length)];
+      c.style.left = (rect.left + Math.random() * rect.width) + 'px';
+      c.style.top = (rect.top + Math.random() * rect.height) + 'px';
+      c.style.color = Math.random() > 0.5 ? 'var(--green)' : 'var(--gold)';
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 1000);
+    }, i * 60);
+  }
+}
+
+function spawnRandomMatrixChar() {
+  const chars = 'VOODOO01@#$!<>[]{}MAGIC';
+  const c = document.createElement('div');
+  c.className = 'matrix-char';
+  c.textContent = chars[Math.floor(Math.random() * chars.length)];
+  c.style.left = Math.random() * window.innerWidth + 'px';
+  c.style.top = Math.random() * window.innerHeight + 'px';
+  c.style.color = ['var(--green)', 'var(--gold)', 'var(--purple)'][Math.floor(Math.random()*3)];
+  c.style.fontSize = (12 + Math.random() * 12) + 'px';
+  document.body.appendChild(c);
+  setTimeout(() => c.remove(), 1000);
+}
+
+function typewriterReveal(el, text) {
+  let i = 0;
+  el.textContent = '';
+  const iv = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i];
+      i++;
+    } else {
+      clearInterval(iv);
+    }
+  }, 60);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════════════════════════════════════
+
+function addLog(type, text) {
+  const el = document.getElementById('log-entries');
+  const div = document.createElement('div');
+  div.className = `log-entry ${type}`;
+  const time = new Date().toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  div.textContent = `[${time}] ${text}`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════════════
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════
+
+// Start terminal typing on load
+setTimeout(typeTerminal, 600);
+
+// Keyboard shortcut: Enter on briefing screen
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    hideDecodePanel();
+  }
+});
+</script>
+</body>
+</html>

@@ -2176,15 +2176,25 @@ const FX = {
 // ===== GAMES TAB =====
 
 const GAMES_LIST = [
-  { id: 'tamagotchi',name: 'Tamagotchi',   icon: '🥚', desc: 'Годуй, грайся та виховуй свого компаньона!',   xp: 0,   tc: 'tc-green', hot: true,  locked: false, comp: null },
-  { id: 'fasttap',   name: 'Fast Tap Quiz', icon: '⚡', desc: '5 слів за 30 сек. Тапай правильний варіант!',   xp: 30,  tc: 'tc-blue',  hot: false, locked: false, comp: null },
-  { id: 'matchpairs',name: 'Match Pairs',   icon: '🃏', desc: 'З\'єднай слово з перекладом. Flip-card механіка.', xp: 20,  tc: 'tc-green', hot: false, locked: false, comp: null },
-  { id: 'guessword', name: 'Guess the Word',icon: '🎯', desc: 'Три підказки → назви слово. 3 спроби.',          xp: 15,  tc: 'tc-blue',  hot: false, locked: false, comp: null },
-  { id: 'memory',    name: 'Memory Cards',  icon: '🧠', desc: 'Запам\'ятай і відтвори всі слова.',              xp: 20,  tc: 'tc-gold',  hot: false, locked: false, comp: null },
-  { id: 'build',     name: 'Build Sentence',icon: '🔤', desc: 'Склади речення із слів у правильному порядку.',  xp: 25,  tc: 'tc-green', hot: false, locked: true,  comp: null, reqWords: 10 },
-  { id: 'synonym',   name: 'Synonym Hunt',  icon: '🔀', desc: 'Знайди синонім серед 4 варіантів.',              xp: 15,  tc: 'tc-red',   hot: false, locked: true,  comp: null, reqWords: 10 },
-  { id: 'battle',    name: 'Word Battle',   icon: '⚔️', desc: 'PvP режим проти інших учнів у реальному часі!', xp: 50,  tc: 'tc-gold',  hot: false, locked: true,  comp: null, reqWords: 30 },
-  { id: 'daily',     name: 'Daily Challenge',icon: '🌊', desc: 'Щоденний виклик. Обмежений час. Топ нагороди.', xp: 100, tc: 'tc-red',   hot: false, locked: true,  comp: null, reqWords: 30 },
+  // ── Inline games (built-in JS) ───────────────────────────────────────
+  { id: 'tamagotchi',  name: 'Tamagotchi',      icon: '🥚', desc: 'Виховуй свого компаньона!',             xp: 0,   tc: 'tc-green', hot: true,  locked: false },
+  { id: 'fasttap',     name: 'Fast Tap Quiz',   icon: '⚡', desc: '5 слів за 30 сек — тапай правильний!',  xp: 30,  tc: 'tc-blue',  hot: false, locked: false },
+  { id: 'matchpairs',  name: 'Match Pairs',     icon: '🃏', desc: 'З\'єднай слово з перекладом.',           xp: 20,  tc: 'tc-green', hot: false, locked: false },
+  { id: 'guessword',   name: 'Guess the Word',  icon: '🎯', desc: 'Три підказки → назви слово.',            xp: 15,  tc: 'tc-blue',  hot: false, locked: false },
+  { id: 'memory',      name: 'Memory Cards',    icon: '🧠', desc: 'Запам\'ятай і відтвори всі слова.',      xp: 20,  tc: 'tc-gold',  hot: false, locked: false },
+  // ── Iframe games (full mockups) ──────────────────────────────────────
+  { id: 'connections', name: 'Connections',     icon: '🔗', desc: 'Знайди 4 групи споріднених слів!',       xp: 40,  tc: 'tc-blue',  hot: true,  locked: false, file: 'new_16_connections.html' },
+  { id: 'wordraid',    name: 'Word Raid',       icon: '⚔️', desc: 'RPG боїться — перемагай босів словами!', xp: 60,  tc: 'tc-red',   hot: true,  locked: false, file: 'new_27_wordraid.html' },
+  { id: 'crossword',   name: 'Daily Crossword', icon: '✏️', desc: 'Щоденний кросворд 7×7.',                 xp: 50,  tc: 'tc-gold',  hot: false, locked: false, file: 'new_22_crossword.html' },
+  { id: 'wordrace',    name: 'Word Race',       icon: '🏎️', desc: 'Гонка слів — хто швидший?',              xp: 35,  tc: 'tc-blue',  hot: false, locked: false, file: 'new_21_wordrace.html' },
+  { id: 'rozvidnyk',   name: 'Розвідник',       icon: '🕵️', desc: 'Розшифруй секретні повідомлення!',       xp: 45,  tc: 'tc-green', hot: false, locked: false, file: 'new_26_rozvidnyk.html' },
+  { id: 'evolution',   name: 'Word Evolution',  icon: '🧬', desc: 'Еволюція слів — Darwin ranking!',         xp: 40,  tc: 'tc-gold',  hot: false, locked: false, file: 'new_24_evolution.html' },
+  { id: 'wordchain',   name: 'Word Chain',      icon: '⛓️', desc: 'Ланцюг слів — не розривай!',              xp: 35,  tc: 'tc-green', hot: false, locked: false, file: 'new_25_wordchain.html' },
+  { id: 'codenames',   name: 'Codenames',       icon: '🔐', desc: 'Шпигунська гра зі словами.',              xp: 50,  tc: 'tc-red',   hot: false, locked: false, file: 'new_23_codenames.html' },
+  { id: 'auction',     name: 'Word Auction',    icon: '🔨', desc: 'Торгуйся за правильні слова!',            xp: 45,  tc: 'tc-gold',  hot: false, locked: false, file: 'new_19_auction.html' },
+  { id: 'balderdash',  name: 'Balderdash',      icon: '🎭', desc: 'Придумай найпереконливіше визначення!',   xp: 40,  tc: 'tc-blue',  hot: false, locked: false, file: 'new_20_balderdash.html' },
+  { id: 'papers',      name: 'Papers Please',   icon: '🛂', desc: 'Граматична перевірка документів.',         xp: 55,  tc: 'tc-red',   hot: false, locked: false, file: 'new_17_papers.html' },
+  { id: 'dating',      name: 'Word Dating',     icon: '💘', desc: 'Свайпай слова — підбери пару!',            xp: 30,  tc: 'tc-green', hot: false, locked: false, file: 'new_18_dating.html' },
 ];
 
 function renderGames() {
@@ -2233,13 +2243,77 @@ function renderGames() {
 }
 
 function startGame(id) {
+  // Inline games
   if (id === 'tamagotchi') { startTamagotchiMode(); return; }
-  if (id === 'fasttap') { startFastTapGame(); return; }
+  if (id === 'fasttap')    { startFastTapGame();    return; }
   if (id === 'matchpairs') { startMatchPairsGame(); return; }
-  if (id === 'guessword') { startGuessWordGame(); return; }
-  if (id === 'memory') { startMemoryGame(); return; }
+  if (id === 'guessword')  { startGuessWordGame();  return; }
+  if (id === 'memory')     { startMemoryGame();     return; }
+
+  // Iframe games (full mockups)
+  const game = GAMES_LIST.find(function(g) { return g.id === id; });
+  if (game && game.file) {
+    openGameIframe('/games/' + game.file, game.name, game.xp);
+    return;
+  }
   showToast('🚧 Незабаром!', 'success');
 }
+
+function openGameIframe(url, name, xpReward) {
+  var overlay = document.getElementById('gameOverlay');
+  var iframe  = document.getElementById('gameIframe');
+  var title   = document.getElementById('gameOverlayTitle');
+  iframe.src  = url;
+  title.textContent = '🎮 ' + (name || 'Гра');
+  overlay.classList.remove('hidden');
+  // Store expected XP so postMessage handler knows what to give
+  overlay.dataset.xp = xpReward || 0;
+  overlay.dataset.gameName = name || '';
+  // Hide main UI chrome while game is open
+  document.getElementById('tabs').style.display = 'none';
+  document.querySelector('.header').style.display = 'none';
+}
+
+function closeGameIframe() {
+  var overlay = document.getElementById('gameOverlay');
+  var iframe  = document.getElementById('gameIframe');
+  iframe.src  = '';
+  overlay.classList.add('hidden');
+  document.getElementById('tabs').style.display = '';
+  document.querySelector('.header').style.display = '';
+}
+
+// Listen for XP messages from iframe games
+window.addEventListener('message', function(event) {
+  var data = event.data;
+  if (!data || typeof data !== 'object') return;
+
+  // Game sends: { type: 'GAME_OVER', xp: 50 } or { type: 'GAME_DONE', score: 3 }
+  if (data.type === 'GAME_OVER' || data.type === 'GAME_DONE' || data.type === 'VOODOO_XP') {
+    var overlay = document.getElementById('gameOverlay');
+    var awardXP = data.xp || parseInt(overlay.dataset.xp) || 0;
+    var gameName = overlay.dataset.gameName || 'гри';
+    closeGameIframe();
+    if (awardXP > 0) {
+      // Award XP to user
+      state.xp = (state.xp || 0) + awardXP;
+      // Show floating XP popup
+      var popup = document.createElement('div');
+      popup.className = 'xp-award-popup';
+      popup.textContent = '+' + awardXP + ' XP 🎉';
+      document.body.appendChild(popup);
+      setTimeout(function() { popup.remove(); }, 3000);
+      // Sync to server
+      if (state.tgId) {
+        fetch('/api/progress', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ tg_id: state.tgId, xp_delta: awardXP, source: gameName })
+        }).catch(function(){});
+      }
+    }
+  }
+});
 
 // ===== TAMAGOTCHI MODE =====
 const TAMA_FOODS = [

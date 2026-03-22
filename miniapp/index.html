@@ -34,6 +34,15 @@
       </div>
     </main>
 
+    <!-- GAME IFRAME OVERLAY (full-screen game launcher) -->
+    <div id="gameOverlay" class="game-overlay hidden">
+      <div class="game-overlay-bar">
+        <span id="gameOverlayTitle">🎮 Гра</span>
+        <button class="game-close-btn" onclick="closeGameIframe()">✕ Вийти</button>
+      </div>
+      <iframe id="gameIframe" class="game-iframe" src="" allow="accelerometer; autoplay"></iframe>
+    </div>
+
     <!-- BOTTOM TABS -->
     <nav class="tabs" id="tabs">
       <button class="tab active" data-tab="home" onclick="switchTab('home')">🏠<span>Дім</span></button>

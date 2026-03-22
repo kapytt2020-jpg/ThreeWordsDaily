@@ -1,0 +1,1782 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Inspector — Voodoo English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: rgba(124,58,237,0.25);
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --gold: #f59e0b;
+    --red: #ef4444;
+    --green: #10b981;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --doc-bg: #f5f0e8;
+    --doc-border: #c4b896;
+    --doc-text: #1a1a1a;
+    --doc-muted: #5a5040;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  .screen.active { display: flex; }
+
+  /* ── BRIEFING SCREEN ── */
+  #screen-briefing {
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,58,237,0.18) 0%, transparent 70%),
+      var(--bg);
+  }
+
+  .briefing-wrap {
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .badge-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .badge {
+    background: linear-gradient(135deg, var(--purple), #4f1fa0);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 4px;
+  }
+
+  .day-counter {
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .game-title {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #fff 30%, var(--purple-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .game-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .rules-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: left;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rules-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--purple), var(--gold));
+  }
+
+  .rules-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .rules-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .rule-item {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.8;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    gap: 10px;
+  }
+  .rule-item:last-child { border-bottom: none; }
+
+  .rule-bullet {
+    color: var(--purple-light);
+    flex-shrink: 0;
+  }
+
+  .btn-start {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--purple), #5b21b6);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  }
+
+  .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(124,58,237,0.55);
+  }
+  .btn-start:active { transform: translateY(0); }
+
+  /* ── GAME SCREEN ── */
+  #screen-game {
+    padding: 0;
+    justify-content: flex-start;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+      var(--bg);
+  }
+
+  .top-bar {
+    width: 100%;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .top-bar-brand {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--purple-light);
+    letter-spacing: 2px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .top-bar-stats {
+    display: flex;
+    gap: 16px;
+    margin-left: auto;
+    align-items: center;
+  }
+
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .stat-icon { font-size: 14px; }
+
+  #timer-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+    min-width: 36px;
+    text-align: center;
+    transition: color 0.3s;
+  }
+  #timer-display.warning { color: var(--red); animation: timerFlash 0.5s infinite; }
+
+  @keyframes timerFlash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .game-body {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  /* ── DOCUMENT PANEL ── */
+  .doc-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .doc-outer {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .document-card {
+    background: var(--doc-bg);
+    border: 2px solid var(--doc-border);
+    border-radius: 4px;
+    padding: 0;
+    box-shadow:
+      0 2px 0 #b8a880,
+      0 8px 32px rgba(0,0,0,0.6),
+      inset 0 0 40px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--doc-text);
+  }
+
+  .doc-header {
+    background: linear-gradient(135deg, #1a0a3e, #0d0520);
+    color: #e8d5ff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  .doc-header-seal {
+    width: 38px;
+    height: 38px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .doc-header-text { flex: 1; }
+
+  .doc-org {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .doc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+
+  .doc-serial {
+    font-size: 10px;
+    color: rgba(255,255,255,0.4);
+  }
+
+  .doc-body {
+    padding: 18px 20px;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 27px,
+      rgba(0,0,0,0.06) 27px,
+      rgba(0,0,0,0.06) 28px
+    );
+  }
+
+  .doc-field {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 8px;
+    min-height: 28px;
+  }
+
+  .doc-field-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--doc-muted);
+    min-width: 120px;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .doc-field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--doc-text);
+    border-bottom: 1px solid #c4b896;
+    flex: 1;
+    padding: 2px 4px;
+    letter-spacing: 0.5px;
+    line-height: 1.4;
+  }
+
+  .doc-field-value.highlight {
+    background: rgba(239,68,68,0.12);
+    border-bottom-color: var(--red);
+    color: #c0392b;
+    border-radius: 2px;
+  }
+
+  .doc-divider {
+    border: none;
+    border-top: 1px dashed #c4b896;
+    margin: 12px 0;
+  }
+
+  .doc-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.04);
+    border-top: 1px solid var(--doc-border);
+    font-size: 9px;
+    color: var(--doc-muted);
+    letter-spacing: 1px;
+  }
+
+  /* STAMP OVERLAY */
+  .stamp-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+  }
+
+  .stamp-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(36px, 8vw, 56px);
+    font-weight: 900;
+    letter-spacing: 6px;
+    border: 6px solid currentColor;
+    padding: 8px 20px;
+    border-radius: 8px;
+    transform: rotate(-25deg) scale(2);
+    opacity: 0;
+    transition: none;
+  }
+
+  .stamp-text.approve {
+    color: var(--green);
+    border-color: var(--green);
+    text-shadow: 0 0 20px rgba(16,185,129,0.5);
+  }
+
+  .stamp-text.reject {
+    color: var(--red);
+    border-color: var(--red);
+    text-shadow: 0 0 20px rgba(239,68,68,0.5);
+  }
+
+  @keyframes stampCrash {
+    0%   { transform: rotate(-25deg) scale(2.5) translateY(-30px); opacity: 0; }
+    35%  { transform: rotate(-25deg) scale(0.85);                  opacity: 1; }
+    50%  { transform: rotate(-25deg) scale(1.05);                  opacity: 1; }
+    65%  { transform: rotate(-25deg) scale(0.95);                  opacity: 1; }
+    100% { transform: rotate(-25deg) scale(1.0);                   opacity: 0.85; }
+  }
+
+  .stamp-text.animate {
+    animation: stampCrash 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* ── INSPECTION PANEL ── */
+  .inspect-panel {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .inspect-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inspect-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--purple-light);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .decision-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-approve, .btn-reject {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-approve {
+    background: linear-gradient(135deg, var(--green), #059669);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+  }
+  .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.45); }
+  .btn-approve:active { transform: scale(0.97); }
+
+  .btn-reject {
+    background: linear-gradient(135deg, var(--red), #dc2626);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+  }
+  .btn-reject:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239,68,68,0.45); }
+  .btn-reject:active { transform: scale(0.97); }
+
+  .btn-approve:disabled, .btn-reject:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .reason-block {
+    margin-top: 12px;
+    display: none;
+  }
+  .reason-block.visible { display: block; }
+
+  .reason-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .reason-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .reason-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+
+  .reason-option:hover { border-color: var(--red); background: rgba(239,68,68,0.08); }
+  .reason-option.selected { border-color: var(--red); background: rgba(239,68,68,0.15); color: #fca5a5; }
+
+  .reason-radio {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--muted);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .reason-option.selected .reason-radio {
+    border-color: var(--red);
+    background: var(--red);
+  }
+
+  .confirm-reject-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--red);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    display: none;
+    transition: opacity 0.15s;
+  }
+  .confirm-reject-btn:hover { opacity: 0.85; }
+
+  /* RULES PANEL */
+  .rules-list-panel {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+  }
+
+  .rule-chip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text);
+  }
+
+  .rule-chip-icon { font-size: 14px; flex-shrink: 0; }
+
+  /* progress indicator */
+  .doc-progress-bar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .doc-progress-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .doc-progress-track {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .doc-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* ── RESULTS SCREEN ── */
+  #screen-results {
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,58,237,0.2) 0%, transparent 70%),
+      var(--bg);
+  }
+
+  .results-wrap {
+    max-width: 520px;
+    width: 100%;
+    text-align: center;
+  }
+
+  .results-title {
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .results-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .score-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    flex: 1;
+    max-width: 140px;
+  }
+
+  .score-val {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .score-lbl {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .mistakes-list {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: left;
+    margin-bottom: 20px;
+  }
+
+  .mistakes-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .mistake-item {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .mistake-item:last-child { border-bottom: none; }
+  .mistake-doc { color: var(--gold); font-weight: 600; font-size: 12px; }
+  .mistake-txt { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .btn-next {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--purple), #5b21b6);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  }
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.55); }
+
+  /* ── WIN SCREEN ── */
+  #screen-win {
+    background:
+      radial-gradient(ellipse 60% 60% at 50% 0%, rgba(245,158,11,0.15) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgba(124,58,237,0.15) 0%, transparent 70%),
+      var(--bg);
+  }
+
+  .win-wrap { max-width: 520px; width: 100%; text-align: center; }
+
+  .win-emoji {
+    font-size: 64px;
+    margin-bottom: 12px;
+    animation: winBounce 0.6s ease;
+  }
+
+  @keyframes winBounce {
+    0%   { transform: scale(0) rotate(-10deg); }
+    60%  { transform: scale(1.2) rotate(5deg); }
+    80%  { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+
+  .win-title {
+    font-size: clamp(24px, 6vw, 42px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--gold), #fbbf24, var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+
+  .rank-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), #d97706);
+    color: #1a0a00;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 20px;
+    border-radius: 6px;
+    margin: 12px 0 24px;
+  }
+
+  .win-stats {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .win-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    min-width: 110px;
+  }
+
+  .win-stat-val { font-size: 28px; font-weight: 900; color: var(--gold); line-height: 1; }
+  .win-stat-lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; }
+
+  .share-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--gold), #d97706);
+    border: none;
+    border-radius: 10px;
+    color: #1a0a00;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.4);
+    margin-bottom: 12px;
+  }
+  .share-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,158,11,0.55); }
+
+  .replay-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .replay-btn:hover { border-color: var(--purple); color: var(--purple-light); }
+
+  /* ── FLASH OVERLAY ── */
+  #result-flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    transition: opacity 0.1s;
+  }
+  #result-flash.approve-flash { background: rgba(16,185,129,0.12); }
+  #result-flash.reject-flash  { background: rgba(239,68,68,0.12); }
+  @keyframes flash { 0%,100%{opacity:0} 20%{opacity:1} }
+  #result-flash.flashing { animation: flash 0.35s ease forwards; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 680px) {
+    .game-body { flex-direction: column; overflow-y: auto; }
+    .doc-panel { padding: 16px; min-height: 0; }
+    .inspect-panel {
+      width: 100%;
+      border-left: none;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .top-bar { flex-wrap: wrap; gap: 8px; }
+    .top-bar-brand { width: 100%; }
+    .top-bar-stats { margin-left: 0; }
+    .score-row { flex-wrap: wrap; }
+    .win-stats { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- FLASH OVERLAY -->
+<div id="result-flash"></div>
+
+<!-- ════════════════════════════════════
+     SCREEN 1 — BRIEFING
+════════════════════════════════════ -->
+<div id="screen-briefing" class="screen active">
+  <div class="briefing-wrap">
+    <div class="badge-row">
+      <div class="badge">Voodoo Academy</div>
+      <div class="day-counter" id="briefing-day">День 1 з 5</div>
+    </div>
+
+    <div class="game-title">📋 WORD INSPECTOR</div>
+    <div class="game-subtitle">Document Verification System</div>
+
+    <div class="rules-card">
+      <div class="rules-title">Сьогоднішні правила</div>
+      <div class="rule-item"><span class="rule-bullet">→</span> Усі документи мають бути на англійській мові</div>
+      <div class="rule-item"><span class="rule-bullet">→</span> Дата народження: формат DD/MM/YYYY</div>
+      <div class="rule-item"><span class="rule-bullet">→</span> Рівень мови не нижче B1 (A1/A2 = відхилити)</div>
+      <div class="rule-item"><span class="rule-bullet">→</span> Переклад повинен відповідати оригіналу</div>
+      <div class="rule-item"><span class="rule-bullet">→</span> Неіснуючі рівні (Z2, X1...) = відхилити</div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()">ПОЧИНАТИ РОБОТУ</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 2 — GAME
+════════════════════════════════════ -->
+<div id="screen-game" class="screen">
+  <div class="top-bar">
+    <div class="top-bar-brand">📋 WORD INSPECTOR</div>
+    <div class="top-bar-stats">
+      <div class="stat-pill">
+        <span class="stat-icon">⭐</span>
+        <span id="score-display">0</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">📄</span>
+        <span id="doc-count-display">0/5</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">⏱</span>
+        <span id="timer-display">60</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <!-- LEFT: document -->
+    <div class="doc-panel">
+      <div class="doc-outer">
+        <div class="document-card" id="document-card">
+
+          <div class="doc-header">
+            <div class="doc-header-seal">🎓</div>
+            <div class="doc-header-text">
+              <div class="doc-org">Voodoo Language Academy</div>
+              <div class="doc-title">STUDENT CARD</div>
+              <div class="doc-serial" id="doc-serial">REF-2026-001</div>
+            </div>
+          </div>
+
+          <div class="doc-body">
+            <div class="doc-field">
+              <div class="doc-field-label">Full Name</div>
+              <div class="doc-field-value" id="field-name">—</div>
+            </div>
+            <div class="doc-field">
+              <div class="doc-field-label">Date of Birth</div>
+              <div class="doc-field-value" id="field-dob">—</div>
+            </div>
+            <div class="doc-field">
+              <div class="doc-field-label">Language Level</div>
+              <div class="doc-field-value" id="field-level">—</div>
+            </div>
+            <div class="doc-field">
+              <div class="doc-field-label">Native Language</div>
+              <div class="doc-field-value" id="field-native">—</div>
+            </div>
+
+            <hr class="doc-divider">
+
+            <div class="doc-field">
+              <div class="doc-field-label">Target Word (EN)</div>
+              <div class="doc-field-value" id="field-word">—</div>
+            </div>
+            <div class="doc-field">
+              <div class="doc-field-label">Translation (UA)</div>
+              <div class="doc-field-value" id="field-translation">—</div>
+            </div>
+          </div>
+
+          <div class="doc-footer">
+            <span>VLA OFFICIAL DOCUMENT</span>
+            <span id="doc-date-issued">ISSUED: 22/03/2026</span>
+            <span>⚠ VERIFY BEFORE PROCESSING</span>
+          </div>
+        </div>
+
+        <!-- STAMP OVERLAY -->
+        <div class="stamp-overlay" id="stamp-overlay">
+          <div class="stamp-text" id="stamp-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: inspection panel -->
+    <div class="inspect-panel">
+
+      <div class="doc-progress-bar">
+        <div class="doc-progress-label">
+          <span>Прогрес</span>
+          <span id="progress-txt">0 / 5</span>
+        </div>
+        <div class="doc-progress-track">
+          <div class="doc-progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="inspect-section">
+        <div class="inspect-label">Рішення</div>
+        <div class="decision-btns">
+          <button class="btn-approve" id="btn-approve" onclick="makeDecision('approve')">✓ APPROVE</button>
+          <button class="btn-reject"  id="btn-reject"  onclick="showRejectOptions()">✗ REJECT</button>
+        </div>
+
+        <div class="reason-block" id="reason-block">
+          <div class="reason-label">Причина відхилення:</div>
+          <div class="reason-options" id="reason-options"></div>
+          <button class="confirm-reject-btn" id="confirm-reject-btn" onclick="confirmReject()">
+            ПІДТВЕРДИТИ ВІДХИЛЕННЯ
+          </button>
+        </div>
+      </div>
+
+      <div class="rules-list-panel">
+        <div class="inspect-label">Правила дня</div>
+        <div class="rule-chip"><span class="rule-chip-icon">🌐</span>Тільки англійська мова в документах</div>
+        <div class="rule-chip"><span class="rule-chip-icon">📅</span>Дата: DD/MM/YYYY (через слеш)</div>
+        <div class="rule-chip"><span class="rule-chip-icon">📊</span>Рівень: A1–C2 (не нижче B1)</div>
+        <div class="rule-chip"><span class="rule-chip-icon">🔤</span>Переклад = точна відповідність</div>
+        <div class="rule-chip"><span class="rule-chip-icon">✏️</span>Перевір орфографію слова</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 3 — DAY RESULTS
+════════════════════════════════════ -->
+<div id="screen-results" class="screen">
+  <div class="results-wrap">
+    <div class="results-title" id="results-title">День завершено!</div>
+    <div class="results-subtitle" id="results-day-label">День 1 з 5</div>
+
+    <div class="score-row">
+      <div class="score-card">
+        <div class="score-val" id="res-correct">0</div>
+        <div class="score-lbl">Правильно</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" id="res-coins" style="color:var(--gold)">0</div>
+        <div class="score-lbl">Монет</div>
+      </div>
+      <div class="score-card">
+        <div class="score-val" id="res-xp" style="color:var(--purple-light)">0</div>
+        <div class="score-lbl">XP</div>
+      </div>
+    </div>
+
+    <div class="mistakes-list" id="mistakes-list">
+      <div class="mistakes-title">Помилки</div>
+      <div id="mistakes-body"></div>
+    </div>
+
+    <button class="btn-next" id="btn-next-day" onclick="nextDay()">НАСТУПНИЙ ДЕНЬ →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     SCREEN 4 — WIN
+════════════════════════════════════ -->
+<div id="screen-win" class="screen">
+  <div class="win-wrap">
+    <div class="win-emoji">👮</div>
+    <div class="win-title">ВІДМІННА РОБОТА!</div>
+    <div style="font-size:13px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-bottom:8px;">Усі 5 днів завершено</div>
+
+    <div class="rank-badge" id="win-rank">Inspector</div>
+
+    <div class="win-stats">
+      <div class="win-stat">
+        <div class="win-stat-val" id="win-total-score">0</div>
+        <div class="win-stat-lbl">Рахунок</div>
+      </div>
+      <div class="win-stat">
+        <div class="win-stat-val" id="win-accuracy">0%</div>
+        <div class="win-stat-lbl">Точність</div>
+      </div>
+      <div class="win-stat">
+        <div class="win-stat-val" id="win-coins">0</div>
+        <div class="win-stat-lbl">Монет</div>
+      </div>
+      <div class="win-stat">
+        <div class="win-stat-val" id="win-xp">0</div>
+        <div class="win-stat-lbl">XP</div>
+      </div>
+    </div>
+
+    <button class="share-btn" onclick="shareResults()">📤 ПОДІЛИТИСЯ РЕЗУЛЬТАТОМ</button>
+    <button class="replay-btn" onclick="resetGame()">↩ ГРАТИ ЗНОВУ</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  DOCUMENTS DATABASE  (5 docs × 5 days = 25)
+// ═══════════════════════════════════════════════
+const DAYS = [
+  // DAY 1
+  [
+    {
+      serial: 'REF-2026-001',
+      name: 'Olena Kovalenko',
+      dob: '15/03/1998',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'apple',
+      translation: 'яблуко',
+      correct: true,
+      errorField: null,
+      errorReason: null,
+      reasons: []
+    },
+    {
+      serial: 'REF-2026-002',
+      name: 'Dmytro Hrytsenko',
+      dob: '07/11/1995',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'apple',
+      translation: 'апельсин',
+      correct: false,
+      errorField: 'field-translation',
+      errorReason: 'Неправильний переклад: "apple" = "яблуко", не "апельсин"',
+      reasons: ['wrong_translation','wrong_date','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-003',
+      name: 'Sofia Marchenko',
+      dob: '03-15-1998',
+      level: 'C1',
+      native: 'Ukrainian',
+      word: 'cat',
+      translation: 'кіт',
+      correct: false,
+      errorField: 'field-dob',
+      errorReason: 'Неправильний формат дати: "03-15-1998" → повинно бути 15/03/1998',
+      reasons: ['wrong_date','wrong_translation','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-004',
+      name: 'Ivan Petrenko',
+      dob: '22/06/2000',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'book',
+      translation: 'книга',
+      correct: true,
+      errorField: null,
+      errorReason: null,
+      reasons: []
+    },
+    {
+      serial: 'REF-2026-005',
+      name: 'Natalia Bondar',
+      dob: '19/09/1993',
+      level: 'Z2',
+      native: 'Ukrainian',
+      word: 'dog',
+      translation: 'собака',
+      correct: false,
+      errorField: 'field-level',
+      errorReason: 'Неіснуючий рівень: "Z2" — допустимі A1–C2',
+      reasons: ['wrong_level','wrong_date','wrong_translation','typo_word']
+    }
+  ],
+  // DAY 2
+  [
+    {
+      serial: 'REF-2026-006',
+      name: 'Andriy Savchenko',
+      dob: '30/12/1990',
+      level: 'C1',
+      native: 'Ukrainian',
+      word: 'house',
+      translation: 'будинок',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-007',
+      name: 'Yulia Tkachenko',
+      dob: '14/02/2001',
+      level: 'A2',
+      native: 'Ukrainian',
+      word: 'sun',
+      translation: 'сонце',
+      correct: false,
+      errorField: 'field-level',
+      errorReason: 'Рівень A2 нижче мінімального B1 — відхилити',
+      reasons: ['wrong_level','wrong_date','wrong_translation','typo_word']
+    },
+    {
+      serial: 'REF-2026-008',
+      name: 'Mykola Lysenko',
+      dob: '08/08/1988',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'moon',
+      translation: 'місяць',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-009',
+      name: 'Oksana Rudenko',
+      dob: '25/05/1997',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'watar',
+      translation: 'вода',
+      correct: false,
+      errorField: 'field-word',
+      errorReason: 'Помилка у слові: "watar" → правильно "water"',
+      reasons: ['typo_word','wrong_date','wrong_translation','wrong_level']
+    },
+    {
+      serial: 'REF-2026-010',
+      name: 'Taras Shevchuk',
+      dob: '11/07/1985',
+      level: 'C2',
+      native: 'Ukrainian',
+      word: 'fire',
+      translation: 'вогонь',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    }
+  ],
+  // DAY 3
+  [
+    {
+      serial: 'REF-2026-011',
+      name: 'Larysa Kravchenko',
+      dob: '03/03/1999',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'bridge',
+      translation: 'міст',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-012',
+      name: 'Vasyl Moroz',
+      dob: '19/11/1994',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'window',
+      translation: 'стіл',
+      correct: false,
+      errorField: 'field-translation',
+      errorReason: 'Неправильний переклад: "window" = "вікно", не "стіл"',
+      reasons: ['wrong_translation','wrong_date','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-013',
+      name: 'Halyna Ponomarenko',
+      dob: '2001/06/14',
+      level: 'C1',
+      native: 'Ukrainian',
+      word: 'cloud',
+      translation: 'хмара',
+      correct: false,
+      errorField: 'field-dob',
+      errorReason: 'Неправильний формат дати: "2001/06/14" → повинно бути 14/06/2001',
+      reasons: ['wrong_date','wrong_translation','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-014',
+      name: 'Roman Savchuk',
+      dob: '28/02/1996',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'river',
+      translation: 'річка',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-015',
+      name: 'Iryna Kharchenko',
+      dob: '05/09/2003',
+      level: 'X1',
+      native: 'Ukrainian',
+      word: 'star',
+      translation: 'зірка',
+      correct: false,
+      errorField: 'field-level',
+      errorReason: 'Неіснуючий рівень: "X1" — допустимі A1–C2',
+      reasons: ['wrong_level','wrong_date','wrong_translation','typo_word']
+    }
+  ],
+  // DAY 4
+  [
+    {
+      serial: 'REF-2026-016',
+      name: 'Bohdan Koval',
+      dob: '12/12/1991',
+      level: 'C2',
+      native: 'Ukrainian',
+      word: 'forest',
+      translation: 'ліс',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-017',
+      name: 'Svitlana Honchar',
+      dob: '27/04/2000',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'ocean',
+      translation: 'пустеля',
+      correct: false,
+      errorField: 'field-translation',
+      errorReason: 'Неправильний переклад: "ocean" = "океан", не "пустеля"',
+      reasons: ['wrong_translation','wrong_date','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-018',
+      name: 'Serhiy Fedorenko',
+      dob: '09-22-1987',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'mountain',
+      translation: 'гора',
+      correct: false,
+      errorField: 'field-dob',
+      errorReason: 'Неправильний формат дати: "09-22-1987" → повинно бути 22/09/1987',
+      reasons: ['wrong_date','wrong_translation','wrong_level','typo_word']
+    },
+    {
+      serial: 'REF-2026-019',
+      name: 'Yelyzaveta Sydorenko',
+      dob: '16/08/2002',
+      level: 'C1',
+      native: 'Ukrainian',
+      word: 'flower',
+      translation: 'квітка',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-020',
+      name: 'Denys Yaremchuk',
+      dob: '01/01/1999',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'brid',
+      translation: 'птах',
+      correct: false,
+      errorField: 'field-word',
+      errorReason: 'Помилка у слові: "brid" → правильно "bird"',
+      reasons: ['typo_word','wrong_date','wrong_translation','wrong_level']
+    }
+  ],
+  // DAY 5
+  [
+    {
+      serial: 'REF-2026-021',
+      name: 'Maryna Kovalchuk',
+      dob: '20/10/1993',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'light',
+      translation: 'світло',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-022',
+      name: 'Viktor Kostenko',
+      dob: '14/03/1998',
+      level: 'A1',
+      native: 'Ukrainian',
+      word: 'shadow',
+      translation: 'тінь',
+      correct: false,
+      errorField: 'field-level',
+      errorReason: 'Рівень A1 нижче мінімального B1 — відхилити',
+      reasons: ['wrong_level','wrong_date','wrong_translation','typo_word']
+    },
+    {
+      serial: 'REF-2026-023',
+      name: 'Oksana Melnyk',
+      dob: '08/08/2000',
+      level: 'C1',
+      native: 'Ukrainian',
+      word: 'storm',
+      translation: 'буря',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    },
+    {
+      serial: 'REF-2026-024',
+      name: 'Petro Lysytsia',
+      dob: '31/07/1985',
+      level: 'B2',
+      native: 'Ukrainian',
+      word: 'trea',
+      translation: 'дерево',
+      correct: false,
+      errorField: 'field-word',
+      errorReason: 'Помилка у слові: "trea" → правильно "tree"',
+      reasons: ['typo_word','wrong_date','wrong_translation','wrong_level']
+    },
+    {
+      serial: 'REF-2026-025',
+      name: 'Kateryna Moroz',
+      dob: '25/12/1995',
+      level: 'B1',
+      native: 'Ukrainian',
+      word: 'smile',
+      translation: 'усмішка',
+      correct: true,
+      errorField: null, errorReason: null, reasons: []
+    }
+  ]
+];
+
+const REASON_LABELS = {
+  wrong_translation: '❌ Неправильний переклад',
+  wrong_date:        '📅 Неправильний формат дати',
+  wrong_level:       '📊 Неприпустимий рівень',
+  typo_word:         '✏️ Помилка в написанні слова'
+};
+
+// ═══════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════
+let state = {
+  day: 0,           // 0-indexed
+  docIndex: 0,
+  score: 0,
+  totalCorrect: 0,
+  totalDocs: 0,
+  dayCorrect: 0,
+  dayMistakes: [],  // {docNum, reason}
+  timer: 60,
+  timerInterval: null,
+  decided: false,
+  selectedReason: null
+};
+
+// ═══════════════════════════════════════════════
+//  SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  START / RESET
+// ═══════════════════════════════════════════════
+function startGame() {
+  state.docIndex = 0;
+  state.dayCorrect = 0;
+  state.dayMistakes = [];
+  loadDocument();
+  showScreen('screen-game');
+  startTimer();
+}
+
+function resetGame() {
+  clearInterval(state.timerInterval);
+  state = {
+    day: 0, docIndex: 0, score: 0,
+    totalCorrect: 0, totalDocs: 0,
+    dayCorrect: 0, dayMistakes: [],
+    timer: 60, timerInterval: null,
+    decided: false, selectedReason: null
+  };
+  document.getElementById('briefing-day').textContent = 'День 1 з 5';
+  showScreen('screen-briefing');
+}
+
+// ═══════════════════════════════════════════════
+//  DOCUMENT LOADING
+// ═══════════════════════════════════════════════
+function loadDocument() {
+  const doc = DAYS[state.day][state.docIndex];
+  state.decided = false;
+  state.selectedReason = null;
+
+  // Reset stamp
+  const stamp = document.getElementById('stamp-text');
+  stamp.classList.remove('animate', 'approve', 'reject');
+  document.getElementById('stamp-overlay').style.opacity = '0';
+
+  // Reset highlight
+  ['field-name','field-dob','field-level','field-native','field-word','field-translation']
+    .forEach(id => document.getElementById(id).classList.remove('highlight'));
+
+  // Populate fields
+  document.getElementById('doc-serial').textContent     = doc.serial;
+  document.getElementById('field-name').textContent        = doc.name;
+  document.getElementById('field-dob').textContent         = doc.dob;
+  document.getElementById('field-level').textContent       = doc.level;
+  document.getElementById('field-native').textContent      = doc.native;
+  document.getElementById('field-word').textContent        = doc.word;
+  document.getElementById('field-translation').textContent = doc.translation;
+
+  // Enable buttons
+  document.getElementById('btn-approve').disabled = false;
+  document.getElementById('btn-reject').disabled  = false;
+
+  // Hide reason block
+  document.getElementById('reason-block').classList.remove('visible');
+  document.getElementById('confirm-reject-btn').style.display = 'none';
+
+  // Update progress
+  const processed = state.docIndex;
+  document.getElementById('doc-count-display').textContent = `${processed}/5`;
+  document.getElementById('progress-txt').textContent = `${processed} / 5`;
+  document.getElementById('progress-fill').style.width = `${(processed / 5) * 100}%`;
+
+  // Reset timer
+  clearInterval(state.timerInterval);
+  state.timer = 60;
+  updateTimerDisplay();
+  startTimer();
+}
+
+// ═══════════════════════════════════════════════
+//  TIMER
+// ═══════════════════════════════════════════════
+function startTimer() {
+  state.timerInterval = setInterval(() => {
+    state.timer--;
+    updateTimerDisplay();
+    if (state.timer <= 0) {
+      clearInterval(state.timerInterval);
+      if (!state.decided) autoTimeOut();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  el.textContent = state.timer;
+  if (state.timer <= 10) {
+    el.classList.add('warning');
+  } else {
+    el.classList.remove('warning');
+  }
+}
+
+function autoTimeOut() {
+  // treat as wrong decision: if doc is correct → wrong to reject; mark mistake
+  const doc = DAYS[state.day][state.docIndex];
+  const playerDecision = 'timeout';
+  recordResult(doc, playerDecision, 'Час вийшов — рішення не прийнято');
+  triggerStamp(doc.correct ? 'reject' : 'approve'); // wrong stamp
+  setTimeout(() => advanceDoc(), 1200);
+}
+
+// ═══════════════════════════════════════════════
+//  DECISIONS
+// ═══════════════════════════════════════════════
+function makeDecision(decision) {
+  if (state.decided) return;
+  state.decided = true;
+  clearInterval(state.timerInterval);
+
+  const doc = DAYS[state.day][state.docIndex];
+  document.getElementById('btn-approve').disabled = true;
+  document.getElementById('btn-reject').disabled  = true;
+
+  const isCorrect = (decision === 'approve') === doc.correct;
+
+  if (isCorrect) {
+    state.dayCorrect++;
+    state.totalCorrect++;
+    state.score += 20;
+    document.getElementById('score-display').textContent = state.score;
+    triggerStamp(decision);
+    triggerFlash(decision === 'approve' ? 'approve' : 'reject');
+    setTimeout(() => advanceDoc(), 1200);
+  } else {
+    // Wrong decision
+    const wrongLabel = decision === 'approve'
+      ? `Документ ${state.docIndex + 1}: Помилка пропущена — ${doc.errorReason}`
+      : `Документ ${state.docIndex + 1}: Правильний документ відхилено`;
+    state.dayMistakes.push(wrongLabel);
+    if (doc.errorField) {
+      document.getElementById(doc.errorField).classList.add('highlight');
+    }
+    triggerStamp(decision);
+    triggerFlash(decision === 'approve' ? 'approve' : 'reject');
+    setTimeout(() => advanceDoc(), 1400);
+  }
+}
+
+function recordResult(doc, decision, reason) {
+  if (decision === 'timeout') {
+    const label = `Документ ${state.docIndex + 1}: Час вийшов (${doc.correct ? 'правильний документ' : doc.errorReason})`;
+    state.dayMistakes.push(label);
+  }
+}
+
+function showRejectOptions() {
+  if (state.decided) return;
+  const doc = DAYS[state.day][state.docIndex];
+  const block = document.getElementById('reason-block');
+  const opts  = document.getElementById('reason-options');
+
+  // Build options using this doc's ordered reasons
+  const reasons = doc.reasons.length ? doc.reasons : ['wrong_translation','wrong_date','wrong_level','typo_word'];
+  opts.innerHTML = reasons.map(r => `
+    <div class="reason-option" data-reason="${r}" onclick="selectReason('${r}')">
+      <div class="reason-radio" id="radio-${r}"></div>
+      <span>${REASON_LABELS[r]}</span>
+    </div>
+  `).join('');
+
+  block.classList.add('visible');
+  state.selectedReason = null;
+}
+
+function selectReason(r) {
+  // Deselect all
+  document.querySelectorAll('.reason-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById(`radio-${r}`).parentElement.classList.add('selected');
+  state.selectedReason = r;
+  document.getElementById('confirm-reject-btn').style.display = 'block';
+}
+
+function confirmReject() {
+  if (!state.selectedReason) return;
+  makeDecision('reject');
+}
+
+// ═══════════════════════════════════════════════
+//  STAMP ANIMATION
+// ═══════════════════════════════════════════════
+function triggerStamp(decision) {
+  const overlay = document.getElementById('stamp-overlay');
+  const stamp   = document.getElementById('stamp-text');
+
+  stamp.classList.remove('animate', 'approve', 'reject');
+  overlay.style.opacity = '1';
+
+  if (decision === 'approve') {
+    stamp.textContent = 'APPROVED';
+    stamp.className   = 'stamp-text approve';
+  } else {
+    stamp.textContent = 'REJECTED';
+    stamp.className   = 'stamp-text reject';
+  }
+
+  // Trigger reflow then animate
+  void stamp.offsetWidth;
+  stamp.classList.add('animate');
+}
+
+// ═══════════════════════════════════════════════
+//  FLASH
+// ═══════════════════════════════════════════════
+function triggerFlash(type) {
+  const el = document.getElementById('result-flash');
+  el.className = '';
+  void el.offsetWidth;
+  el.classList.add(type === 'approve' ? 'approve-flash' : 'reject-flash', 'flashing');
+}
+
+// ═══════════════════════════════════════════════
+//  ADVANCE
+// ═══════════════════════════════════════════════
+function advanceDoc() {
+  state.totalDocs++;
+  state.docIndex++;
+
+  if (state.docIndex >= 5) {
+    showDayResults();
+  } else {
+    loadDocument();
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  DAY RESULTS
+// ═══════════════════════════════════════════════
+function showDayResults() {
+  clearInterval(state.timerInterval);
+
+  const coins = state.dayCorrect * 20;
+  const xp    = state.dayCorrect * 15;
+
+  document.getElementById('results-title').textContent =
+    state.dayCorrect === 5 ? 'Ідеальний день! 🎉' :
+    state.dayCorrect >= 3  ? 'День завершено!' :
+    'Важкий день...';
+
+  document.getElementById('results-day-label').textContent = `День ${state.day + 1} з 5`;
+  document.getElementById('res-correct').textContent = `${state.dayCorrect}/5`;
+  document.getElementById('res-coins').textContent   = coins;
+  document.getElementById('res-xp').textContent      = xp;
+
+  const mbody = document.getElementById('mistakes-body');
+  if (state.dayMistakes.length === 0) {
+    mbody.innerHTML = '<div style="color:var(--green);font-size:14px;padding:8px 0">✓ Жодної помилки! Чудова робота!</div>';
+    document.querySelector('.mistakes-title').style.color = 'var(--green)';
+    document.querySelector('.mistakes-title').textContent = 'Результати';
+  } else {
+    document.querySelector('.mistakes-title').style.color = 'var(--red)';
+    document.querySelector('.mistakes-title').textContent = 'Помилки';
+    mbody.innerHTML = state.dayMistakes.map(m => `
+      <div class="mistake-item">
+        <div class="mistake-doc">${m.split(':')[0]}</div>
+        <div class="mistake-txt">${m.split(':').slice(1).join(':').trim()}</div>
+      </div>
+    `).join('');
+  }
+
+  const isLastDay = state.day >= 4;
+  const btn = document.getElementById('btn-next-day');
+  btn.textContent = isLastDay ? 'ПЕРЕГЛЯНУТИ ПІДСУМКИ →' : 'НАСТУПНИЙ ДЕНЬ →';
+
+  showScreen('screen-results');
+}
+
+// ═══════════════════════════════════════════════
+//  NEXT DAY
+// ═══════════════════════════════════════════════
+function nextDay() {
+  if (state.day >= 4) {
+    showWinScreen();
+    return;
+  }
+
+  state.day++;
+  state.docIndex = 0;
+  state.dayCorrect = 0;
+  state.dayMistakes = [];
+
+  document.getElementById('briefing-day').textContent = `День ${state.day + 1} з 5`;
+  document.getElementById('score-display').textContent = state.score;
+
+  startGame();
+}
+
+// ═══════════════════════════════════════════════
+//  WIN SCREEN
+// ═══════════════════════════════════════════════
+function showWinScreen() {
+  const accuracy = Math.round((state.totalCorrect / state.totalDocs) * 100);
+  const coins    = state.totalCorrect * 20;
+  const xp       = state.totalCorrect * 15;
+
+  const rank =
+    accuracy >= 95 ? 'Chief Inspector' :
+    accuracy >= 80 ? 'Senior Inspector' :
+    accuracy >= 60 ? 'Inspector' :
+    'Novice';
+
+  document.getElementById('win-total-score').textContent = state.score;
+  document.getElementById('win-accuracy').textContent    = `${accuracy}%`;
+  document.getElementById('win-coins').textContent       = coins;
+  document.getElementById('win-xp').textContent          = xp;
+  document.getElementById('win-rank').textContent        = rank;
+
+  showScreen('screen-win');
+}
+
+// ═══════════════════════════════════════════════
+//  SHARE
+// ═══════════════════════════════════════════════
+function shareResults() {
+  const accuracy = Math.round((state.totalCorrect / state.totalDocs) * 100);
+  const rank = document.getElementById('win-rank').textContent;
+  const text = `📋 Word Inspector — Voodoo English\n👮 Звання: ${rank}\n✅ Точність: ${accuracy}%\n⭐ Рахунок: ${state.score}\n\nГрай на Voodoo English Academy!`;
+
+  if (navigator.share) {
+    navigator.share({ text });
+  } else if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.share-btn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Скопійовано!';
+      setTimeout(() => { btn.textContent = orig; }, 2000);
+    });
+  } else {
+    alert(text);
+  }
+}
+</script>
+</body>
+</html>

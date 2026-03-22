@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Word Auction — Voodoo English</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a2e;
+    --purple: #7c3aed;
+    --purple-light: #a855f7;
+    --purple-dim: #3b1f6e;
+    --gold: #f59e0b;
+    --gold-light: #fbbf24;
+    --gold-dim: #78450a;
+    --green: #10b981;
+    --green-dim: #064e3b;
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(124,58,237,0.25);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #app {
+    width: 100%;
+    max-width: 430px;
+    height: 100vh;
+    max-height: 900px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* ===== SCREENS ===== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ===== PARTICLES ===== */
+  #particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    font-size: 18px;
+    animation: flyParticle 1.2s ease-out forwards;
+    z-index: 999;
+  }
+  @keyframes flyParticle {
+    0%   { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+  }
+
+  /* ===== FLASH OVERLAY ===== */
+  #flash {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  #flash.green { background: rgba(16,185,129,0.25); }
+  #flash.red   { background: rgba(239,68,68,0.25); }
+
+  /* ===== UTILITY ===== */
+  .btn {
+    border: none;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    border-radius: 14px;
+    transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+    min-height: 52px;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-gold {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0a0a0f;
+    box-shadow: 0 4px 24px rgba(245,158,11,0.4);
+  }
+  .btn-gold:hover { filter: brightness(1.1); box-shadow: 0 6px 32px rgba(245,158,11,0.55); }
+  .btn-purple {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--purple); color: var(--text); }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .chip-gold { background: rgba(245,158,11,0.15); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+  .chip-purple { background: rgba(124,58,237,0.15); color: var(--purple-light); border: 1px solid var(--border); }
+  .chip-green { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .chip-red   { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+  }
+
+  /* ===== SCREEN 1: LOBBY ===== */
+  #screen-lobby {
+    padding: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.18) 0%, transparent 65%),
+                var(--bg);
+  }
+
+  .lobby-header {
+    text-align: center;
+    padding: 44px 24px 24px;
+    position: relative;
+  }
+
+  .hammer-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 24px rgba(245,158,11,0.7));
+    animation: hammerPulse 2s ease-in-out infinite;
+  }
+  @keyframes hammerPulse {
+    0%,100% { transform: rotate(-8deg) scale(1); }
+    50%      { transform: rotate(8deg) scale(1.08); }
+  }
+
+  .lobby-title {
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .lobby-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .live-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .live-text {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(239,68,68,0.15);
+    border: 1px solid rgba(239,68,68,0.4);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 0.08em;
+  }
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.2; }
+  }
+
+  .balance-card {
+    margin: 16px 24px;
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05));
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .balance-label { font-size: 13px; color: var(--muted); }
+  .balance-amount {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .competitors-label {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0 24px;
+    margin-bottom: 10px;
+  }
+
+  .competitors-list {
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .competitor-row {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .competitor-name { font-size: 15px; font-weight: 600; }
+  .competitor-coins { font-size: 14px; color: var(--gold); font-weight: 700; }
+
+  .lobby-footer {
+    padding: 24px;
+    margin-top: auto;
+  }
+  .lobby-footer .btn { width: 100%; font-size: 17px; }
+
+  /* ===== SCREEN 2: BIDDING ===== */
+  #screen-bid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .game-topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .topbar-item { text-align: center; }
+  .topbar-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .topbar-value { font-size: 17px; font-weight: 800; margin-top: 2px; }
+  .topbar-value.gold { color: var(--gold); }
+  .topbar-value.purple { color: var(--purple-light); }
+
+  .round-progress {
+    display: flex;
+    gap: 6px;
+    padding: 12px 20px 0;
+    flex-shrink: 0;
+  }
+  .round-dot {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg3);
+    transition: background 0.4s;
+  }
+  .round-dot.done { background: var(--gold); }
+  .round-dot.current { background: var(--purple); animation: dotPulse 1.5s ease-in-out infinite; }
+  @keyframes dotPulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.5; }
+  }
+
+  /* LOT CARD with flip */
+  .lot-container {
+    padding: 16px 20px 12px;
+    flex-shrink: 0;
+  }
+  .lot-flip-wrapper {
+    perspective: 800px;
+    height: 170px;
+  }
+  .lot-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.75s cubic-bezier(0.45, 0.05, 0.15, 1.0);
+  }
+  .lot-flip-inner.flipped { transform: rotateY(180deg); }
+
+  .lot-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Front face - mystery */
+  .lot-front {
+    background: linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%);
+    border: 1px solid var(--border);
+    flex-direction: column;
+    gap: 10px;
+  }
+  .lot-number {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .lot-badges {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .lot-hint {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    max-width: 220px;
+    line-height: 1.5;
+  }
+
+  /* Back face - revealed word */
+  .lot-back {
+    transform: rotateY(180deg);
+    background: linear-gradient(135deg, #1a0d3d 0%, #120d2e 100%);
+    border: 1.5px solid rgba(124,58,237,0.5);
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+  }
+  .lot-word {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    text-align: center;
+  }
+  .lot-ipa {
+    font-size: 13px;
+    color: var(--purple-light);
+    text-align: center;
+  }
+  .lot-def {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.5;
+  }
+  .lot-ukr {
+    font-size: 14px;
+    color: var(--gold-light);
+    font-weight: 600;
+    text-align: center;
+  }
+  .lot-back-badges {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  /* Bid section */
+  .bid-section {
+    padding: 0 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bid-title {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  .bid-amount-display {
+    text-align: center;
+    font-size: 42px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .bid-slider-wrap {
+    position: relative;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--bg3);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(245,158,11,0.5);
+    transition: box-shadow 0.2s;
+  }
+  input[type=range]::-webkit-slider-thumb:active {
+    box-shadow: 0 2px 20px rgba(245,158,11,0.8);
+  }
+  .slider-track-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--purple), var(--gold));
+    pointer-events: none;
+  }
+
+  .quick-bids {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .quick-bid-btn {
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 10px 6px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+    min-height: 48px;
+  }
+  .quick-bid-btn:hover, .quick-bid-btn.active {
+    background: var(--purple-dim);
+    border-color: var(--purple);
+    color: var(--purple-light);
+  }
+  .quick-bid-btn.allin {
+    background: rgba(245,158,11,0.1);
+    border-color: rgba(245,158,11,0.3);
+    color: var(--gold);
+  }
+  .quick-bid-btn.allin:hover {
+    background: rgba(245,158,11,0.2);
+  }
+
+  .bid-btn-wrap { padding-bottom: 16px; }
+  .bid-btn-wrap .btn { width: 100%; font-size: 17px; }
+
+  /* Bot bids display */
+  .bot-bids-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 20px;
+    flex-shrink: 0;
+  }
+  .bot-bid-item {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .bot-bid-item.shown { opacity: 1; transform: translateY(0); }
+  .bot-bid-name { font-size: 11px; color: var(--muted); }
+  .bot-bid-amount { font-size: 16px; font-weight: 800; color: var(--gold); margin-top: 2px; }
+  .bot-bid-amount span { font-size: 11px; color: var(--muted); }
+
+  /* ===== SCREEN 3: QUIZ ===== */
+  #screen-quiz {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .quiz-header {
+    padding: 20px 20px 0;
+    flex-shrink: 0;
+  }
+  .quiz-word-display {
+    background: linear-gradient(135deg, #1a0d3d, #120d2e);
+    border: 1.5px solid rgba(124,58,237,0.4);
+    border-radius: 18px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .quiz-word { font-size: 30px; font-weight: 900; }
+  .quiz-word-ipa { font-size: 13px; color: var(--purple-light); margin-top: 4px; }
+  .quiz-stakes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .quiz-stakes-text { font-size: 14px; color: var(--muted); }
+  .quiz-stakes-amount { font-size: 20px; font-weight: 800; }
+  .quiz-stakes-amount.win { color: var(--green); }
+  .quiz-stakes-amount.lose { color: var(--red); }
+
+  /* Timer */
+  .timer-bar-wrap {
+    height: 8px;
+    background: var(--bg3);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .timer-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--green), var(--gold));
+    transform-origin: left;
+    transition: transform linear;
+  }
+  .timer-bar.danger { background: linear-gradient(90deg, var(--red), #ff6b00); }
+
+  .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+
+  .quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 20px;
+    flex: 1;
+  }
+  .quiz-option {
+    background: var(--bg2);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--text);
+    transition: all 0.15s;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    min-height: 56px;
+  }
+  .quiz-option:hover { border-color: var(--purple); background: var(--purple-dim); }
+  .quiz-option.correct {
+    background: rgba(16,185,129,0.15);
+    border-color: var(--green);
+    color: var(--green);
+  }
+  .quiz-option.wrong {
+    background: rgba(239,68,68,0.12);
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .quiz-option.disabled { pointer-events: none; }
+
+  /* ===== RESULT POPUP ===== */
+  .result-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    padding: 20px;
+  }
+  .result-popup.show { opacity: 1; pointer-events: all; }
+  .result-card {
+    background: var(--bg2);
+    border-radius: 24px;
+    padding: 32px 28px;
+    text-align: center;
+    max-width: 340px;
+    width: 100%;
+    border: 1.5px solid var(--border);
+    transform: scale(0.9);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .result-popup.show .result-card { transform: scale(1); }
+  .result-icon { font-size: 52px; margin-bottom: 10px; }
+  .result-title { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+  .result-title.win { color: var(--green); }
+  .result-title.lose { color: var(--red); }
+  .result-delta {
+    font-size: 38px;
+    font-weight: 900;
+    margin-bottom: 16px;
+  }
+  .result-delta.win { color: var(--green); }
+  .result-delta.lose { color: var(--red); }
+  .result-bots { margin-top: 12px; width: 100%; }
+  .result-bot-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 13px;
+  }
+  .result-bot-row:last-child { border-bottom: none; }
+  .rbot-name { color: var(--muted); }
+  .rbot-result.rwin { color: var(--green); font-weight: 700; }
+  .rbot-result.rlose { color: var(--red); font-weight: 700; }
+
+  /* ===== SCREEN 4: FINAL ===== */
+  #screen-final {
+    padding: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.2) 0%, transparent 60%), var(--bg);
+  }
+  .final-header {
+    text-align: center;
+    padding: 40px 24px 20px;
+  }
+  .final-title {
+    font-size: 26px;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .final-sub { font-size: 13px; color: var(--muted); }
+
+  .leaderboard {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .lb-row {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .lb-row.you {
+    background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(124,58,237,0.08));
+    border-color: rgba(124,58,237,0.5);
+  }
+  .lb-row.first {
+    background: linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.06));
+    border-color: rgba(245,158,11,0.4);
+  }
+  .lb-rank { font-size: 22px; width: 32px; flex-shrink: 0; }
+  .lb-name { font-size: 15px; font-weight: 700; flex: 1; }
+  .lb-coins { font-size: 16px; font-weight: 800; color: var(--gold); }
+  .lb-xp { font-size: 12px; color: var(--purple-light); font-weight: 600; margin-left: 8px; }
+
+  .final-stats {
+    margin: 0 20px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+  .stat-value { font-size: 20px; font-weight: 800; }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.purple { color: var(--purple-light); }
+
+  .profit-banner {
+    margin: 0 20px 20px;
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+  }
+  .profit-banner.win { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); }
+  .profit-banner.lose { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); }
+  .profit-label { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 4px; }
+  .profit-amount { font-size: 36px; font-weight: 900; }
+  .profit-amount.win { color: var(--green); }
+  .profit-amount.lose { color: var(--red); }
+
+  .final-footer { padding: 0 20px 32px; }
+  .final-footer .btn { width: 100%; font-size: 17px; }
+
+  /* Coin counter animation */
+  .coin-float {
+    position: fixed;
+    font-size: 20px;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 997;
+    animation: coinFloat 1.5s ease-out forwards;
+  }
+  @keyframes coinFloat {
+    0%   { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-80px) scale(0.8); opacity: 0; }
+  }
+
+  /* Scroll utility */
+  #screen-final { overflow-y: auto; }
+  #screen-bid, #screen-quiz { overflow-y: auto; }
+
+  @media (max-height: 700px) {
+    .hammer-icon { font-size: 40px; }
+    .lobby-title { font-size: 28px; }
+    .lobby-header { padding: 28px 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div id="flash"></div>
+
+<div id="app">
+
+  <!-- SCREEN 1: LOBBY -->
+  <div id="screen-lobby" class="screen active">
+    <div class="lobby-header">
+      <span class="hammer-icon">🔨</span>
+      <div class="lobby-title">WORD AUCTION</div>
+      <div class="lobby-sub">Voodoo English</div>
+      <div class="live-row">
+        <span class="live-text">Аукціонний зал відкрито</span>
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          LIVE
+        </div>
+      </div>
+    </div>
+
+    <div class="balance-card">
+      <div>
+        <div class="balance-label">Ваш баланс</div>
+        <div class="balance-amount">💰 <span id="lobby-coins">500</span></div>
+      </div>
+      <div style="text-align:right">
+        <div class="balance-label">Раунди</div>
+        <div style="font-size:20px;font-weight:800;color:var(--purple-light)">5</div>
+      </div>
+    </div>
+
+    <div class="competitors-label">Учасники аукціону</div>
+    <div class="competitors-list">
+      <div class="competitor-row">
+        <div class="competitor-name">🤖 Bot Alex</div>
+        <div class="competitor-coins">💰 <span id="lobby-alex">500</span></div>
+      </div>
+      <div class="competitor-row">
+        <div class="competitor-name">🤖 Bot Maria</div>
+        <div class="competitor-coins">💰 <span id="lobby-maria">500</span></div>
+      </div>
+      <div class="competitor-row">
+        <div class="competitor-name">🤖 Bot Sam</div>
+        <div class="competitor-coins">💰 <span id="lobby-sam">500</span></div>
+      </div>
+    </div>
+
+    <div style="padding:20px 24px 0;flex:1">
+      <div class="card" style="padding:14px 16px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.08em;">Як грати</div>
+        <div style="font-size:13px;color:var(--text);line-height:1.6;">
+          🎯 Зроби ставку <b>перш ніж</b> побачити слово<br>
+          📖 Відповідай на питання — виграй ×2 ставку<br>
+          🏆 Хто фінішує з найбільшим балансом — переміг!
+        </div>
+      </div>
+    </div>
+
+    <div class="lobby-footer">
+      <button class="btn btn-gold" onclick="startGame()">🔨 УВІЙТИ В ЗАЛ</button>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: BIDDING -->
+  <div id="screen-bid" class="screen">
+    <div class="game-topbar">
+      <div class="topbar-item">
+        <div class="topbar-label">Раунд</div>
+        <div class="topbar-value purple" id="round-label">1/5</div>
+      </div>
+      <div class="topbar-item">
+        <div class="topbar-label">Ваші монети</div>
+        <div class="topbar-value gold">💰 <span id="player-coins-display">500</span></div>
+      </div>
+      <div class="topbar-item">
+        <div class="topbar-label">В банку</div>
+        <div class="topbar-value gold">💰 <span id="pot-display">0</span></div>
+      </div>
+    </div>
+
+    <div class="round-progress">
+      <div class="round-dot current" id="rdot-0"></div>
+      <div class="round-dot" id="rdot-1"></div>
+      <div class="round-dot" id="rdot-2"></div>
+      <div class="round-dot" id="rdot-3"></div>
+      <div class="round-dot" id="rdot-4"></div>
+    </div>
+
+    <div class="lot-container">
+      <div class="lot-flip-wrapper">
+        <div class="lot-flip-inner" id="lot-flip">
+          <!-- Front: mystery -->
+          <div class="lot-face lot-front">
+            <div class="lot-number" id="lot-number">Лот №1</div>
+            <div class="lot-badges" id="lot-badges-front">
+              <span class="chip chip-purple">B2</span>
+              <span class="chip chip-gold">🎭 Emotions</span>
+            </div>
+            <div class="lot-hint">Зроби ставку перш ніж побачити слово!</div>
+          </div>
+          <!-- Back: revealed -->
+          <div class="lot-face lot-back">
+            <div class="lot-word" id="lot-word">MELANCHOLY</div>
+            <div class="lot-ipa" id="lot-ipa">/ˈmelənkɒli/</div>
+            <div class="lot-def" id="lot-def">a feeling of pensive sadness</div>
+            <div class="lot-ukr" id="lot-ukr">меланхолія, смуток</div>
+            <div class="lot-back-badges" id="lot-badges-back">
+              <span class="chip chip-purple">B2</span>
+              <span class="chip chip-gold">🎭 Emotions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bot bids row -->
+    <div class="bot-bids-row">
+      <div class="bot-bid-item" id="bbid-alex">
+        <div class="bot-bid-name">🤖 Alex</div>
+        <div class="bot-bid-amount"><span id="bbid-alex-val">—</span></div>
+      </div>
+      <div class="bot-bid-item" id="bbid-maria">
+        <div class="bot-bid-name">🤖 Maria</div>
+        <div class="bot-bid-amount"><span id="bbid-maria-val">—</span></div>
+      </div>
+      <div class="bot-bid-item" id="bbid-sam">
+        <div class="bot-bid-name">🤖 Sam</div>
+        <div class="bot-bid-amount"><span id="bbid-sam-val">—</span></div>
+      </div>
+    </div>
+
+    <!-- Bid section -->
+    <div class="bid-section">
+      <div class="bid-title" id="bid-phase-title">💰 Зроби ставку перш ніж побачити слово!</div>
+      <div class="bid-amount-display">💰 <span id="bid-amount">50</span></div>
+
+      <div class="bid-slider-wrap" id="slider-wrap">
+        <input type="range" id="bid-slider" min="10" max="200" value="50"
+               oninput="updateBid(this.value)" style="position:relative;z-index:2;">
+        <div class="slider-track-fill" id="slider-fill" style="width:20%;"></div>
+      </div>
+
+      <div class="quick-bids" id="quick-bids">
+        <button class="quick-bid-btn" onclick="setBid(25)">25</button>
+        <button class="quick-bid-btn" onclick="setBid(50)">50</button>
+        <button class="quick-bid-btn" onclick="setBid(100)">100</button>
+        <button class="quick-bid-btn allin" onclick="setAllIn()">ALL IN</button>
+      </div>
+
+      <div class="bid-btn-wrap" id="bid-btn-wrap">
+        <button class="btn btn-gold" id="bid-submit-btn" onclick="submitBid()">🔨 ЗРОБИТИ СТАВКУ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: QUIZ -->
+  <div id="screen-quiz" class="screen">
+    <div class="quiz-header">
+      <div class="quiz-word-display">
+        <div class="quiz-word" id="quiz-word">MELANCHOLY</div>
+        <div class="quiz-word-ipa" id="quiz-ipa">/ˈmelənkɒli/</div>
+      </div>
+      <div class="quiz-stakes">
+        <div class="quiz-stakes-text">Ваша ставка: 💰 <span id="quiz-bid-show">50</span></div>
+        <div>
+          <div style="font-size:11px;color:var(--muted);text-align:right;">Виграш / Програш</div>
+          <div class="quiz-stakes-amount win" id="quiz-win-show">+100</div>
+        </div>
+      </div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="timer-bar"></div>
+      </div>
+      <div class="quiz-q">Яке правильне визначення цього слова?</div>
+    </div>
+    <div class="quiz-options" id="quiz-options"></div>
+    <div style="height:20px;flex-shrink:0;"></div>
+  </div>
+
+  <!-- RESULT POPUP -->
+  <div class="result-popup" id="result-popup">
+    <div class="result-card">
+      <div class="result-icon" id="result-icon">🏆</div>
+      <div class="result-title" id="result-title">Правильно!</div>
+      <div class="result-delta" id="result-delta">+100</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;" id="result-subtitle">Чудово! Ви знали це слово!</div>
+      <div class="result-bots" id="result-bots"></div>
+      <button class="btn btn-gold" style="width:100%;margin-top:18px;" id="result-next-btn" onclick="nextRound()">
+        Наступний лот →
+      </button>
+    </div>
+  </div>
+
+  <!-- SCREEN 4: FINAL -->
+  <div id="screen-final" class="screen">
+    <div class="final-header">
+      <div style="font-size:44px;margin-bottom:8px;" id="final-trophy">🏆</div>
+      <div class="final-title" id="final-headline">Аукціон завершено!</div>
+      <div class="final-sub" id="final-place-text">Ваше місце: 1-е</div>
+    </div>
+
+    <div class="leaderboard" id="leaderboard"></div>
+
+    <div class="profit-banner" id="profit-banner">
+      <div class="profit-label">Ваш результат</div>
+      <div class="profit-amount" id="final-profit">+0</div>
+    </div>
+
+    <div class="final-stats">
+      <div class="stat-card">
+        <div class="stat-label">Найкраща ставка</div>
+        <div class="stat-value gold" id="best-bid">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">XP зароблено</div>
+        <div class="stat-value purple" id="xp-earned">100 XP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Правильних</div>
+        <div class="stat-value green" id="correct-count">0/5</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Найгірша ставка</div>
+        <div class="stat-value red" id="worst-bid">—</div>
+      </div>
+    </div>
+
+    <div class="final-footer">
+      <button class="btn btn-gold" onclick="restartGame()">🔨 НОВИЙ АУКЦІОН</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// GAME DATA
+// ============================================================
+const WORDS = [
+  {
+    word: 'MELANCHOLY',
+    level: 'B2',
+    category: '🎭 Emotions',
+    ipa: '/ˈmelənkɒli/',
+    def: 'a feeling of pensive sadness',
+    ukr: 'меланхолія, смуток',
+    multiplier: 2.0,
+    options: [
+      'a feeling of pensive sadness',
+      'extreme happiness and excitement',
+      'sudden burst of angry emotion',
+      'state of deep relaxation'
+    ],
+    correct: 0
+  },
+  {
+    word: 'HAGGLE',
+    level: 'B1',
+    category: '💼 Commerce',
+    ipa: '/ˈhæɡ.əl/',
+    def: 'to negotiate about price',
+    ukr: 'торгуватись, битись за ціну',
+    multiplier: 1.75,
+    options: [
+      'to carry heavy bags of goods',
+      'to negotiate about price',
+      'to display items for sale',
+      'to refuse a purchase firmly'
+    ],
+    correct: 1
+  },
+  {
+    word: 'EPHEMERAL',
+    level: 'C1',
+    category: '⏳ Time',
+    ipa: '/ɪˈfem.ər.əl/',
+    def: 'lasting for a very short time',
+    ukr: 'ефемерний, короткочасний',
+    multiplier: 2.5,
+    options: [
+      'recurring every few centuries',
+      'permanently fixed in memory',
+      'lasting for a very short time',
+      'relating to supernatural events'
+    ],
+    correct: 2
+  },
+  {
+    word: 'COZY',
+    level: 'A2',
+    category: '🏠 Home',
+    ipa: '/ˈkoʊ.zi/',
+    def: 'comfortable and warm',
+    ukr: 'затишний, комфортний',
+    multiplier: 1.5,
+    options: [
+      'comfortable and warm',
+      'spacious and modern',
+      'cold and unwelcoming',
+      'decorative but impractical'
+    ],
+    correct: 0
+  },
+  {
+    word: 'RESILIENT',
+    level: 'B2',
+    category: '💪 Character',
+    ipa: '/rɪˈzɪl.i.ənt/',
+    def: 'able to recover quickly',
+    ukr: 'стійкий, витривалий',
+    multiplier: 2.0,
+    options: [
+      'easily discouraged by failure',
+      'physically very strong and large',
+      'slow to understand new ideas',
+      'able to recover quickly'
+    ],
+    correct: 3
+  }
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+const START_COINS = 500;
+let state = {};
+
+function initState() {
+  state = {
+    round: 0,
+    playerCoins: START_COINS,
+    bots: [
+      { name: 'Bot Alex', coins: START_COINS },
+      { name: 'Bot Maria', coins: START_COINS },
+      { name: 'Bot Sam', coins: START_COINS }
+    ],
+    currentBid: 50,
+    botBids: [],
+    botResults: [],
+    history: [],        // { bid, won, delta, word }
+    correctCount: 0,
+    bidPhase: true,     // true = bidding, false = waiting for quiz
+    timerInterval: null,
+    timerLeft: 10,
+    quizAnswered: false
+  };
+}
+
+initState();
+
+// ============================================================
+// SCREEN NAVIGATION
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ============================================================
+// LOBBY
+// ============================================================
+function startGame() {
+  initState();
+  updateLobbyDisplay();
+  showScreen('screen-bid');
+  loadRound();
+}
+
+function updateLobbyDisplay() {
+  document.getElementById('lobby-coins').textContent = state.playerCoins;
+  document.getElementById('lobby-alex').textContent = state.bots[0].coins;
+  document.getElementById('lobby-maria').textContent = state.bots[1].coins;
+  document.getElementById('lobby-sam').textContent = state.bots[2].coins;
+}
+
+// ============================================================
+// ROUND SETUP
+// ============================================================
+function loadRound() {
+  const r = state.round;
+  const w = WORDS[r];
+
+  // Update topbar
+  document.getElementById('round-label').textContent = `${r + 1}/5`;
+  animateCounter('player-coins-display', state.playerCoins);
+  document.getElementById('pot-display').textContent = '0';
+
+  // Round dots
+  for (let i = 0; i < 5; i++) {
+    const dot = document.getElementById(`rdot-${i}`);
+    dot.className = 'round-dot';
+    if (i < r) dot.classList.add('done');
+    else if (i === r) dot.classList.add('current');
+  }
+
+  // Lot card front
+  document.getElementById('lot-number').textContent = `Лот №${r + 1}`;
+  const levelClass = w.level.startsWith('A') ? 'chip-green' : w.level.startsWith('C') ? 'chip-red' : 'chip-purple';
+  document.getElementById('lot-badges-front').innerHTML =
+    `<span class="chip ${levelClass}">${w.level}</span><span class="chip chip-gold">${w.category}</span>`;
+
+  // Lot card back (pre-fill, hidden)
+  document.getElementById('lot-word').textContent = w.word;
+  document.getElementById('lot-ipa').textContent = w.ipa;
+  document.getElementById('lot-def').textContent = w.def;
+  document.getElementById('lot-ukr').textContent = w.ukr;
+  document.getElementById('lot-badges-back').innerHTML =
+    `<span class="chip ${levelClass}">${w.level}</span><span class="chip chip-gold">${w.category}</span>`;
+
+  // Reset flip
+  document.getElementById('lot-flip').classList.remove('flipped');
+
+  // Reset bid state
+  state.bidPhase = true;
+  state.currentBid = Math.min(50, state.playerCoins);
+  document.getElementById('bid-slider').max = Math.min(200, state.playerCoins);
+  document.getElementById('bid-slider').value = state.currentBid;
+  updateBid(state.currentBid, false);
+
+  // Reset bot bids
+  ['alex', 'maria', 'sam'].forEach(b => {
+    const el = document.getElementById(`bbid-${b}`);
+    el.classList.remove('shown');
+    document.getElementById(`bbid-${b}-val`).textContent = '—';
+  });
+
+  // Show bid UI
+  document.getElementById('bid-phase-title').textContent = '💰 Зроби ставку перш ніж побачити слово!';
+  document.getElementById('bid-submit-btn').textContent = '🔨 ЗРОБИТИ СТАВКУ';
+  document.getElementById('bid-submit-btn').disabled = false;
+  document.getElementById('quick-bids').style.display = 'grid';
+  document.getElementById('slider-wrap').style.display = 'block';
+}
+
+// ============================================================
+// BID CONTROLS
+// ============================================================
+function updateBid(val, animate = true) {
+  val = parseInt(val);
+  state.currentBid = val;
+  document.getElementById('bid-slider').value = val;
+  document.getElementById('bid-amount').textContent = val;
+
+  // Fill track
+  const max = parseInt(document.getElementById('bid-slider').max);
+  const min = parseInt(document.getElementById('bid-slider').min);
+  const pct = ((val - min) / (max - min)) * 100;
+  document.getElementById('slider-fill').style.width = pct + '%';
+}
+
+function setBid(amount) {
+  const max = Math.min(200, state.playerCoins);
+  updateBid(Math.min(amount, max));
+}
+
+function setAllIn() {
+  const max = Math.min(200, state.playerCoins);
+  updateBid(max);
+  // Flash the button
+  document.querySelectorAll('.quick-bid-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  setTimeout(() => event.target.classList.remove('active'), 300);
+}
+
+// ============================================================
+// SUBMIT BID
+// ============================================================
+function submitBid() {
+  if (!state.bidPhase) return;
+  state.bidPhase = false;
+
+  const bid = state.currentBid;
+  const w = WORDS[state.round];
+
+  // Disable bid UI
+  document.getElementById('bid-submit-btn').disabled = true;
+  document.getElementById('quick-bids').style.display = 'none';
+  document.getElementById('slider-wrap').style.display = 'none';
+  document.getElementById('bid-phase-title').textContent = '🤖 Боти роблять ставки...';
+
+  // Update pot display
+  document.getElementById('pot-display').textContent = bid;
+
+  // Generate bot bids
+  state.botBids = state.bots.map(bot => {
+    const maxBid = Math.min(200, bot.coins);
+    const botBid = Math.max(10, Math.floor(Math.random() * maxBid * 0.65) + 10);
+    return Math.min(botBid, maxBid);
+  });
+
+  // Animate bot bids appearing one by one
+  const botKeys = ['alex', 'maria', 'sam'];
+  let pot = bid;
+  botKeys.forEach((key, i) => {
+    setTimeout(() => {
+      const botBid = state.botBids[i];
+      pot += botBid;
+      document.getElementById(`bbid-${key}-val`).textContent = `💰 ${botBid}`;
+      document.getElementById(`bbid-${key}`).classList.add('shown');
+      animateCounter('pot-display', pot);
+
+      if (i === botKeys.length - 1) {
+        // All bots bid — flip the card
+        setTimeout(() => {
+          flipCard(w, bid, pot);
+        }, 700);
+      }
+    }, (i + 1) * 600);
+  });
+}
+
+function flipCard(word, bid, pot) {
+  document.getElementById('bid-phase-title').textContent = '🃏 Слово відкривається...';
+  document.getElementById('lot-flip').classList.add('flipped');
+
+  setTimeout(() => {
+    startQuiz(word, bid, pot);
+  }, 1000);
+}
+
+// ============================================================
+// QUIZ
+// ============================================================
+function startQuiz(word, bid, pot) {
+  state.quizAnswered = false;
+  const multiplier = word.multiplier;
+  const winAmount = Math.round(bid * multiplier);
+
+  // Fill quiz screen
+  document.getElementById('quiz-word').textContent = word.word;
+  document.getElementById('quiz-ipa').textContent = word.ipa;
+  document.getElementById('quiz-bid-show').textContent = bid;
+  document.getElementById('quiz-win-show').textContent = `+${winAmount} / -${bid}`;
+  document.getElementById('quiz-win-show').className = 'quiz-stakes-amount win';
+
+  // Shuffle options (keep track of correct)
+  const opts = word.options.map((text, idx) => ({ text, isCorrect: idx === word.correct }));
+  shuffleArray(opts);
+
+  const container = document.getElementById('quiz-options');
+  container.innerHTML = '';
+  opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-option';
+    btn.textContent = opt.text;
+    btn.onclick = () => answerQuiz(btn, opt.isCorrect, bid, winAmount, word, opts);
+    container.appendChild(btn);
+  });
+
+  showScreen('screen-quiz');
+  startTimer(bid, winAmount, word, opts);
+}
+
+function startTimer(bid, winAmount, word, opts) {
+  clearInterval(state.timerInterval);
+  state.timerLeft = 10;
+  const bar = document.getElementById('timer-bar');
+  bar.style.transition = 'none';
+  bar.style.transform = 'scaleX(1)';
+  bar.className = 'timer-bar';
+
+  // Force reflow
+  bar.offsetWidth;
+
+  bar.style.transition = `transform ${state.timerLeft}s linear`;
+  bar.style.transform = 'scaleX(0)';
+
+  state.timerInterval = setInterval(() => {
+    state.timerLeft--;
+    if (state.timerLeft <= 3) bar.classList.add('danger');
+    if (state.timerLeft <= 0) {
+      clearInterval(state.timerInterval);
+      if (!state.quizAnswered) {
+        // Time up = wrong
+        const options = document.querySelectorAll('.quiz-option');
+        options.forEach(o => o.classList.add('disabled'));
+        // Highlight correct
+        const allOpts = document.querySelectorAll('.quiz-option');
+        allOpts.forEach((o, i) => { if (opts[i].isCorrect) o.classList.add('correct'); });
+        processResult(false, bid, winAmount, word);
+      }
+    }
+  }, 1000);
+}
+
+function answerQuiz(btn, isCorrect, bid, winAmount, word, opts) {
+  if (state.quizAnswered) return;
+  state.quizAnswered = true;
+  clearInterval(state.timerInterval);
+
+  // Stop timer bar
+  const bar = document.getElementById('timer-bar');
+  const computed = getComputedStyle(bar).transform;
+  bar.style.transition = 'none';
+  bar.style.transform = computed;
+
+  // Disable all options
+  document.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+
+  // Mark correct/wrong
+  const allOpts = document.querySelectorAll('.quiz-option');
+  allOpts.forEach((o, i) => {
+    if (opts[i].isCorrect) o.classList.add('correct');
+    else if (o === btn && !isCorrect) o.classList.add('wrong');
+  });
+
+  setTimeout(() => {
+    processResult(isCorrect, bid, winAmount, word);
+  }, 600);
+}
+
+function processResult(won, bid, winAmount, word) {
+  const delta = won ? winAmount : -bid;
+
+  // Player coins
+  state.playerCoins = Math.max(0, state.playerCoins + delta);
+
+  if (won) state.correctCount++;
+
+  // Bot results (50-75% success)
+  state.botResults = state.bots.map((bot, i) => {
+    const success = Math.random() < 0.625;
+    const botBid = state.botBids[i];
+    const botDelta = success ? Math.round(botBid * word.multiplier) : -botBid;
+    bot.coins = Math.max(0, bot.coins + botDelta);
+    return { success, botBid, botDelta, name: bot.name };
+  });
+
+  // Save history
+  state.history.push({ bid, won, delta, word: word.word });
+
+  // Show flash
+  flashScreen(won ? 'green' : 'red');
+  if (won) spawnCoins();
+
+  // Show result popup
+  showResultPopup(won, bid, winAmount, delta);
+}
+
+// ============================================================
+// RESULT POPUP
+// ============================================================
+function showResultPopup(won, bid, winAmount, delta) {
+  const icon = document.getElementById('result-icon');
+  const title = document.getElementById('result-title');
+  const deltaEl = document.getElementById('result-delta');
+  const sub = document.getElementById('result-subtitle');
+  const botsEl = document.getElementById('result-bots');
+  const nextBtn = document.getElementById('result-next-btn');
+
+  icon.textContent = won ? '🎉' : '😔';
+  title.textContent = won ? 'Правильно!' : 'Неправильно!';
+  title.className = 'result-title ' + (won ? 'win' : 'lose');
+  deltaEl.textContent = (delta > 0 ? '+' : '') + delta + ' 💰';
+  deltaEl.className = 'result-delta ' + (won ? 'win' : 'lose');
+  sub.textContent = won
+    ? `Ви знали це слово! Ставка ×${WORDS[state.round].multiplier}`
+    : 'Краще наступного разу!';
+
+  // Bot results
+  botsEl.innerHTML = state.botResults.map(r =>
+    `<div class="result-bot-row">
+      <span class="rbot-name">🤖 ${r.name}</span>
+      <span class="rbot-result ${r.success ? 'rwin' : 'rlose'}">${r.success ? '+' : ''}${r.botDelta} 💰</span>
+    </div>`
+  ).join('');
+
+  // Update player coins in background
+  animateCounter('player-coins-display', state.playerCoins);
+
+  const isLast = state.round >= WORDS.length - 1;
+  nextBtn.textContent = isLast ? '🏆 Результати аукціону' : 'Наступний лот →';
+
+  document.getElementById('result-popup').classList.add('show');
+}
+
+function nextRound() {
+  document.getElementById('result-popup').classList.remove('show');
+  state.round++;
+
+  if (state.round >= WORDS.length) {
+    showFinalScreen();
+  } else {
+    showScreen('screen-bid');
+    loadRound();
+  }
+}
+
+// ============================================================
+// FINAL SCREEN
+// ============================================================
+function showFinalScreen() {
+  showScreen('screen-final');
+
+  // Rankings
+  const players = [
+    { name: 'Ви 🎮', coins: state.playerCoins, isYou: true },
+    ...state.bots.map(b => ({ name: `🤖 ${b.name.replace('Bot ','')}`, coins: b.coins, isYou: false }))
+  ];
+  players.sort((a, b) => b.coins - a.coins);
+
+  const rankIcons = ['🥇', '🥈', '🥉', '4️⃣'];
+  const xpMap = [100, 75, 50, 25];
+  const placeNames = ['1-е місце!', '2-е місце!', '3-е місце', '4-е місце'];
+
+  let yourPlace = 0;
+  let yourXP = 25;
+
+  const lbContainer = document.getElementById('leaderboard');
+  lbContainer.innerHTML = '';
+
+  players.forEach((p, i) => {
+    const xp = xpMap[i];
+    if (p.isYou) {
+      yourPlace = i + 1;
+      yourXP = xp;
+    }
+
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (p.isYou ? ' you' : '') + (i === 0 ? ' first' : '');
+    row.innerHTML = `
+      <div class="lb-rank">${rankIcons[i]}</div>
+      <div class="lb-name">${p.name}</div>
+      <div style="display:flex;align-items:center;">
+        <div class="lb-coins">💰 ${p.coins}</div>
+        <div class="lb-xp">+${xp}XP</div>
+      </div>
+    `;
+    lbContainer.appendChild(row);
+  });
+
+  // Trophy / headline
+  const trophyIcons = ['🏆', '🥈', '🥉', '😤'];
+  document.getElementById('final-trophy').textContent = trophyIcons[yourPlace - 1];
+  document.getElementById('final-headline').textContent =
+    yourPlace === 1 ? 'Ви перемогли! Браво!' : 'Аукціон завершено!';
+  document.getElementById('final-place-text').textContent = `Ваше місце: ${placeNames[yourPlace - 1]}`;
+
+  // Profit
+  const profit = state.playerCoins - START_COINS;
+  const profitEl = document.getElementById('final-profit');
+  const bannerEl = document.getElementById('profit-banner');
+  profitEl.textContent = (profit >= 0 ? '+' : '') + profit + ' 💰';
+  profitEl.className = 'profit-amount ' + (profit >= 0 ? 'win' : 'lose');
+  bannerEl.className = 'profit-banner ' + (profit >= 0 ? 'win' : 'lose');
+
+  // Stats
+  const bids = state.history.map(h => h.bid);
+  const winBids = state.history.filter(h => h.won).map(h => h.bid);
+  const loseBids = state.history.filter(h => !h.won).map(h => h.bid);
+  const bestBid = winBids.length > 0 ? Math.max(...winBids) : (bids.length > 0 ? Math.max(...bids) : 0);
+  const worstBid = loseBids.length > 0 ? Math.max(...loseBids) : 0;
+
+  document.getElementById('best-bid').textContent = bestBid > 0 ? `💰 ${bestBid}` : '—';
+  document.getElementById('worst-bid').textContent = worstBid > 0 ? `💰 ${worstBid}` : '—';
+  document.getElementById('xp-earned').textContent = `${yourXP} XP`;
+  document.getElementById('correct-count').textContent = `${state.correctCount}/5`;
+}
+
+function restartGame() {
+  initState();
+  showScreen('screen-lobby');
+  updateLobbyDisplay();
+}
+
+// ============================================================
+// ANIMATIONS & EFFECTS
+// ============================================================
+function flashScreen(type) {
+  const el = document.getElementById('flash');
+  el.className = type;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 350);
+}
+
+function spawnCoins() {
+  const container = document.getElementById('particles');
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight / 2;
+
+  for (let i = 0; i < 12; i++) {
+    setTimeout(() => {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.textContent = '💰';
+      const dx = (Math.random() - 0.5) * 300;
+      const dy = (Math.random() - 0.5) * 300 - 80;
+      p.style.setProperty('--dx', dx + 'px');
+      p.style.setProperty('--dy', dy + 'px');
+      p.style.left = cx + 'px';
+      p.style.top = cy + 'px';
+      container.appendChild(p);
+      setTimeout(() => p.remove(), 1300);
+    }, i * 50);
+  }
+}
+
+function animateCounter(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = parseInt(el.textContent) || 0;
+  const diff = target - start;
+  const dur = 600;
+  const startTime = performance.now();
+
+  function step(now) {
+    const t = Math.min(1, (now - startTime) / dur);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    el.textContent = Math.round(start + diff * ease);
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
+}
+
+function showCoinFloat(el, delta) {
+  const rect = el.getBoundingClientRect();
+  const f = document.createElement('div');
+  f.className = 'coin-float';
+  f.textContent = (delta > 0 ? '+' : '') + delta + ' 💰';
+  f.style.color = delta > 0 ? 'var(--green)' : 'var(--red)';
+  f.style.left = rect.left + 'px';
+  f.style.top = rect.top + 'px';
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 1600);
+}
+
+function shuffleArray(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+</script>
+</body>
+</html>

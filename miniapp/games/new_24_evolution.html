@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Evolution — Voodoo English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --purple: #7c3aed;
+    --purple-light: #a78bfa;
+    --purple-dark: #5b21b6;
+    --gold: #f59e0b;
+    --gold-light: #fbbf24;
+    --green: #10b981;
+    --green-light: #34d399;
+    --red: #ef4444;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: rgba(124,58,237,0.25);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Background particle field */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .screen {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .screen.active { display: flex; }
+
+  /* ============================================================
+     SCREEN 1 — LAB INTRO
+  ============================================================ */
+  #screen-intro {
+    gap: 0;
+  }
+
+  .lab-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  #dna-canvas {
+    display: block;
+    margin: 0 auto 24px;
+    border-radius: 16px;
+  }
+
+  .title-main {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--purple-light) 0%, var(--gold) 50%, var(--green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+
+  .title-sub {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+
+  .gen-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 10px 20px;
+    margin: 24px auto;
+    width: fit-content;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .gen-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.3s;
+  }
+
+  .gen-arrow {
+    color: var(--purple-light);
+    font-size: 1rem;
+    opacity: 0.6;
+  }
+
+  .chain-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    max-width: 680px;
+    width: 100%;
+    margin-bottom: 28px;
+  }
+
+  .chain-card {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chain-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .chain-card.speed::before { background: linear-gradient(90deg, var(--purple), var(--gold)); }
+  .chain-card.cold::before  { background: linear-gradient(90deg, #60a5fa, #a5f3fc); }
+  .chain-card.size::before  { background: linear-gradient(90deg, var(--green), #86efac); }
+
+  .chain-card:hover {
+    border-color: var(--purple);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(124,58,237,0.3);
+  }
+
+  .chain-card.selected {
+    border-color: var(--purple);
+    background: rgba(124,58,237,0.12);
+    box-shadow: 0 0 0 1px var(--purple), 0 8px 24px rgba(124,58,237,0.4);
+  }
+
+  .chain-icon { font-size: 1.8rem; margin-bottom: 8px; }
+  .chain-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .chain-words {
+    font-size: 0.85rem;
+    color: var(--text);
+    font-weight: 500;
+    line-height: 1.6;
+  }
+  .chain-badge {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: rgba(124,58,237,0.2);
+    color: var(--purple-light);
+    text-transform: uppercase;
+  }
+  .chain-badge.done {
+    background: rgba(16,185,129,0.2);
+    color: var(--green-light);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 16px 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.4s;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(124,58,237,0.6);
+  }
+  .btn-primary:hover::after { left: 100%; }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* ============================================================
+     SCREEN 2 — GAME
+  ============================================================ */
+  #screen-game {
+    justify-content: flex-start;
+    padding-top: 20px;
+    padding-bottom: 40px;
+    gap: 0;
+  }
+
+  .game-header {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .gen-badge {
+    background: linear-gradient(135deg, var(--purple-dark), var(--purple));
+    border-radius: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.4);
+  }
+
+  .xp-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .xp-icon { font-size: 1rem; }
+
+  /* Progress dots */
+  .progress-bar {
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 8px 16px;
+    position: relative;
+  }
+
+  .progress-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+  }
+
+  .progress-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    z-index: 0;
+  }
+
+  .progress-step.done:not(:last-child)::after {
+    background: var(--green);
+  }
+
+  .p-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    transition: all 0.4s;
+    position: relative;
+  }
+
+  .progress-step.done .p-dot {
+    background: var(--green);
+    border-color: var(--green-light);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(16,185,129,0.5);
+  }
+
+  .progress-step.active .p-dot {
+    background: var(--purple);
+    border-color: var(--purple-light);
+    color: #fff;
+    box-shadow: 0 0 14px rgba(124,58,237,0.7);
+    animation: pulse-dot 1.5s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 14px rgba(124,58,237,0.7); }
+    50% { box-shadow: 0 0 24px rgba(124,58,237,1), 0 0 40px rgba(124,58,237,0.4); }
+  }
+
+  .p-word {
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60px;
+  }
+
+  .progress-step.done .p-word { color: var(--green-light); }
+  .progress-step.active .p-word { color: var(--purple-light); }
+
+  /* Specimen container */
+  .specimen-area {
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 24px;
+  }
+
+  .evolution-chain-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .chain-word-node {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+  }
+
+  .chain-word-node.current {
+    background: rgba(124,58,237,0.2);
+    color: var(--purple-light);
+    border-color: var(--purple);
+  }
+
+  .chain-word-node.done-node {
+    background: rgba(16,185,129,0.1);
+    color: var(--green-light);
+    border-color: rgba(16,185,129,0.4);
+  }
+
+  .chain-arrow {
+    font-size: 0.8rem;
+    opacity: 0.4;
+  }
+
+  .specimen-container {
+    background: var(--surface);
+    border: 2px solid var(--purple);
+    border-radius: 20px;
+    padding: 28px 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(124,58,237,0.2), inset 0 0 60px rgba(124,58,237,0.05);
+    animation: specimen-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes specimen-pulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(124,58,237,0.2), inset 0 0 60px rgba(124,58,237,0.05); }
+    50% { box-shadow: 0 0 50px rgba(124,58,237,0.4), inset 0 0 80px rgba(124,58,237,0.1); }
+  }
+
+  .specimen-label {
+    position: absolute;
+    top: 10px;
+    left: 16px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--purple-light);
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .specimen-id {
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+
+  .word-display {
+    font-size: clamp(2.2rem, 7vw, 3.8rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #fff 0%, var(--purple-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+    line-height: 1;
+    transition: all 0.3s;
+  }
+
+  .word-ipa {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  .word-translation {
+    font-size: 0.95rem;
+    color: var(--green-light);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  .word-sentence {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    font-style: italic;
+    padding: 0 8px;
+  }
+
+  /* DNA mini-canvas inside specimen */
+  #specimen-dna {
+    display: block;
+    margin: 12px auto 0;
+  }
+
+  /* Question area */
+  .question-area {
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 20px;
+  }
+
+  .question-text {
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 14px;
+    color: var(--text);
+  }
+
+  .question-highlight {
+    color: var(--gold);
+  }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .option-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    text-align: left;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    line-height: 1.3;
+  }
+
+  .option-letter {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--purple);
+    background: rgba(124,58,237,0.1);
+    transform: translateY(-1px);
+  }
+
+  .option-btn:hover:not(:disabled) .option-letter {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+  }
+
+  .option-btn.correct {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.15);
+    box-shadow: 0 0 20px rgba(16,185,129,0.3);
+  }
+
+  .option-btn.correct .option-letter {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
+  .option-btn.wrong {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.1);
+    animation: shake 0.4s ease;
+  }
+
+  .option-btn.wrong .option-letter {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+
+  .option-btn:disabled { cursor: not-allowed; }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  /* Feedback message */
+  .feedback-msg {
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .feedback-msg.show { opacity: 1; }
+  .feedback-msg.success { color: var(--green-light); }
+  .feedback-msg.fail { color: #fca5a5; }
+
+  /* Timer ring */
+  .timer-ring-wrap {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 10;
+  }
+
+  #timer-ring { display: block; }
+
+  /* ============================================================
+     EVOLUTION TRANSITION
+  ============================================================ */
+  .evolution-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,15,0.95);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .evolution-overlay.active { display: flex; }
+
+  .cell-container {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+  }
+
+  .cell {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(124,58,237,0.1);
+    box-shadow: 0 0 30px rgba(124,58,237,0.4);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+    padding: 8px;
+    color: var(--purple-light);
+  }
+
+  .cell::before {
+    content: '';
+    position: absolute;
+    inset: -50%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(124,58,237,0.3) 60deg, transparent 120deg);
+    animation: cell-spin 2s linear infinite;
+  }
+
+  @keyframes cell-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .cell-divide {
+    font-size: 2rem;
+    color: var(--purple-light);
+    animation: divide-pulse 0.5s ease infinite alternate;
+  }
+
+  @keyframes divide-pulse {
+    from { opacity: 0.4; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1.1); }
+  }
+
+  .evolution-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: var(--green-light);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: evo-glow 1s ease infinite alternate;
+  }
+
+  @keyframes evo-glow {
+    from { text-shadow: 0 0 10px rgba(16,185,129,0.5); }
+    to { text-shadow: 0 0 30px rgba(16,185,129,1), 0 0 60px rgba(16,185,129,0.4); }
+  }
+
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 101;
+  }
+
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particle-fly 1s ease-out forwards;
+  }
+
+  @keyframes particle-fly {
+    from { opacity: 1; transform: translate(0,0) scale(1); }
+    to { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0); }
+  }
+
+  /* ============================================================
+     SCREEN 3 — RESULTS
+  ============================================================ */
+  #screen-results {
+    gap: 0;
+    justify-content: flex-start;
+    padding-top: 40px;
+    padding-bottom: 60px;
+  }
+
+  .results-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .results-chain-name {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--purple-light), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 28px;
+    text-align: center;
+  }
+
+  /* Evolution tree */
+  .evo-tree {
+    width: 100%;
+    max-width: 720px;
+    position: relative;
+    margin-bottom: 28px;
+    padding: 24px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .evo-tree-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .tree-nodes {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 0;
+    position: relative;
+  }
+
+  .tree-nodes::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    right: 28px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--purple), var(--gold), var(--green));
+    z-index: 0;
+  }
+
+  .tree-node {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+  }
+
+  .node-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 3px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    padding: 4px;
+    transition: all 0.4s;
+    position: relative;
+  }
+
+  .node-circle.correct {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.15);
+    color: var(--green-light);
+    box-shadow: 0 0 16px rgba(16,185,129,0.5);
+  }
+
+  .node-circle.wrong {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.1);
+    color: #fca5a5;
+  }
+
+  .node-circle .check {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    font-size: 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+  }
+
+  .node-circle.correct .check { background: var(--green); color: #fff; }
+  .node-circle.wrong .check { background: var(--red); color: #fff; }
+
+  .node-word {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .node-meaning {
+    font-size: 0.55rem;
+    color: var(--text-muted);
+    text-align: center;
+    opacity: 0.7;
+    max-width: 70px;
+    line-height: 1.3;
+  }
+
+  /* Score section */
+  .score-section {
+    width: 100%;
+    max-width: 720px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .score-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .score-value {
+    font-size: 2rem;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .score-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .evolution-rank {
+    width: 100%;
+    max-width: 720px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(245,158,11,0.1));
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .rank-emoji { font-size: 3rem; margin-bottom: 8px; }
+
+  .rank-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--gold);
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+
+  .rank-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .comparison {
+    font-size: 0.85rem;
+    color: var(--green-light);
+    font-weight: 600;
+  }
+
+  .results-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--purple);
+    color: var(--purple-light);
+  }
+
+  /* Confetti / XP popup */
+  .xp-popup {
+    position: fixed;
+    font-size: 1.2rem;
+    font-weight: 800;
+    pointer-events: none;
+    z-index: 200;
+    animation: xp-float 1s ease-out forwards;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  @keyframes xp-float {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to { opacity: 0; transform: translateY(-80px) scale(1.3); }
+  }
+
+  /* Revealing phase */
+  .reveal-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border-radius: 18px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: opacity 0.5s;
+  }
+
+  .reveal-overlay.hidden { opacity: 0; pointer-events: none; }
+
+  .timer-bar-wrap {
+    width: 100%;
+    max-width: 720px;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .timer-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--gold));
+    border-radius: 4px;
+    transition: width linear;
+    width: 100%;
+  }
+
+  @media (max-width: 500px) {
+    .options-grid { grid-template-columns: 1fr; }
+    .score-section { grid-template-columns: 1fr 1fr; }
+    .tree-nodes::before { display: none; }
+    .node-circle { width: 44px; height: 44px; font-size: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ============================================================
+     SCREEN 1 — INTRO
+============================================================ -->
+<div id="screen-intro" class="screen active">
+  <div class="lab-header">
+    <canvas id="dna-canvas" width="480" height="120"></canvas>
+    <div class="title-main">🧬 WORD EVOLUTION</div>
+    <div class="title-sub">Спостерігай як слова еволюціонують через покоління</div>
+  </div>
+
+  <div class="gen-preview">
+    <div class="gen-dot">G1</div>
+    <div class="gen-arrow">→</div>
+    <div class="gen-dot">G2</div>
+    <div class="gen-arrow">→</div>
+    <div class="gen-dot">G3</div>
+    <div class="gen-arrow">→</div>
+    <div class="gen-dot">G4</div>
+    <div class="gen-arrow">→</div>
+    <div class="gen-dot">G5</div>
+  </div>
+
+  <div class="chain-selector">
+    <div class="chain-card speed" data-chain="A" onclick="selectChain('A')">
+      <div class="chain-icon">⚡</div>
+      <div class="chain-name">Ланцюг А</div>
+      <div class="chain-words">FAST → RAPID<br>→ SWIFT → ACCELERATE<br>→ EXPEDITE</div>
+      <div class="chain-badge" id="badge-A">Швидкість</div>
+    </div>
+    <div class="chain-card cold" data-chain="B" onclick="selectChain('B')">
+      <div class="chain-icon">❄️</div>
+      <div class="chain-name">Ланцюг B</div>
+      <div class="chain-words">COLD → CHILL<br>→ FREEZE → GLACIAL<br>→ ARCTIC</div>
+      <div class="chain-badge" id="badge-B">Холод</div>
+    </div>
+    <div class="chain-card size" data-chain="C" onclick="selectChain('C')">
+      <div class="chain-icon">🌍</div>
+      <div class="chain-name">Ланцюг C</div>
+      <div class="chain-words">BIG → LARGE<br>→ MASSIVE → ENORMOUS<br>→ COLOSSAL</div>
+      <div class="chain-badge" id="badge-C">Розмір</div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="start-btn" onclick="startGame()" disabled>
+    ПОЧАТИ ЕВОЛЮЦІЮ →
+  </button>
+</div>
+
+<!-- ============================================================
+     SCREEN 2 — GAME
+============================================================ -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="gen-badge" id="gen-badge">GEN 1 / 5</div>
+    <div class="xp-display">
+      <span class="xp-icon">🧬</span>
+      <span id="xp-counter">0 XP</span>
+    </div>
+  </div>
+
+  <div class="progress-bar" id="progress-bar">
+    <!-- filled by JS -->
+  </div>
+
+  <div class="specimen-area">
+    <div class="evolution-chain-display" id="chain-display">
+      <!-- filled by JS -->
+    </div>
+
+    <div class="specimen-container" id="specimen-box">
+      <div class="specimen-label">SPECIMEN</div>
+      <div class="specimen-id" id="specimen-id">EVL-001</div>
+
+      <div class="reveal-overlay" id="reveal-overlay">
+        <span>🔬 Досліджуємо зразок...</span>
+      </div>
+
+      <div class="word-display" id="word-display">FAST</div>
+      <div class="word-ipa" id="word-ipa">/fæst/</div>
+      <div class="word-translation" id="word-translation">Переклад: швидкий</div>
+      <div class="word-sentence" id="word-sentence">She runs fast every morning.</div>
+      <canvas id="specimen-dna" width="300" height="50"></canvas>
+    </div>
+  </div>
+
+  <div class="timer-bar-wrap">
+    <div class="timer-bar" id="timer-bar"></div>
+  </div>
+
+  <div class="question-area" id="question-area" style="display:none">
+    <div class="question-text" id="question-text">
+      Яке значення слова <span class="question-highlight" id="q-word">FAST</span>?
+    </div>
+    <div class="options-grid" id="options-grid">
+      <!-- filled by JS -->
+    </div>
+    <div class="feedback-msg" id="feedback-msg"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     EVOLUTION OVERLAY
+============================================================ -->
+<div class="evolution-overlay" id="evo-overlay">
+  <div class="evolution-title">🧬 Еволюція!</div>
+  <div class="cell-container">
+    <div class="cell" id="evo-cell-from">FAST</div>
+    <div class="cell-divide">⟹</div>
+    <div class="cell" id="evo-cell-to">RAPID</div>
+  </div>
+  <div style="color: var(--text-muted); font-size:0.85rem; font-weight:500; letter-spacing:1px;">Наступне покоління...</div>
+</div>
+
+<div class="particles" id="particles"></div>
+
+<!-- ============================================================
+     SCREEN 3 — RESULTS
+============================================================ -->
+<div id="screen-results" class="screen">
+  <div class="results-title">Твоя еволюція</div>
+  <div class="results-chain-name" id="result-chain-name">Ланцюг А — ШВИДКІСТЬ</div>
+
+  <div class="evo-tree" id="evo-tree">
+    <div class="evo-tree-label">🌿 Еволюційне дерево</div>
+    <div class="tree-nodes" id="tree-nodes">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <div class="score-section">
+    <div class="score-card">
+      <div class="score-value" id="r-correct" style="color:var(--green)">0/5</div>
+      <div class="score-label">Правильних</div>
+    </div>
+    <div class="score-card">
+      <div class="score-value" id="r-xp" style="color:var(--gold)">0</div>
+      <div class="score-label">Зароблено XP</div>
+    </div>
+  </div>
+
+  <div class="evolution-rank" id="evolution-rank">
+    <div class="rank-emoji" id="rank-emoji">🦠</div>
+    <div class="rank-title" id="rank-title">Мікроб</div>
+    <div class="rank-desc" id="rank-desc">Ти тільки починаєш еволюцію!</div>
+    <div class="comparison" id="comparison">Ти еволюціонував швидше за 12% гравців</div>
+  </div>
+
+  <div class="results-buttons">
+    <button class="btn-primary" onclick="newEvolution()">НОВА ЕВОЛЮЦІЯ →</button>
+    <button class="btn-secondary" onclick="backToIntro()">← НАЗАД</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  DATA
+// ============================================================
+const CHAINS = {
+  A: {
+    name: 'Ланцюг А — ШВИДКІСТЬ',
+    icon: '⚡',
+    color: '#7c3aed',
+    words: [
+      {
+        word: 'FAST',
+        ipa: '/fæst/',
+        translation: 'швидкий',
+        sentence: 'She runs fast every morning before school.',
+        question: 'Що означає FAST?',
+        options: ['швидкий','повільний','великий','маленький'],
+        correct: 0
+      },
+      {
+        word: 'RAPID',
+        ipa: '/ˈræpɪd/',
+        translation: 'дуже швидкий, стрімкий',
+        sentence: 'The rapid river current swept through the canyon.',
+        question: 'RAPID це...?',
+        options: ['дуже швидкий','дуже холодний','дуже великий','дуже темний'],
+        correct: 0
+      },
+      {
+        word: 'SWIFT',
+        ipa: '/swɪft/',
+        translation: 'блискавичний, миттєвий',
+        sentence: 'The swift eagle caught the fish in seconds.',
+        question: 'SWIFT означає',
+        options: ['блискавичний','крижаний','масивний','тихий'],
+        correct: 0
+      },
+      {
+        word: 'ACCELERATE',
+        ipa: '/əkˈseləreɪt/',
+        translation: 'прискорювати',
+        sentence: 'Press the pedal to accelerate down the highway.',
+        question: 'ACCELERATE',
+        options: ['прискорювати','заморожувати','збільшувати','затихати'],
+        correct: 0
+      },
+      {
+        word: 'EXPEDITE',
+        ipa: '/ˈekspɪdaɪt/',
+        translation: 'прискорювати виконання',
+        sentence: 'We need to expedite the delivery to meet the deadline.',
+        question: 'EXPEDITE значить',
+        options: ['прискорювати виконання','уповільнювати','охолоджувати','розширювати'],
+        correct: 0
+      }
+    ]
+  },
+  B: {
+    name: 'Ланцюг B — ХОЛОД',
+    icon: '❄️',
+    color: '#60a5fa',
+    words: [
+      {
+        word: 'COLD',
+        ipa: '/koʊld/',
+        translation: 'холодний',
+        sentence: 'The cold wind made everyone shiver.',
+        question: 'COLD означає',
+        options: ['холодний','гарячий','великий','швидкий'],
+        correct: 0
+      },
+      {
+        word: 'CHILL',
+        ipa: '/tʃɪl/',
+        translation: 'прохолодний, легкий холод',
+        sentence: 'There is a chill in the autumn morning air.',
+        question: 'CHILL це',
+        options: ['прохолодний','теплий','маленький','повільний'],
+        correct: 0
+      },
+      {
+        word: 'FREEZE',
+        ipa: '/friːz/',
+        translation: 'заморожувати, замерзати',
+        sentence: 'Water will freeze at zero degrees Celsius.',
+        question: 'FREEZE значить',
+        options: ['заморожувати','нагрівати','прискорювати','збільшувати'],
+        correct: 0
+      },
+      {
+        word: 'GLACIAL',
+        ipa: '/ˈɡleɪʃəl/',
+        translation: 'льодовиковий, дуже холодний',
+        sentence: 'The glacial temperature froze even the lake surface.',
+        question: 'GLACIAL означає',
+        options: ['льодовиковий, дуже холодний','пустельний','тропічний','вулканічний'],
+        correct: 0
+      },
+      {
+        word: 'ARCTIC',
+        ipa: '/ˈɑːrktɪk/',
+        translation: 'арктичний, полярний',
+        sentence: 'Arctic explorers endure extreme cold and darkness.',
+        question: 'ARCTIC це',
+        options: ['арктичний, полярний','тропічний','помірний','субтропічний'],
+        correct: 0
+      }
+    ]
+  },
+  C: {
+    name: 'Ланцюг C — РОЗМІР',
+    icon: '🌍',
+    color: '#10b981',
+    words: [
+      {
+        word: 'BIG',
+        ipa: '/bɪɡ/',
+        translation: 'великий',
+        sentence: 'That is a big elephant at the zoo.',
+        question: 'BIG означає',
+        options: ['великий','малий','швидкий','холодний'],
+        correct: 0
+      },
+      {
+        word: 'LARGE',
+        ipa: '/lɑːrdʒ/',
+        translation: 'великий за розміром',
+        sentence: 'She ordered a large coffee and a muffin.',
+        question: 'LARGE це',
+        options: ['великий за розміром','маленький','яскравий','темний'],
+        correct: 0
+      },
+      {
+        word: 'MASSIVE',
+        ipa: '/ˈmæsɪv/',
+        translation: 'масивний, величезний',
+        sentence: 'The massive boulder blocked the mountain road.',
+        question: 'MASSIVE означає',
+        options: ['масивний, величезний','крихітний','легкий','тонкий'],
+        correct: 0
+      },
+      {
+        word: 'ENORMOUS',
+        ipa: '/ɪˈnɔːrməs/',
+        translation: 'надзвичайно великий',
+        sentence: 'The enormous whale surfaced near the boat.',
+        question: 'ENORMOUS значить',
+        options: ['надзвичайно великий','нескінченно малий','дуже швидкий','дуже холодний'],
+        correct: 0
+      },
+      {
+        word: 'COLOSSAL',
+        ipa: '/kəˈlɒsəl/',
+        translation: 'колосальний, титанічний',
+        sentence: 'The colossal statue towered over the ancient city.',
+        question: 'COLOSSAL це',
+        options: ['колосальний, титанічний','мінімальний','помірний','звичайний'],
+        correct: 0
+      }
+    ]
+  }
+};
+
+const RANKS = [
+  { min: 0,   emoji: '🦠', title: 'Мікроб',     desc: 'Ти тільки починаєш еволюцію!',   pct: () => randomPct(5,20) },
+  { min: 30,  emoji: '🐟', title: 'Риба',       desc: 'Перші кроки у великому океані.',  pct: () => randomPct(20,40) },
+  { min: 60,  emoji: '🦎', title: 'Рептилія',   desc: 'Адаптація прогресує!',            pct: () => randomPct(40,60) },
+  { min: 80,  emoji: '🐒', title: 'Мавпа',      desc: 'Майже на вершині еволюції!',      pct: () => randomPct(60,80) },
+  { min: 95,  emoji: '🧬', title: 'Homo Sapiens', desc: 'Еволюція завершена. Досконалість!', pct: () => randomPct(80,99) },
+];
+
+function randomPct(a,b){ return Math.floor(a + Math.random()*(b-a)); }
+
+// ============================================================
+//  STATE
+// ============================================================
+let selectedChain = null;
+let currentGen = 0;       // 0-based index into chain.words
+let xp = 0;
+let answers = [];          // true/false per gen
+let genStartTime = 0;
+let questionShown = false;
+let answered = false;
+let timerInterval = null;
+let revealTimeout = null;
+let completed = JSON.parse(localStorage.getItem('evo_completed') || '[]');
+
+// ============================================================
+//  BACKGROUND CANVAS
+// ============================================================
+(function bgCanvas(){
+  const c = document.getElementById('bg-canvas');
+  const ctx = c.getContext('2d');
+  let dots = [];
+
+  function resize(){
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+  }
+
+  function init(){
+    resize();
+    dots = [];
+    const n = Math.floor((c.width * c.height) / 14000);
+    for(let i = 0; i < n; i++){
+      dots.push({
+        x: Math.random() * c.width,
+        y: Math.random() * c.height,
+        r: Math.random() * 1.5 + 0.3,
+        vx: (Math.random()-0.5)*0.15,
+        vy: (Math.random()-0.5)*0.15,
+        alpha: Math.random()*0.5+0.1
+      });
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    dots.forEach(d=>{
+      d.x += d.vx; d.y += d.vy;
+      if(d.x<0) d.x = c.width;
+      if(d.x>c.width) d.x = 0;
+      if(d.y<0) d.y = c.height;
+      if(d.y>c.height) d.y = 0;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(124,58,237,${d.alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', init);
+  init();
+  draw();
+})();
+
+// ============================================================
+//  DNA HELIX ANIMATION (intro)
+// ============================================================
+(function dnaIntro(){
+  const c = document.getElementById('dna-canvas');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  let t = 0;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    const N = 80;
+    for(let i = 0; i <= N; i++){
+      const x = (i/N) * W;
+      const phase = (i/N) * Math.PI*4 + t;
+      const y1 = H/2 + Math.sin(phase) * (H*0.38);
+      const y2 = H/2 + Math.sin(phase + Math.PI) * (H*0.38);
+
+      // Connecting rungs
+      if(i % 6 === 0){
+        const ry1 = H/2 + Math.sin(phase) * (H*0.38);
+        const ry2 = H/2 + Math.sin(phase + Math.PI) * (H*0.38);
+        const mx = x;
+        const alpha = 0.15 + 0.25 * Math.abs(Math.sin(phase));
+        ctx.beginPath();
+        ctx.moveTo(mx, ry1);
+        ctx.lineTo(mx, ry2);
+        ctx.strokeStyle = `rgba(167,139,250,${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Strand 1 dots
+      const a1 = 0.6 + 0.4 * Math.sin(phase);
+      ctx.beginPath();
+      ctx.arc(x, y1, 3, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(124,58,237,${a1})`;
+      ctx.fill();
+
+      // Strand 2 dots
+      const a2 = 0.6 + 0.4 * Math.sin(phase + Math.PI);
+      ctx.beginPath();
+      ctx.arc(x, y2, 3, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(16,185,129,${a2})`;
+      ctx.fill();
+    }
+
+    // Draw connecting lines between adjacent same-strand dots
+    ctx.beginPath();
+    for(let i = 0; i <= N; i++){
+      const x = (i/N)*W;
+      const phase = (i/N)*Math.PI*4 + t;
+      const y = H/2 + Math.sin(phase)*(H*0.38);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = 'rgba(124,58,237,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for(let i = 0; i <= N; i++){
+      const x = (i/N)*W;
+      const phase = (i/N)*Math.PI*4 + t + Math.PI;
+      const y = H/2 + Math.sin(phase)*(H*0.38);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = 'rgba(16,185,129,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    t += 0.025;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ============================================================
+//  SPECIMEN DNA (in-game mini helix)
+// ============================================================
+let specimenT = 0;
+let specimenAnim = null;
+
+function startSpecimenDNA(){
+  const c = document.getElementById('specimen-dna');
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const N = 50;
+
+    ctx.beginPath();
+    for(let i=0;i<=N;i++){
+      const x=(i/N)*W;
+      const phase=(i/N)*Math.PI*4+specimenT;
+      const y=H/2+Math.sin(phase)*(H*0.42);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(124,58,237,0.7)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    for(let i=0;i<=N;i++){
+      const x=(i/N)*W;
+      const phase=(i/N)*Math.PI*4+specimenT+Math.PI;
+      const y=H/2+Math.sin(phase)*(H*0.42);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle='rgba(16,185,129,0.7)';
+    ctx.lineWidth=2;
+    ctx.stroke();
+
+    for(let i=0;i<=N;i+=5){
+      const x=(i/N)*W;
+      const phase=(i/N)*Math.PI*4+specimenT;
+      const y1=H/2+Math.sin(phase)*(H*0.42);
+      const y2=H/2+Math.sin(phase+Math.PI)*(H*0.42);
+      ctx.beginPath();
+      ctx.moveTo(x,y1); ctx.lineTo(x,y2);
+      ctx.strokeStyle='rgba(167,139,250,0.2)';
+      ctx.lineWidth=1;
+      ctx.stroke();
+    }
+
+    specimenT += 0.04;
+    specimenAnim = requestAnimationFrame(draw);
+  }
+
+  if(specimenAnim) cancelAnimationFrame(specimenAnim);
+  draw();
+}
+
+// ============================================================
+//  UI HELPERS
+// ============================================================
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function selectChain(ch){
+  selectedChain = ch;
+  document.querySelectorAll('.chain-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.chain===ch);
+  });
+  document.getElementById('start-btn').disabled = false;
+}
+
+function updateBadges(){
+  ['A','B','C'].forEach(ch=>{
+    const el = document.getElementById('badge-'+ch);
+    if(completed.includes(ch)){
+      el.textContent = '✓ Пройдено';
+      el.classList.add('done');
+    }
+  });
+}
+
+// ============================================================
+//  GAME START
+// ============================================================
+function startGame(){
+  if(!selectedChain) return;
+  xp = 0;
+  currentGen = 0;
+  answers = [];
+  showScreen('game');
+  startSpecimenDNA();
+  renderGen();
+}
+
+// ============================================================
+//  RENDER GENERATION
+// ============================================================
+function renderGen(){
+  answered = false;
+  questionShown = false;
+
+  const chain = CHAINS[selectedChain];
+  const wordData = chain.words[currentGen];
+
+  // Header
+  document.getElementById('gen-badge').textContent = `GEN ${currentGen+1} / 5`;
+  document.getElementById('xp-counter').textContent = `${xp} XP`;
+  document.getElementById('specimen-id').textContent = `EVL-${selectedChain}0${currentGen+1}`;
+
+  // Word
+  document.getElementById('word-display').textContent = wordData.word;
+  document.getElementById('word-ipa').textContent = wordData.ipa;
+  document.getElementById('word-translation').textContent = `Переклад: ${wordData.translation}`;
+  document.getElementById('word-sentence').textContent = wordData.sentence;
+
+  // Chain display
+  renderChainDisplay();
+
+  // Progress dots
+  renderProgress();
+
+  // Hide question area
+  const qa = document.getElementById('question-area');
+  qa.style.display = 'none';
+  document.getElementById('feedback-msg').classList.remove('show');
+
+  // Show reveal overlay, then remove it after 2.5s
+  const ro = document.getElementById('reveal-overlay');
+  ro.classList.remove('hidden');
+  ro.innerHTML = '<span>🔬 Досліджуємо зразок...</span>';
+
+  // Timer bar reset
+  const tb = document.getElementById('timer-bar');
+  tb.style.transition = 'none';
+  tb.style.width = '100%';
+
+  clearTimeout(revealTimeout);
+  revealTimeout = setTimeout(()=>{
+    ro.classList.add('hidden');
+    // Start countdown to show question (3s reveal window)
+    tb.style.transition = 'width 3s linear';
+    tb.style.width = '0%';
+
+    setTimeout(()=>{
+      showQuestion();
+    }, 3000);
+  }, 300);
+}
+
+function renderChainDisplay(){
+  const chain = CHAINS[selectedChain];
+  const el = document.getElementById('chain-display');
+  el.innerHTML = '';
+
+  chain.words.forEach((w, i) => {
+    if(i > 0){
+      const arrow = document.createElement('span');
+      arrow.className = 'chain-arrow';
+      arrow.textContent = '🧬';
+      el.appendChild(arrow);
+    }
+
+    const node = document.createElement('div');
+    node.className = 'chain-word-node';
+
+    if(i < currentGen) node.classList.add('done-node');
+    else if(i === currentGen) node.classList.add('current');
+
+    if(i > currentGen) {
+      node.textContent = '???';
+    } else {
+      node.textContent = w.word;
+    }
+
+    el.appendChild(node);
+  });
+}
+
+function renderProgress(){
+  const chain = CHAINS[selectedChain];
+  const pb = document.getElementById('progress-bar');
+  pb.innerHTML = '';
+
+  chain.words.forEach((w,i)=>{
+    const step = document.createElement('div');
+    step.className = 'progress-step';
+    if(i < currentGen) step.classList.add('done');
+    else if(i === currentGen) step.classList.add('active');
+
+    const dot = document.createElement('div');
+    dot.className = 'p-dot';
+    if(i < currentGen) dot.textContent = '✓';
+    else dot.textContent = i+1;
+
+    const word = document.createElement('div');
+    word.className = 'p-word';
+    word.textContent = i <= currentGen ? w.word : '???';
+
+    step.appendChild(dot);
+    step.appendChild(word);
+    pb.appendChild(step);
+  });
+}
+
+// ============================================================
+//  SHOW QUESTION
+// ============================================================
+function showQuestion(){
+  if(answered) return;
+  questionShown = true;
+
+  const chain = CHAINS[selectedChain];
+  const wordData = chain.words[currentGen];
+
+  document.getElementById('q-word').textContent = wordData.word;
+  document.getElementById('question-text').innerHTML =
+    `Яке значення слова <span class="question-highlight">${wordData.word}</span>?`;
+
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+
+  const letters = ['A','B','C','D'];
+  const shuffled = shuffleWithCorrect(wordData.options, wordData.correct);
+
+  shuffled.forEach((opt, i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<div class="option-letter">${letters[i]}</div><span>${opt.text}</span>`;
+    btn.onclick = ()=>chooseAnswer(i, opt.isCorrect, btn, grid);
+    grid.appendChild(btn);
+  });
+
+  const qa = document.getElementById('question-area');
+  qa.style.display = 'block';
+
+  genStartTime = Date.now();
+}
+
+function shuffleWithCorrect(options, correctIdx){
+  const items = options.map((text,i)=>({text, isCorrect: i===correctIdx}));
+  // Fisher-Yates
+  for(let i=items.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [items[i],items[j]]=[items[j],items[i]];
+  }
+  return items;
+}
+
+// ============================================================
+//  ANSWER HANDLING
+// ============================================================
+function chooseAnswer(idx, isCorrect, btn, grid){
+  if(answered) return;
+  answered = true;
+
+  // Disable all buttons
+  Array.from(grid.children).forEach(b=>b.disabled=true);
+
+  const fb = document.getElementById('feedback-msg');
+  fb.classList.add('show');
+
+  if(isCorrect){
+    btn.classList.add('correct');
+    xp += 20;
+    answers.push(true);
+    fb.textContent = '✓ Вірно! +20 XP';
+    fb.className = 'feedback-msg show success';
+    showXPPopup('+20 XP', btn);
+    spawnParticles(btn);
+
+    document.getElementById('xp-counter').textContent = `${xp} XP`;
+
+    // After short delay, trigger evolution
+    setTimeout(()=>triggerEvolution(), 1200);
+  } else {
+    btn.classList.add('wrong');
+    xp = Math.max(0, xp - 5);
+    answers.push(false);
+    fb.textContent = '✗ Мутація не вдалась! -5 XP';
+    fb.className = 'feedback-msg show fail';
+
+    // Highlight correct
+    Array.from(grid.children).forEach(b=>{
+      const span = b.querySelector('span');
+      if(b !== btn && !b.classList.contains('wrong')){
+        // find correct one
+      }
+    });
+    // Mark correct answer
+    markCorrectBtn(grid);
+
+    document.getElementById('xp-counter').textContent = `${xp} XP`;
+    setTimeout(()=>triggerEvolution(), 1800);
+  }
+}
+
+function markCorrectBtn(grid){
+  const chain = CHAINS[selectedChain];
+  const wordData = chain.words[currentGen];
+  const correctText = wordData.options[wordData.correct];
+  Array.from(grid.children).forEach(btn=>{
+    if(btn.querySelector('span').textContent === correctText){
+      btn.classList.add('correct');
+    }
+  });
+}
+
+function showXPPopup(text, nearEl){
+  const rect = nearEl.getBoundingClientRect();
+  const pop = document.createElement('div');
+  pop.className = 'xp-popup';
+  pop.textContent = text;
+  pop.style.color = '#10b981';
+  pop.style.left = (rect.left + rect.width/2 - 30) + 'px';
+  pop.style.top = (rect.top - 10) + 'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(), 1100);
+}
+
+function spawnParticles(near){
+  const pc = document.getElementById('particles');
+  const rect = near.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+
+  for(let i=0;i<20;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = Math.random()*Math.PI*2;
+    const dist = 60 + Math.random()*120;
+    p.style.left = cx+'px';
+    p.style.top = cy+'px';
+    p.style.setProperty('--tx', `${Math.cos(angle)*dist}px`);
+    p.style.setProperty('--ty', `${Math.sin(angle)*dist}px`);
+    const colors = ['#7c3aed','#10b981','#f59e0b','#a78bfa','#34d399'];
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay = (Math.random()*0.3)+'s';
+    p.style.animationDuration = (0.6+Math.random()*0.6)+'s';
+    pc.appendChild(p);
+    setTimeout(()=>p.remove(), 1200);
+  }
+}
+
+// ============================================================
+//  EVOLUTION ANIMATION
+// ============================================================
+function triggerEvolution(){
+  const chain = CHAINS[selectedChain];
+  const fromWord = chain.words[currentGen].word;
+
+  if(currentGen >= 4){
+    // Last gen — go to results
+    setTimeout(()=>showResults(), 300);
+    return;
+  }
+
+  const toWord = chain.words[currentGen+1].word;
+
+  document.getElementById('evo-cell-from').textContent = fromWord;
+  document.getElementById('evo-cell-to').textContent = toWord;
+
+  const overlay = document.getElementById('evo-overlay');
+  overlay.classList.add('active');
+
+  // Spawn full-screen particles
+  spawnFullParticles();
+
+  setTimeout(()=>{
+    overlay.classList.remove('active');
+    currentGen++;
+    renderGen();
+  }, 2200);
+}
+
+function spawnFullParticles(){
+  const pc = document.getElementById('particles');
+  const cx = window.innerWidth/2;
+  const cy = window.innerHeight/2;
+
+  for(let i=0;i<40;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = Math.random()*Math.PI*2;
+    const dist = 80 + Math.random()*200;
+    p.style.left = cx+'px';
+    p.style.top = cy+'px';
+    p.style.setProperty('--tx', `${Math.cos(angle)*dist}px`);
+    p.style.setProperty('--ty', `${Math.sin(angle)*dist}px`);
+    p.style.width = (4+Math.random()*8)+'px';
+    p.style.height = p.style.width;
+    const colors = ['#7c3aed','#10b981','#f59e0b','#a78bfa','#34d399','#60a5fa'];
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay = (Math.random()*0.5)+'s';
+    p.style.animationDuration = (0.8+Math.random()*0.8)+'s';
+    pc.appendChild(p);
+    setTimeout(()=>p.remove(), 1600);
+  }
+}
+
+// ============================================================
+//  RESULTS
+// ============================================================
+function showResults(){
+  const chain = CHAINS[selectedChain];
+  const correct = answers.filter(Boolean).length;
+  const pct = Math.round((correct/5)*100);
+
+  // Save completed
+  if(correct >= 3 && !completed.includes(selectedChain)){
+    completed.push(selectedChain);
+    localStorage.setItem('evo_completed', JSON.stringify(completed));
+  }
+
+  document.getElementById('result-chain-name').textContent = chain.name;
+  document.getElementById('r-correct').textContent = `${correct}/5`;
+  document.getElementById('r-xp').textContent = xp;
+
+  // Rank
+  let rank = RANKS[0];
+  RANKS.forEach(r=>{ if(pct >= r.min) rank = r; });
+
+  document.getElementById('rank-emoji').textContent = rank.emoji;
+  document.getElementById('rank-title').textContent = rank.title;
+  document.getElementById('rank-desc').textContent = rank.desc;
+  document.getElementById('comparison').textContent =
+    `Ти еволюціонував швидше за ${rank.pct()}% гравців`;
+
+  // Tree
+  buildTree();
+
+  showScreen('results');
+}
+
+function buildTree(){
+  const chain = CHAINS[selectedChain];
+  const tn = document.getElementById('tree-nodes');
+  tn.innerHTML = '';
+
+  chain.words.forEach((w,i)=>{
+    const node = document.createElement('div');
+    node.className = 'tree-node';
+
+    const circle = document.createElement('div');
+    circle.className = 'node-circle';
+
+    const isCorrect = answers[i] === true;
+    const isAnswered = i < answers.length;
+
+    if(isAnswered){
+      circle.classList.add(isCorrect ? 'correct' : 'wrong');
+      const check = document.createElement('div');
+      check.className = 'check';
+      check.textContent = isCorrect ? '✓' : '✗';
+      circle.appendChild(check);
+    }
+
+    const wordEl = document.createElement('span');
+    wordEl.textContent = w.word;
+    circle.appendChild(wordEl);
+
+    const wordLabel = document.createElement('div');
+    wordLabel.className = 'node-word';
+    wordLabel.textContent = w.word;
+
+    const meaning = document.createElement('div');
+    meaning.className = 'node-meaning';
+    meaning.textContent = w.translation;
+
+    node.appendChild(circle);
+    node.appendChild(wordLabel);
+    node.appendChild(meaning);
+    tn.appendChild(node);
+  });
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function newEvolution(){
+  selectedChain = null;
+  currentGen = 0;
+  xp = 0;
+  answers = [];
+  updateBadges();
+  showScreen('intro');
+  document.querySelectorAll('.chain-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('start-btn').disabled = true;
+}
+
+function backToIntro(){
+  newEvolution();
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+updateBadges();
+</script>
+</body>
+</html>

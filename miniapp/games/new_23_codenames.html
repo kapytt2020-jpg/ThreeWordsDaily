@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CODENAMES — Word Spy | Voodoo English</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #11111a;
+    --bg3: #1a1a2e;
+    --purple: #7c3aed;
+    --purple-light: #a78bfa;
+    --purple-dim: rgba(124, 58, 237, 0.15);
+    --gold: #f59e0b;
+    --gold-light: #fcd34d;
+    --gold-dim: rgba(245, 158, 11, 0.15);
+    --red: #ef4444;
+    --red-dim: rgba(239, 68, 68, 0.15);
+    --grey: #6b7280;
+    --grey-dim: rgba(107, 114, 128, 0.15);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --border: rgba(255,255,255,0.07);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ═══════════════════════════════════════
+     SCANLINES OVERLAY
+  ═══════════════════════════════════════ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ═══════════════════════════════════════
+     SCREENS
+  ═══════════════════════════════════════ */
+  .screen {
+    display: none;
+    min-height: 100vh;
+  }
+  .screen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ═══════════════════════════════════════
+     SETUP SCREEN
+  ═══════════════════════════════════════ */
+  #screen-setup {
+    padding: 40px 20px;
+    text-align: center;
+    position: relative;
+  }
+
+  .setup-bg-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(ellipse at center,
+      rgba(124,58,237,0.12) 0%,
+      rgba(245,158,11,0.06) 50%,
+      transparent 70%);
+    pointer-events: none;
+    border-radius: 50%;
+  }
+
+  .classified-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 2px;
+    margin-bottom: 32px;
+  }
+
+  .classified-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .game-title {
+    font-size: clamp(48px, 10vw, 88px);
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #e2e8f0 0%, var(--purple-light) 50%, var(--gold-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .game-subtitle {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 40px;
+  }
+
+  .setup-explanation {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+    max-width: 360px;
+    line-height: 1.6;
+  }
+
+  .teams-overview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 480px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .team-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .team-card.purple { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.08); }
+  .team-card.gold { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
+
+  .team-card-icon { font-size: 28px; margin-bottom: 8px; }
+  .team-card-name { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .team-card.purple .team-card-name { color: var(--purple-light); }
+  .team-card.gold .team-card-name { color: var(--gold-light); }
+  .team-card-words { font-size: 28px; font-weight: 900; }
+  .team-card.purple .team-card-words { color: var(--purple-light); }
+  .team-card.gold .team-card-words { color: var(--gold-light); }
+  .team-card-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+
+  .extras-row {
+    display: flex;
+    gap: 12px;
+    max-width: 480px;
+    width: 100%;
+    margin-bottom: 40px;
+  }
+
+  .extra-card {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .extra-card.assassin { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+  .extra-card.neutral { border-color: rgba(107,114,128,0.3); background: rgba(107,114,128,0.08); }
+
+  .extra-card-icon { font-size: 22px; margin-bottom: 4px; }
+  .extra-card-count { font-size: 22px; font-weight: 900; }
+  .extra-card.assassin .extra-card-count { color: var(--red); }
+  .extra-card.neutral .extra-card-count { color: var(--grey); }
+  .extra-card-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+
+  .rules-list {
+    max-width: 420px;
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: left;
+    margin-bottom: 36px;
+  }
+
+  .rules-list h3 {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+  }
+
+  .rules-list li {
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    list-style: none;
+    display: flex;
+    gap: 10px;
+    line-height: 1.5;
+  }
+
+  .rules-list li:last-child { border-bottom: none; }
+  .rules-list li .rule-icon { flex-shrink: 0; }
+
+  .btn-start {
+    background: linear-gradient(135deg, var(--purple) 0%, #6d28d9 100%);
+    color: white;
+    border: none;
+    padding: 18px 56px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 32px rgba(124,58,237,0.4);
+  }
+
+  .btn-start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 48px rgba(124,58,237,0.6);
+  }
+
+  .btn-start:active { transform: translateY(0); }
+
+  /* ═══════════════════════════════════════
+     GAME SCREEN
+  ═══════════════════════════════════════ */
+  #screen-game {
+    padding: 0;
+    justify-content: flex-start;
+    min-height: 100vh;
+  }
+
+  /* TOP BAR */
+  .top-bar {
+    width: 100%;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .score-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .score-pill.purple { border-color: rgba(124,58,237,0.4); color: var(--purple-light); }
+  .score-pill.gold { border-color: rgba(245,158,11,0.4); color: var(--gold-light); }
+
+  .score-pill .count {
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .turn-indicator {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: all 0.3s;
+  }
+
+  .turn-indicator.purple {
+    background: rgba(124,58,237,0.15);
+    color: var(--purple-light);
+    border: 1px solid rgba(124,58,237,0.3);
+  }
+
+  .turn-indicator.gold {
+    background: rgba(245,158,11,0.15);
+    color: var(--gold-light);
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+
+  .assassin-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--red);
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 20px;
+    padding: 6px 12px;
+    animation: pulse-warning 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-warning {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  /* GAME AREA */
+  .game-area {
+    flex: 1;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 16px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* SPYMASTER TOGGLE */
+  .spy-toggle-bar {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .btn-spy-toggle {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-spy-toggle:hover {
+    border-color: rgba(124,58,237,0.4);
+    color: var(--purple-light);
+  }
+
+  .btn-spy-toggle.active {
+    background: rgba(124,58,237,0.15);
+    border-color: rgba(124,58,237,0.5);
+    color: var(--purple-light);
+    box-shadow: 0 0 12px rgba(124,58,237,0.2);
+  }
+
+  /* BOARD */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* CARD */
+  .card-wrapper {
+    aspect-ratio: 4/3;
+    perspective: 800px;
+    cursor: pointer;
+    min-height: 80px;
+  }
+
+  .card-wrapper.revealed { cursor: default; }
+  .card-wrapper.revealed .card-inner { transform: rotateY(180deg); }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    text-align: center;
+  }
+
+  /* FRONT — hidden colors */
+  .card-front {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .card-wrapper:not(.revealed):hover .card-front {
+    border-color: rgba(255,255,255,0.2);
+    box-shadow: 0 0 16px rgba(255,255,255,0.04);
+  }
+
+  /* Spymaster overlay glow on front */
+  .card-wrapper.spy-purple .card-front {
+    border-color: rgba(124,58,237,0.7);
+    box-shadow: 0 0 16px rgba(124,58,237,0.35), inset 0 0 20px rgba(124,58,237,0.1);
+  }
+
+  .card-wrapper.spy-gold .card-front {
+    border-color: rgba(245,158,11,0.7);
+    box-shadow: 0 0 16px rgba(245,158,11,0.35), inset 0 0 20px rgba(245,158,11,0.1);
+  }
+
+  .card-wrapper.spy-assassin .card-front {
+    border-color: rgba(239,68,68,0.8);
+    box-shadow: 0 0 20px rgba(239,68,68,0.4), inset 0 0 24px rgba(239,68,68,0.12);
+  }
+
+  .card-wrapper.spy-neutral .card-front {
+    border-color: rgba(107,114,128,0.4);
+  }
+
+  .card-english {
+    font-size: clamp(11px, 2.5vw, 16px);
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .card-ukrainian {
+    font-size: clamp(9px, 1.8vw, 11px);
+    font-weight: 400;
+    color: var(--text-dim);
+    margin-top: 3px;
+    opacity: 0.7;
+  }
+
+  /* Spy label badge */
+  .spy-label {
+    display: none;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .card-wrapper.spy-purple .spy-label { background: var(--purple); display: block; }
+  .card-wrapper.spy-gold .spy-label { background: var(--gold); display: block; }
+  .card-wrapper.spy-assassin .spy-label { background: var(--red); display: block; }
+
+  /* BACK — revealed */
+  .card-back {
+    transform: rotateY(180deg);
+    border: 2px solid transparent;
+  }
+
+  .card-back.color-purple {
+    background: linear-gradient(135deg, rgba(124,58,237,0.9) 0%, rgba(109,40,217,0.95) 100%);
+    border-color: var(--purple-light);
+    box-shadow: 0 0 20px rgba(124,58,237,0.5);
+  }
+
+  .card-back.color-gold {
+    background: linear-gradient(135deg, rgba(245,158,11,0.9) 0%, rgba(217,119,6,0.95) 100%);
+    border-color: var(--gold-light);
+    box-shadow: 0 0 20px rgba(245,158,11,0.5);
+  }
+
+  .card-back.color-assassin {
+    background: linear-gradient(135deg, rgba(239,68,68,0.9) 0%, rgba(185,28,28,0.95) 100%);
+    border-color: #fca5a5;
+    box-shadow: 0 0 24px rgba(239,68,68,0.6);
+  }
+
+  .card-back.color-neutral {
+    background: linear-gradient(135deg, rgba(55,65,81,0.9) 0%, rgba(31,41,55,0.95) 100%);
+    border-color: var(--grey);
+    box-shadow: 0 0 12px rgba(107,114,128,0.2);
+  }
+
+  .card-back .card-english { color: rgba(255,255,255,0.95); }
+  .card-back .card-ukrainian { color: rgba(255,255,255,0.75); opacity: 1; font-size: clamp(10px, 1.8vw, 13px); }
+  .card-back .card-icon { font-size: clamp(14px, 3vw, 20px); margin-bottom: 2px; }
+
+  /* ═══════════════════════════════════════
+     PHASE PANEL
+  ═══════════════════════════════════════ */
+  .phase-panel {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .phase-panel.purple { border-color: rgba(124,58,237,0.3); }
+  .phase-panel.gold { border-color: rgba(245,158,11,0.3); }
+
+  .phase-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .phase-title.purple { color: var(--purple-light); }
+  .phase-title.gold { color: var(--gold-light); }
+
+  /* Spymaster input */
+  .spymaster-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .clue-input {
+    flex: 1;
+    min-width: 160px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .clue-input:focus { border-color: rgba(124,58,237,0.5); }
+  .clue-input.gold-focus:focus { border-color: rgba(245,158,11,0.5); }
+  .clue-input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 400; }
+
+  .number-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  .num-btn {
+    width: 38px;
+    height: 38px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .num-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+  .num-btn.selected.purple { background: rgba(124,58,237,0.2); border-color: var(--purple); color: var(--purple-light); }
+  .num-btn.selected.gold { background: rgba(245,158,11,0.2); border-color: var(--gold); color: var(--gold-light); }
+
+  .btn-give-clue {
+    background: linear-gradient(135deg, var(--purple) 0%, #6d28d9 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-give-clue.gold {
+    background: linear-gradient(135deg, var(--gold) 0%, #d97706 100%);
+  }
+
+  .btn-give-clue:hover { transform: translateY(-1px); }
+  .btn-give-clue:active { transform: translateY(0); }
+  .btn-give-clue:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Guessing phase */
+  .guess-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .clue-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .clue-display .clue-word {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .clue-display.purple .clue-word { color: var(--purple-light); }
+  .clue-display.gold .clue-word { color: var(--gold-light); }
+
+  .clue-display .clue-arrow { color: var(--text-dim); font-size: 16px; }
+
+  .clue-count-badge {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dim);
+  }
+
+  .guesses-left {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .btn-end-turn {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-end-turn:hover {
+    border-color: rgba(255,255,255,0.2);
+    color: var(--text);
+  }
+
+  /* ═══════════════════════════════════════
+     LOG STRIP
+  ═══════════════════════════════════════ */
+  .game-log {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 16px 16px;
+  }
+
+  .log-strip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    min-height: 36px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .log-entry { animation: fadeIn 0.3s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ═══════════════════════════════════════
+     ASSASSIN FLASH
+  ═══════════════════════════════════════ */
+  .assassin-flash {
+    position: fixed;
+    inset: 0;
+    background: rgba(239,68,68,0.4);
+    z-index: 9998;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .assassin-flash.active { opacity: 1; }
+
+  /* ═══════════════════════════════════════
+     WIN SCREEN
+  ═══════════════════════════════════════ */
+  #screen-win {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .win-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .win-glow.purple {
+    background: radial-gradient(ellipse at center, rgba(124,58,237,0.2) 0%, transparent 70%);
+  }
+
+  .win-glow.gold {
+    background: radial-gradient(ellipse at center, rgba(245,158,11,0.2) 0%, transparent 70%);
+  }
+
+  #screen-win { position: relative; }
+
+  .win-badge {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    padding: 6px 20px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+
+  .win-badge.purple {
+    background: rgba(124,58,237,0.15);
+    color: var(--purple-light);
+    border: 1px solid rgba(124,58,237,0.3);
+  }
+
+  .win-badge.gold {
+    background: rgba(245,158,11,0.15);
+    color: var(--gold-light);
+    border: 1px solid rgba(245,158,11,0.3);
+  }
+
+  .win-title {
+    font-size: clamp(32px, 7vw, 64px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+
+  .win-title.purple { color: var(--purple-light); }
+  .win-title.gold { color: var(--gold-light); }
+
+  .win-subtitle {
+    font-size: 15px;
+    color: var(--text-dim);
+    margin-bottom: 40px;
+  }
+
+  .win-stats {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .win-stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 28px;
+    text-align: center;
+    min-width: 120px;
+  }
+
+  .win-stat-num {
+    font-size: 36px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .win-stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .assassin-reminder {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 12px;
+    padding: 16px 24px;
+    margin-bottom: 32px;
+    max-width: 360px;
+    font-size: 13px;
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn-new-mission {
+    background: linear-gradient(135deg, var(--purple) 0%, #6d28d9 100%);
+    color: white;
+    border: none;
+    padding: 16px 48px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 32px rgba(124,58,237,0.4);
+  }
+
+  .btn-new-mission:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 48px rgba(124,58,237,0.6);
+  }
+
+  /* ═══════════════════════════════════════
+     MOBILE RESPONSIVE
+  ═══════════════════════════════════════ */
+  @media (max-width: 600px) {
+    .board { gap: 5px; }
+    .card-wrapper { min-height: 64px; }
+    .card-english { font-size: 10px; letter-spacing: 0; }
+    .card-ukrainian { font-size: 8px; }
+    .teams-overview { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .top-bar { gap: 8px; padding: 8px 12px; }
+    .score-pill { padding: 4px 10px; font-size: 12px; }
+    .turn-indicator { font-size: 11px; padding: 6px 10px; }
+    .spymaster-form { gap: 8px; }
+    .clue-input { font-size: 13px; }
+    .num-btn { width: 32px; height: 32px; font-size: 14px; }
+  }
+
+  @media (max-width: 400px) {
+    .board { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+    .card-english { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ASSASSIN FLASH OVERLAY -->
+<div class="assassin-flash" id="assassinFlash"></div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1: SETUP
+═══════════════════════════════════════════ -->
+<div class="screen active" id="screen-setup">
+  <div class="setup-bg-glow"></div>
+
+  <div class="classified-badge">Classified Mission</div>
+
+  <div class="game-title">CODENAMES</div>
+  <div class="game-subtitle">Word Spy</div>
+
+  <div class="setup-explanation">
+    Грай за обидві команди — ти одночасно шпигун і агент.<br>
+    Перша команда, що знайде всі свої слова, перемагає.
+  </div>
+
+  <div class="teams-overview">
+    <div class="team-card purple">
+      <div class="team-card-icon">🟣</div>
+      <div class="team-card-name">Purple Agents</div>
+      <div class="team-card-words">9</div>
+      <div class="team-card-label">слів</div>
+    </div>
+    <div class="team-card gold">
+      <div class="team-card-icon">🟡</div>
+      <div class="team-card-name">Gold Agents</div>
+      <div class="team-card-words">8</div>
+      <div class="team-card-label">слів</div>
+    </div>
+  </div>
+
+  <div class="extras-row">
+    <div class="extra-card assassin">
+      <div class="extra-card-icon">☠️</div>
+      <div class="extra-card-count">1</div>
+      <div class="extra-card-label">Асасин</div>
+    </div>
+    <div class="extra-card neutral">
+      <div class="extra-card-icon">⬜</div>
+      <div class="extra-card-count">7</div>
+      <div class="extra-card-label">Нейтральних</div>
+    </div>
+  </div>
+
+  <div class="rules-list">
+    <h3>Як грати</h3>
+    <ul>
+      <li><span class="rule-icon">🕵️</span><span>Шпигун дає одне слово-підказку + кількість слів на дошці</span></li>
+      <li><span class="rule-icon">👆</span><span>Агенти натискають картки, щоб вгадати слова своєї команди</span></li>
+      <li><span class="rule-icon">🔄</span><span>Якщо вгадав чужу картку — хід переходить до противника</span></li>
+      <li><span class="rule-icon">☠️</span><span>Асасин = миттєва поразка. Уникай будь-якою ціною!</span></li>
+      <li><span class="rule-icon">👁</span><span>«Розкрити карту» показує кольори шпигуна (читай чесно)</span></li>
+    </ul>
+  </div>
+
+  <button class="btn-start" onclick="startGame()">ПОЧАТИ МІСІЮ</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2: GAME
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-game">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="score-pill purple">
+      🟣 <span class="count" id="purple-count">9</span> залишилось
+    </div>
+    <div class="turn-indicator purple" id="turn-indicator">ХІД ПУРПУРНИХ</div>
+    <div class="score-pill gold">
+      🟡 <span class="count" id="gold-count">8</span> залишилось
+    </div>
+    <div class="assassin-warning">☠️ Уникай асасина!</div>
+  </div>
+
+  <!-- GAME AREA -->
+  <div class="game-area">
+    <div class="spy-toggle-bar">
+      <button class="btn-spy-toggle" id="spyToggleBtn" onclick="toggleSpymaster()">
+        <span>👁</span> <span>РОЗКРИТИ КАРТУ</span>
+      </button>
+    </div>
+
+    <!-- BOARD -->
+    <div class="board" id="board"></div>
+
+    <!-- PHASE PANEL -->
+    <div class="phase-panel" id="phasePanel">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="game-log">
+    <div class="log-strip" id="logStrip">
+      <span class="log-entry">🕵️ Місія розпочата. Ваш хід, Пурпурна команда.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3: WIN
+═══════════════════════════════════════════ -->
+<div class="screen" id="screen-win">
+  <div class="win-glow" id="winGlow"></div>
+
+  <div class="win-badge" id="winBadge">Місія виконана</div>
+  <div class="win-title" id="winTitle">ПУРПУРНІ ПЕРЕМОГЛИ!</div>
+  <div class="win-subtitle">Усі агенти знайдені. Місія успішна.</div>
+
+  <div class="win-stats">
+    <div class="win-stat">
+      <div class="win-stat-num" id="statPurple" style="color: var(--purple-light)">0</div>
+      <div class="win-stat-label">🟣 Пурпурних знайдено</div>
+    </div>
+    <div class="win-stat">
+      <div class="win-stat-num" id="statGold" style="color: var(--gold-light)">0</div>
+      <div class="win-stat-label">🟡 Золотих знайдено</div>
+    </div>
+    <div class="win-stat">
+      <div class="win-stat-num" id="statClues" style="color: var(--text-dim)">0</div>
+      <div class="win-stat-label">Підказок дано</div>
+    </div>
+  </div>
+
+  <div class="assassin-reminder" id="assassinReminder">
+    ☠️ <span>Слово <strong>CROSS</strong> (хрест) — асасин. Завжди уникай його!</span>
+  </div>
+
+  <button class="btn-new-mission" onclick="resetGame()">НОВА МІСІЯ</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//   GAME DATA
+// ═══════════════════════════════════════════════════════════
+const WORDS = [
+  { en: 'BANK',   uk: 'банк',      team: 'purple' },
+  { en: 'FIRE',   uk: 'вогонь',    team: 'purple' },
+  { en: 'SPRING', uk: 'весна',     team: 'gold'   },
+  { en: 'FIELD',  uk: 'поле',      team: 'gold'   },
+  { en: 'STAR',   uk: 'зірка',     team: 'purple' },
+
+  { en: 'COLD',   uk: 'холод',     team: 'gold'   },
+  { en: 'CROWN',  uk: 'корона',    team: 'purple' },
+  { en: 'GLASS',  uk: 'скло',      team: 'gold'   },
+  { en: 'ROCK',   uk: 'скеля',     team: 'neutral'},
+  { en: 'WAVE',   uk: 'хвиля',     team: 'neutral'},
+
+  { en: 'BOLT',   uk: 'блискавка', team: 'purple' },
+  { en: 'SHADOW', uk: 'тінь',      team: 'gold'   },
+  { en: 'BRIDGE', uk: 'міст',      team: 'gold'   },
+  { en: 'AGENT',  uk: 'агент',     team: 'purple' },
+  { en: 'KEY',    uk: 'ключ',      team: 'purple' },
+
+  { en: 'STREAM', uk: 'потік',     team: 'gold'   },
+  { en: 'CROSS',  uk: 'хрест',     team: 'assassin'},
+  { en: 'MINT',   uk: "м'ята",     team: 'neutral'},
+  { en: 'BOARD',  uk: 'дошка',     team: 'neutral'},
+  { en: 'MATCH',  uk: 'сірник',    team: 'purple' },
+
+  { en: 'PITCH',  uk: 'тон',       team: 'neutral'},
+  { en: 'ROOT',   uk: 'корінь',    team: 'gold'   },
+  { en: 'SCREEN', uk: 'екран',     team: 'neutral'},
+  { en: 'STRIKE', uk: 'страйк',    team: 'purple' },
+  { en: 'TRACK',  uk: 'трек',      team: 'neutral'},
+];
+
+const TEAM_ICONS = { purple: '🟣', gold: '🟡', assassin: '☠️', neutral: '⬜' };
+
+// ═══════════════════════════════════════════════════════════
+//   STATE
+// ═══════════════════════════════════════════════════════════
+let state = {};
+
+function initState() {
+  state = {
+    // SPYMASTER_PURPLE | GUESS_PURPLE | SPYMASTER_GOLD | GUESS_GOLD
+    phase: 'SPYMASTER_PURPLE',
+    currentTeam: 'purple',
+    spymasterVisible: false,
+    clueWord: '',
+    clueNumber: 0,
+    guessesUsed: 0,
+    totalClues: 0,
+    purpleRemaining: 9,
+    goldRemaining: 8,
+    revealed: new Array(25).fill(false),
+    gameOver: false,
+    winner: null,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+//   SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+//   START GAME
+// ═══════════════════════════════════════════════════════════
+function startGame() {
+  initState();
+  buildBoard();
+  showScreen('screen-game');
+  updateTopBar();
+  renderPhasePanel();
+  log('🕵️ Місія розпочата. Ваш хід, Пурпурна команда.');
+}
+
+// ═══════════════════════════════════════════════════════════
+//   BOARD BUILD
+// ═══════════════════════════════════════════════════════════
+function buildBoard() {
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  WORDS.forEach((word, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    wrapper.id = `card-${i}`;
+    wrapper.setAttribute('data-index', i);
+    wrapper.onclick = () => handleCardClick(i);
+
+    const inner = document.createElement('div');
+    inner.className = 'card-inner';
+    inner.id = `card-inner-${i}`;
+
+    // FRONT
+    const front = document.createElement('div');
+    front.className = 'card-front';
+    front.innerHTML = `
+      <div class="spy-label"></div>
+      <div class="card-english">${word.en}</div>
+      <div class="card-ukrainian">${word.uk}</div>
+    `;
+
+    // BACK
+    const back = document.createElement('div');
+    back.className = `card-back color-${word.team}`;
+    const icon = word.team === 'purple' ? '🟣' :
+                 word.team === 'gold'   ? '🟡' :
+                 word.team === 'assassin' ? '☠️' : '⬜';
+    back.innerHTML = `
+      <div class="card-icon">${icon}</div>
+      <div class="card-english">${word.en}</div>
+      <div class="card-ukrainian">${word.uk}</div>
+    `;
+
+    inner.appendChild(front);
+    inner.appendChild(back);
+    wrapper.appendChild(inner);
+    board.appendChild(wrapper);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//   SPYMASTER TOGGLE
+// ═══════════════════════════════════════════════════════════
+function toggleSpymaster() {
+  state.spymasterVisible = !state.spymasterVisible;
+  const btn = document.getElementById('spyToggleBtn');
+
+  if (state.spymasterVisible) {
+    btn.classList.add('active');
+    btn.innerHTML = '<span>👁</span> <span>СХОВАТИ КАРТУ</span>';
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = '<span>👁</span> <span>РОЗКРИТИ КАРТУ</span>';
+  }
+
+  applySpymasterOverlay();
+}
+
+function applySpymasterOverlay() {
+  WORDS.forEach((word, i) => {
+    const wrapper = document.getElementById(`card-${i}`);
+    if (!wrapper || state.revealed[i]) return;
+
+    // Remove all spy classes
+    wrapper.classList.remove('spy-purple', 'spy-gold', 'spy-assassin', 'spy-neutral');
+
+    if (state.spymasterVisible) {
+      wrapper.classList.add(`spy-${word.team}`);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//   CARD CLICK
+// ═══════════════════════════════════════════════════════════
+function handleCardClick(i) {
+  if (state.gameOver) return;
+  if (state.revealed[i]) return;
+  if (!state.phase.startsWith('GUESS')) return;
+
+  const word = WORDS[i];
+  revealCard(i);
+
+  const team = state.currentTeam;
+  const oppTeam = team === 'purple' ? 'gold' : 'purple';
+
+  if (word.team === 'assassin') {
+    triggerAssassin(i);
+    return;
+  }
+
+  if (word.team === team) {
+    // Correct!
+    if (team === 'purple') {
+      state.purpleRemaining--;
+      document.getElementById('purple-count').textContent = state.purpleRemaining;
+    } else {
+      state.goldRemaining--;
+      document.getElementById('gold-count').textContent = state.goldRemaining;
+    }
+
+    state.guessesUsed++;
+    log(`✅ ${word.en} (${word.uk}) — правильно! +1 для ${team === 'purple' ? 'Пурпурних' : 'Золотих'}`);
+
+    // Check win
+    if ((team === 'purple' && state.purpleRemaining === 0) ||
+        (team === 'gold'   && state.goldRemaining  === 0)) {
+      triggerWin(team);
+      return;
+    }
+
+    // Can continue if guesses remain
+    const maxGuesses = state.clueNumber + 1;
+    if (state.guessesUsed >= maxGuesses) {
+      log(`🔁 Використано всі спроби. Хід переходить до ${oppTeam === 'purple' ? 'Пурпурних' : 'Золотих'}.`);
+      switchTurn();
+    } else {
+      renderPhasePanel(); // refresh guesses left
+    }
+
+  } else if (word.team === oppTeam) {
+    // Opponent's word
+    if (oppTeam === 'purple') {
+      state.purpleRemaining--;
+      document.getElementById('purple-count').textContent = state.purpleRemaining;
+    } else {
+      state.goldRemaining--;
+      document.getElementById('gold-count').textContent = state.goldRemaining;
+    }
+
+    log(`❌ ${word.en} (${word.uk}) — слово суперника! Хід переходить.`);
+
+    if ((oppTeam === 'purple' && state.purpleRemaining === 0) ||
+        (oppTeam === 'gold'   && state.goldRemaining  === 0)) {
+      triggerWin(oppTeam);
+      return;
+    }
+
+    switchTurn();
+
+  } else {
+    // Neutral
+    log(`⬜ ${word.en} (${word.uk}) — нейтральне. Хід переходить.`);
+    switchTurn();
+  }
+}
+
+function revealCard(i) {
+  state.revealed[i] = true;
+  const wrapper = document.getElementById(`card-${i}`);
+  wrapper.classList.add('revealed');
+  wrapper.classList.remove('spy-purple', 'spy-gold', 'spy-assassin', 'spy-neutral');
+  wrapper.onclick = null;
+}
+
+// ═══════════════════════════════════════════════════════════
+//   TURN MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function switchTurn() {
+  if (state.currentTeam === 'purple') {
+    state.currentTeam = 'gold';
+    state.phase = 'SPYMASTER_GOLD';
+  } else {
+    state.currentTeam = 'purple';
+    state.phase = 'SPYMASTER_PURPLE';
+  }
+  state.clueWord = '';
+  state.clueNumber = 0;
+  state.guessesUsed = 0;
+
+  // Hide spymaster view when turn switches
+  if (state.spymasterVisible) {
+    state.spymasterVisible = false;
+    const btn = document.getElementById('spyToggleBtn');
+    btn.classList.remove('active');
+    btn.innerHTML = '<span>👁</span> <span>РОЗКРИТИ КАРТУ</span>';
+    applySpymasterOverlay();
+  }
+
+  updateTopBar();
+  renderPhasePanel();
+}
+
+function endTurnManually() {
+  const oppTeam = state.currentTeam === 'purple' ? 'gold' : 'purple';
+  log(`🛑 Хід завершено вручну. Хід переходить до ${oppTeam === 'purple' ? 'Пурпурних' : 'Золотих'}.`);
+  switchTurn();
+}
+
+// ═══════════════════════════════════════════════════════════
+//   GIVE CLUE
+// ═══════════════════════════════════════════════════════════
+let selectedNumber = 1;
+
+function selectNumber(n) {
+  selectedNumber = n;
+  document.querySelectorAll('.num-btn').forEach(btn => {
+    btn.classList.remove('selected');
+  });
+  const btn = document.getElementById(`num-${n}`);
+  if (btn) {
+    btn.classList.add('selected');
+    btn.classList.add(state.currentTeam);
+  }
+}
+
+function giveClue() {
+  const input = document.getElementById('clueInput');
+  const word = input ? input.value.trim().toUpperCase() : '';
+
+  if (!word) {
+    log('⚠️ Введи слово-підказку!');
+    return;
+  }
+
+  // Check it's not a board word
+  const isOnBoard = WORDS.some(w => w.en === word);
+  if (isOnBoard) {
+    log('⚠️ Підказка не може бути словом із дошки!');
+    return;
+  }
+
+  state.clueWord = word;
+  state.clueNumber = selectedNumber;
+  state.guessesUsed = 0;
+  state.totalClues++;
+
+  if (state.currentTeam === 'purple') {
+    state.phase = 'GUESS_PURPLE';
+  } else {
+    state.phase = 'GUESS_GOLD';
+  }
+
+  const teamName = state.currentTeam === 'purple' ? 'Пурпурних' : 'Золотих';
+  log(`🗣 ${teamName}: «${word}» → ${selectedNumber} ${declineSlova(selectedNumber)}`);
+
+  selectedNumber = 1;
+  renderPhasePanel();
+}
+
+function declineSlova(n) {
+  if (n === 1) return 'слово';
+  if (n >= 2 && n <= 4) return 'слова';
+  return 'слів';
+}
+
+// ═══════════════════════════════════════════════════════════
+//   RENDER PHASE PANEL
+// ═══════════════════════════════════════════════════════════
+function renderPhasePanel() {
+  const panel = document.getElementById('phasePanel');
+  const team = state.currentTeam;
+  const cls = team;
+
+  panel.className = `phase-panel ${cls}`;
+
+  if (state.phase === 'SPYMASTER_PURPLE' || state.phase === 'SPYMASTER_GOLD') {
+    const teamLabel = team === 'purple' ? '🟣 ПУРПУРНІ — ХІД ШПИГУНА' : '🟡 ЗОЛОТІ — ХІД ШПИГУНА';
+    panel.innerHTML = `
+      <div class="phase-title ${cls}">${teamLabel}</div>
+      <div class="spymaster-form">
+        <input
+          class="clue-input${team === 'gold' ? ' gold-focus' : ''}"
+          id="clueInput"
+          type="text"
+          placeholder="Введи слово-підказку..."
+          maxlength="30"
+          onkeydown="if(event.key==='Enter') giveClue()"
+        />
+        <div class="number-btns">
+          ${[1,2,3,4].map(n => `
+            <button
+              class="num-btn${n===1?' selected '+team:''}"
+              id="num-${n}"
+              onclick="selectNumber(${n})"
+            >${n}</button>
+          `).join('')}
+        </div>
+        <button class="btn-give-clue${team === 'gold' ? ' gold' : ''}" onclick="giveClue()">
+          ДАТИ ПІДКАЗКУ
+        </button>
+      </div>
+    `;
+    // Re-init selectedNumber
+    selectedNumber = 1;
+    // Focus input
+    setTimeout(() => {
+      const inp = document.getElementById('clueInput');
+      if (inp) inp.focus();
+    }, 50);
+
+  } else {
+    // GUESSING PHASE
+    const maxGuesses = state.clueNumber + 1;
+    const remaining = maxGuesses - state.guessesUsed;
+    const teamLabel = team === 'purple' ? '🟣 ПУРПУРНІ — ВГАДУЙ!' : '🟡 ЗОЛОТІ — ВГАДУЙ!';
+
+    panel.innerHTML = `
+      <div class="phase-title ${cls}">${teamLabel}</div>
+      <div class="guess-info">
+        <div class="clue-display ${cls}">
+          <span class="clue-word">${state.clueWord}</span>
+          <span class="clue-arrow">→</span>
+          <span class="clue-count-badge">${state.clueNumber} ${declineSlova(state.clueNumber)}</span>
+        </div>
+        <div class="guesses-left">Залишилось спроб: <strong>${remaining}</strong></div>
+        <button class="btn-end-turn" onclick="endTurnManually()">
+          🛑 СТОП — Завершити хід
+        </button>
+      </div>
+    `;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//   TOP BAR UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateTopBar() {
+  const indicator = document.getElementById('turn-indicator');
+  if (state.currentTeam === 'purple') {
+    indicator.className = 'turn-indicator purple';
+    indicator.textContent = state.phase.startsWith('GUESS') ? 'ВГАДУЄ ПУРПУРНА' : 'ХІД ПУРПУРНИХ';
+  } else {
+    indicator.className = 'turn-indicator gold';
+    indicator.textContent = state.phase.startsWith('GUESS') ? 'ВГАДУЄ ЗОЛОТА' : 'ХІД ЗОЛОТИХ';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//   ASSASSIN
+// ═══════════════════════════════════════════════════════════
+function triggerAssassin(i) {
+  state.gameOver = true;
+  const flash = document.getElementById('assassinFlash');
+  flash.classList.add('active');
+
+  log('☠️ АСАСИН! Гра закінчена. Провал місії!');
+
+  setTimeout(() => { flash.classList.remove('active'); }, 300);
+  setTimeout(() => { flash.classList.add('active'); }, 600);
+  setTimeout(() => { flash.classList.remove('active'); }, 900);
+  setTimeout(() => { flash.classList.add('active'); }, 1100);
+  setTimeout(() => {
+    flash.classList.remove('active');
+    const loser = state.currentTeam;
+    const winner = loser === 'purple' ? 'gold' : 'purple';
+    triggerWin(winner, true);
+  }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//   WIN
+// ═══════════════════════════════════════════════════════════
+function triggerWin(team, byAssassin = false) {
+  state.gameOver = true;
+  state.winner = team;
+
+  const purpleFound = 9 - state.purpleRemaining;
+  const goldFound   = 8 - state.goldRemaining;
+
+  document.getElementById('statPurple').textContent = purpleFound;
+  document.getElementById('statGold').textContent   = goldFound;
+  document.getElementById('statClues').textContent  = state.totalClues;
+
+  const titleEl  = document.getElementById('winTitle');
+  const badgeEl  = document.getElementById('winBadge');
+  const glowEl   = document.getElementById('winGlow');
+  const subtitleEl = document.querySelector('#screen-win .win-subtitle');
+
+  if (team === 'purple') {
+    titleEl.textContent  = '🟣 ПУРПУРНІ ПЕРЕМОГЛИ!';
+    titleEl.className    = 'win-title purple';
+    badgeEl.className    = 'win-badge purple';
+    badgeEl.textContent  = byAssassin ? '☠️ Золоті знайшли асасина' : 'Місія виконана';
+    glowEl.className     = 'win-glow purple';
+    subtitleEl.textContent = byAssassin
+      ? 'Золота команда натиснула асасина. Пурпурні перемагають!'
+      : 'Усі агенти знайдені. Місія успішна!';
+  } else {
+    titleEl.textContent  = '🟡 ЗОЛОТІ ПЕРЕМОГЛИ!';
+    titleEl.className    = 'win-title gold';
+    badgeEl.className    = 'win-badge gold';
+    badgeEl.textContent  = byAssassin ? '☠️ Пурпурні знайшли асасина' : 'Місія виконана';
+    glowEl.className     = 'win-glow gold';
+    subtitleEl.textContent = byAssassin
+      ? 'Пурпурна команда натиснула асасина. Золоті перемагають!'
+      : 'Усі агенти знайдені. Місія успішна!';
+  }
+
+  setTimeout(() => showScreen('screen-win'), 800);
+}
+
+// ═══════════════════════════════════════════════════════════
+//   RESET
+// ═══════════════════════════════════════════════════════════
+function resetGame() {
+  showScreen('screen-setup');
+}
+
+// ═══════════════════════════════════════════════════════════
+//   LOG
+// ═══════════════════════════════════════════════════════════
+function log(msg) {
+  const strip = document.getElementById('logStrip');
+  strip.innerHTML = `<span class="log-entry">${msg}</span>`;
+}
+</script>
+</body>
+</html>

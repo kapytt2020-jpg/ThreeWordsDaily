@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ WORD RACE — Voodoo English</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --purple: #7c3aed;
+  --purple-light: #a855f7;
+  --gold: #f59e0b;
+  --green: #00ff88;
+  --red: #ef4444;
+  --white: #f8fafc;
+  --dim: #4a4a6a;
+  --panel: #12121e;
+  --border: #1e1e3a;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── GLOBAL PARTICLES CANVAS ── */
+#canvas-bg {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 1;
+  transition: opacity .35s ease, transform .35s ease;
+}
+.screen.hidden { opacity: 0; pointer-events: none; transform: scale(.97); }
+
+/* ═══════════════════════════════════════════
+   SCREEN 1 — READY
+═══════════════════════════════════════════ */
+#screen-ready {
+  gap: 28px;
+  padding: 24px;
+}
+
+/* Title */
+.title-wrap {
+  text-align: center;
+  position: relative;
+}
+.title-main {
+  font-size: clamp(3rem, 10vw, 5.5rem);
+  font-weight: 900;
+  letter-spacing: -2px;
+  color: var(--white);
+  text-shadow:
+    0 0 20px rgba(124,58,237,.9),
+    0 0 60px rgba(124,58,237,.5),
+    0 0 120px rgba(124,58,237,.3);
+  animation: motionBlur 3s ease-in-out infinite;
+}
+@keyframes motionBlur {
+  0%,100% { filter: blur(0px) brightness(1); letter-spacing: -2px; }
+  50% { filter: blur(1.5px) brightness(1.2); letter-spacing: 0px; }
+}
+.title-sub {
+  font-size: .95rem;
+  color: var(--dim);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Speedometer */
+.speedo-wrap {
+  position: relative;
+  width: 200px; height: 110px;
+}
+.speedo-svg { width: 100%; height: 100%; }
+.speedo-needle {
+  transform-origin: 100px 100px;
+  transition: transform 1s cubic-bezier(.34,1.56,.64,1);
+}
+.speedo-label {
+  position: absolute; bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  font-size: .7rem; font-weight: 700;
+  color: var(--dim); letter-spacing: 3px;
+}
+.speedo-value {
+  position: absolute; bottom: 8px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.6rem; font-weight: 900;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Difficulty */
+.diff-label {
+  font-size: .75rem; letter-spacing: 3px; color: var(--dim);
+  text-transform: uppercase;
+}
+.diff-btns {
+  display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+}
+.diff-btn {
+  padding: 10px 22px;
+  border-radius: 50px;
+  border: 2px solid var(--border);
+  background: var(--panel);
+  color: var(--dim);
+  font-size: .9rem; font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+.diff-btn:hover { border-color: var(--purple); color: var(--white); transform: scale(1.05); }
+.diff-btn.active {
+  border-color: var(--purple);
+  background: rgba(124,58,237,.25);
+  color: var(--white);
+  box-shadow: 0 0 16px rgba(124,58,237,.5);
+}
+
+/* Record */
+.record-box {
+  font-size: .85rem; color: var(--dim);
+  text-align: center;
+}
+.record-box span { color: var(--gold); font-weight: 800; }
+
+/* Start button */
+.start-btn {
+  position: relative;
+  padding: 18px 60px;
+  font-size: 1.4rem; font-weight: 900;
+  letter-spacing: 3px;
+  border: none; border-radius: 60px;
+  background: linear-gradient(135deg, var(--purple) 0%, #a855f7 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 30px rgba(124,58,237,.7), 0 4px 20px rgba(0,0,0,.5);
+  transition: transform .15s, box-shadow .15s;
+  overflow: hidden;
+}
+.start-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.15), transparent);
+  transform: translateX(-100%);
+  animation: shine 2.5s ease-in-out infinite;
+}
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  40%,100% { transform: translateX(200%); }
+}
+.start-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(124,58,237,.9), 0 4px 30px rgba(0,0,0,.5); }
+.start-btn:active { transform: scale(.97); }
+
+/* Countdown overlay */
+#countdown-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(10,10,15,.85);
+  backdrop-filter: blur(6px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+#countdown-overlay.show { opacity: 1; pointer-events: all; }
+.countdown-num {
+  font-size: 12rem; font-weight: 900;
+  color: var(--white);
+  text-shadow: 0 0 60px var(--purple);
+  animation: cPop .6s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes cPop {
+  from { transform: scale(2.5); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN 2 — RACE
+═══════════════════════════════════════════ */
+#screen-race {
+  padding: 0;
+  justify-content: flex-start;
+}
+
+/* HUD */
+.hud {
+  width: 100%;
+  display: flex; align-items: center; gap: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  height: 64px;
+  flex-shrink: 0;
+}
+.hud-cell {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-right: 1px solid var(--border);
+  padding: 8px 0;
+  min-width: 0;
+}
+.hud-cell:last-child { border-right: none; }
+.hud-label {
+  font-size: .6rem; letter-spacing: 2px;
+  color: var(--dim); text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.hud-value {
+  font-size: 1.3rem; font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+#hud-timer { color: var(--white); }
+#hud-timer.urgent { color: var(--red); animation: timerPulse .5s ease-in-out infinite; }
+@keyframes timerPulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+#hud-wpm { color: var(--green); }
+#hud-acc { color: var(--gold); }
+#hud-combo { color: var(--purple-light); }
+
+/* Race arena */
+.race-arena {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+  position: relative;
+}
+
+/* Combo badge */
+.combo-badge {
+  position: absolute; top: 12px; left: 50%;
+  transform: translateX(-50%);
+  font-size: .9rem; font-weight: 800;
+  padding: 4px 18px; border-radius: 50px;
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  z-index: 5;
+  white-space: nowrap;
+}
+.combo-badge.show { opacity: 1; }
+.combo-badge.fire { background: rgba(245,158,11,.2); color: var(--gold); border: 1px solid var(--gold); }
+.combo-badge.lightning { background: rgba(124,58,237,.3); color: var(--purple-light); border: 1px solid var(--purple-light); box-shadow: 0 0 20px rgba(124,58,237,.5); }
+.combo-badge.unstoppable {
+  background: linear-gradient(90deg,#ff006640,#f59e0b40,#00ff8840,#7c3aed40);
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,.3);
+  animation: rainbowBorder 1s linear infinite;
+}
+@keyframes rainbowBorder {
+  0% { box-shadow: 0 0 15px #ff0066; }
+  25% { box-shadow: 0 0 15px var(--gold); }
+  50% { box-shadow: 0 0 15px var(--green); }
+  75% { box-shadow: 0 0 15px var(--purple); }
+  100% { box-shadow: 0 0 15px #ff0066; }
+}
+
+/* Word display */
+.word-area {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
+  width: 100%; max-width: 600px;
+}
+.word-prev {
+  font-size: 1.1rem; font-weight: 600;
+  color: var(--dim);
+  min-height: 1.5rem;
+  display: flex; align-items: center; gap: 8px;
+  transition: all .3s;
+  font-family: 'Courier New', monospace;
+}
+.word-prev .w-status { font-size: 1rem; }
+
+.word-current-wrap {
+  position: relative;
+  min-height: 80px;
+  display: flex; align-items: center; justify-content: center;
+  overflow: visible;
+}
+.word-current {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 900;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  display: flex; gap: 2px;
+  align-items: center;
+  transition: transform .2s;
+}
+.char-correct { color: var(--green); }
+.char-current { color: var(--white); }
+.char-wait { color: #333355; }
+.char-wrong { color: var(--red); }
+
+.word-next {
+  font-size: 1.1rem; font-weight: 600;
+  color: #1e1e3a;
+  font-family: 'Courier New', monospace;
+  filter: blur(2px);
+  transition: all .3s;
+  min-height: 1.5rem;
+}
+
+/* Speed bar */
+.speed-track {
+  width: 100%; max-width: 500px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.speed-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--green));
+  border-radius: 2px;
+  width: 0%;
+  transition: width .5s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* Input */
+.input-wrap {
+  width: 100%; max-width: 500px;
+  position: relative;
+}
+.race-input {
+  width: 100%;
+  padding: 18px 24px;
+  font-size: 1.4rem; font-weight: 700;
+  font-family: 'Courier New', monospace;
+  background: var(--panel);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  color: var(--white);
+  outline: none;
+  text-align: center;
+  caret-color: var(--purple);
+  transition: border-color .15s, box-shadow .15s;
+  letter-spacing: 3px;
+}
+.race-input:focus { border-color: var(--purple); box-shadow: 0 0 20px rgba(124,58,237,.3); }
+.race-input.correct-glow { border-color: var(--green) !important; box-shadow: 0 0 25px rgba(0,255,136,.5) !important; }
+.race-input.wrong-shake { animation: shake .3s ease; border-color: var(--red) !important; box-shadow: 0 0 20px rgba(239,68,68,.4) !important; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-5px); }
+  60% { transform: translateX(5px); }
+  75% { transform: translateX(-3px); }
+  90% { transform: translateX(3px); }
+}
+
+/* Combo input glow states */
+.race-input.combo-fire { border-color: var(--gold); box-shadow: 0 0 25px rgba(245,158,11,.4); }
+.race-input.combo-lightning { border-color: var(--purple-light); box-shadow: 0 0 30px rgba(168,85,247,.6); }
+.race-input.combo-unstoppable {
+  animation: rainbowInput 1s linear infinite, shake-off .0s;
+  border-width: 2px;
+}
+@keyframes rainbowInput {
+  0% { border-color: #ff0066; box-shadow: 0 0 30px #ff006660; }
+  25% { border-color: var(--gold); box-shadow: 0 0 30px rgba(245,158,11,.6); }
+  50% { border-color: var(--green); box-shadow: 0 0 30px rgba(0,255,136,.6); }
+  75% { border-color: var(--purple-light); box-shadow: 0 0 30px rgba(168,85,247,.6); }
+  100% { border-color: #ff0066; box-shadow: 0 0 30px #ff006660; }
+}
+
+/* Hint */
+.input-hint {
+  text-align: center;
+  font-size: .7rem; color: var(--dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+
+/* Mini speedometer in HUD */
+.mini-speedo { display: flex; align-items: center; gap: 4px; }
+
+/* Particles container */
+#particles-container {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.particle {
+  position: absolute;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFly .6s ease-out forwards;
+}
+@keyframes particleFly {
+  from { opacity: 1; transform: translate(0,0) scale(1); }
+  to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); }
+}
+.word-flyoff {
+  position: absolute;
+  font-family: 'Courier New', monospace;
+  font-weight: 900;
+  font-size: 1.8rem;
+  color: var(--green);
+  pointer-events: none;
+  animation: wordFly .5s ease-out forwards;
+}
+@keyframes wordFly {
+  from { opacity: 1; transform: translateY(0) scale(1.2); }
+  to { opacity: 0; transform: translateY(-80px) scale(.5); }
+}
+
+/* ═══════════════════════════════════════════
+   SCREEN 3 — RESULTS
+═══════════════════════════════════════════ */
+#screen-results {
+  gap: 0;
+  padding: 20px;
+  overflow-y: auto;
+  justify-content: flex-start;
+  padding-top: 40px;
+}
+.results-inner {
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+
+.results-title {
+  font-size: 1rem; letter-spacing: 4px;
+  color: var(--dim); text-transform: uppercase;
+}
+
+.wpm-display {
+  text-align: center;
+}
+.wpm-big {
+  font-size: clamp(5rem, 20vw, 8rem);
+  font-weight: 900;
+  color: var(--green);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 40px rgba(0,255,136,.6);
+  line-height: 1;
+}
+.wpm-label {
+  font-size: .9rem; letter-spacing: 4px;
+  color: var(--dim); text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.rank-badge {
+  text-align: center;
+}
+.rank-emoji { font-size: 3rem; }
+.rank-name {
+  font-size: 1.3rem; font-weight: 800;
+  color: var(--gold);
+  margin-top: 4px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+}
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.stat-val {
+  font-size: 1.6rem; font-weight: 900;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+.stat-lbl {
+  font-size: .65rem; letter-spacing: 2px;
+  color: var(--dim); text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.xp-bar-wrap {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.xp-header {
+  display: flex; justify-content: space-between;
+  font-size: .75rem; color: var(--dim);
+  margin-bottom: 8px;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.xp-val { color: var(--gold); font-weight: 800; font-size: .9rem; }
+.xp-track {
+  height: 8px; background: var(--border);
+  border-radius: 4px; overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--gold));
+  border-radius: 4px;
+  width: 0%; transition: width 1.5s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 0 8px var(--gold);
+}
+
+.record-flash {
+  background: linear-gradient(135deg, rgba(245,158,11,.2), rgba(245,158,11,.05));
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 10px 20px;
+  text-align: center;
+  font-size: .9rem; font-weight: 800;
+  color: var(--gold);
+  animation: recordPulse 1s ease-in-out infinite;
+  display: none;
+}
+.record-flash.show { display: block; }
+@keyframes recordPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(245,158,11,.4); }
+  50% { box-shadow: 0 0 30px rgba(245,158,11,.8); }
+}
+
+.mistakes-box {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: none;
+}
+.mistakes-box.show { display: block; }
+.mistakes-title {
+  font-size: .7rem; letter-spacing: 2px;
+  color: var(--dim); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.mistake-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 4px 0;
+  font-family: 'Courier New', monospace;
+  font-size: .9rem;
+}
+.mistake-wrong { color: var(--red); text-decoration: line-through; }
+.mistake-arrow { color: var(--dim); }
+.mistake-correct { color: var(--green); }
+
+.results-btns {
+  display: flex; flex-direction: column; gap: 10px;
+  width: 100%;
+}
+.btn-primary {
+  width: 100%; padding: 16px;
+  font-size: 1.1rem; font-weight: 800;
+  letter-spacing: 2px;
+  border: none; border-radius: 50px;
+  background: linear-gradient(135deg, var(--purple), #a855f7);
+  color: #fff; cursor: pointer;
+  box-shadow: 0 0 20px rgba(124,58,237,.5);
+  transition: transform .15s, box-shadow .15s;
+}
+.btn-primary:hover { transform: scale(1.03); box-shadow: 0 0 35px rgba(124,58,237,.7); }
+.btn-secondary {
+  width: 100%; padding: 14px;
+  font-size: .95rem; font-weight: 700;
+  letter-spacing: 1px;
+  border: 2px solid var(--border);
+  border-radius: 50px;
+  background: transparent;
+  color: var(--dim); cursor: pointer;
+  transition: all .15s;
+}
+.btn-secondary:hover { border-color: var(--purple); color: var(--white); }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 480px) {
+  .hud-value { font-size: 1.1rem; }
+  .word-current { font-size: 2rem; letter-spacing: 2px; }
+  .race-input { font-size: 1.1rem; padding: 14px 18px; }
+  .wpm-big { font-size: 5rem; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdown-overlay">
+  <div class="countdown-num" id="countdown-num">3</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — READY
+══════════════════════════════════════ -->
+<div class="screen" id="screen-ready">
+  <div class="title-wrap">
+    <div class="title-main">⚡ WORD RACE</div>
+    <div class="title-sub">Voodoo English · Typing Speed</div>
+  </div>
+
+  <!-- Speedometer SVG -->
+  <div class="speedo-wrap">
+    <svg class="speedo-svg" viewBox="0 0 200 110">
+      <!-- Track arc: -150deg to -30deg, radius 80, center 100,100 -->
+      <path d="M 28 100 A 72 72 0 0 1 172 100"
+        fill="none" stroke="#1e1e3a" stroke-width="10" stroke-linecap="round"/>
+      <!-- Filled arc (animated by JS) -->
+      <path id="speedo-arc" d="M 28 100 A 72 72 0 0 1 28 100"
+        fill="none" stroke="#7c3aed" stroke-width="10" stroke-linecap="round"
+        style="transition: all .8s cubic-bezier(.34,1.56,.64,1)"/>
+      <!-- Tick marks -->
+      <g stroke="#2a2a4a" stroke-width="1.5">
+        <line x1="28" y1="100" x2="40" y2="100" transform="rotate(-150 100 100)"/>
+        <line x1="28" y1="100" x2="40" y2="100" transform="rotate(-120 100 100)"/>
+        <line x1="28" y1="100" x2="40" y2="100" transform="rotate(-90 100 100)"/>
+        <line x1="28" y1="100" x2="40" y2="100" transform="rotate(-60 100 100)"/>
+        <line x1="28" y1="100" x2="40" y2="100" transform="rotate(-30 100 100)"/>
+      </g>
+      <!-- Speed labels -->
+      <text x="22" y="98" fill="#4a4a6a" font-size="9" text-anchor="middle">0</text>
+      <text x="56" y="44" fill="#4a4a6a" font-size="9" text-anchor="middle">25</text>
+      <text x="100" y="30" fill="#4a4a6a" font-size="9" text-anchor="middle">50</text>
+      <text x="144" y="44" fill="#4a4a6a" font-size="9" text-anchor="middle">75</text>
+      <text x="178" y="98" fill="#4a4a6a" font-size="9" text-anchor="middle">100</text>
+      <!-- Needle -->
+      <line id="speedo-needle" x1="100" y1="100" x2="38" y2="100"
+        stroke="#00ff88" stroke-width="2.5" stroke-linecap="round"
+        style="transform-origin: 100px 100px; transform: rotate(0deg); transition: transform 1s cubic-bezier(.34,1.56,.64,1)"/>
+      <!-- Center dot -->
+      <circle cx="100" cy="100" r="5" fill="#7c3aed"/>
+    </svg>
+    <div class="speedo-value" id="speedo-val">0</div>
+    <div class="speedo-label">WPM</div>
+  </div>
+
+  <div>
+    <div class="diff-label" style="text-align:center;margin-bottom:10px;">Рівень складності</div>
+    <div class="diff-btns">
+      <button class="diff-btn" data-diff="easy">🟢 Easy A1-A2</button>
+      <button class="diff-btn active" data-diff="medium">🟡 Medium B1-B2</button>
+      <button class="diff-btn" data-diff="hard">🔴 Hard C1+</button>
+    </div>
+  </div>
+
+  <div class="record-box">Рекорд: <span id="record-display">— WPM</span></div>
+
+  <button class="start-btn" id="start-btn">СТАРТ!</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — RACE
+══════════════════════════════════════ -->
+<div class="screen hidden" id="screen-race">
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-cell">
+      <div class="hud-label">⏱ Час</div>
+      <div class="hud-value" id="hud-timer">60</div>
+    </div>
+    <div class="hud-cell">
+      <div class="hud-label">⚡ WPM</div>
+      <div class="hud-value" id="hud-wpm">0</div>
+    </div>
+    <div class="hud-cell">
+      <div class="hud-label">🎯 Точність</div>
+      <div class="hud-value" id="hud-acc">100%</div>
+    </div>
+    <div class="hud-cell">
+      <div class="hud-label">🔥 Комбо</div>
+      <div class="hud-value" id="hud-combo">0</div>
+    </div>
+  </div>
+
+  <!-- Arena -->
+  <div class="race-arena">
+    <div id="particles-container"></div>
+    <div class="combo-badge" id="combo-badge">🔥 ON FIRE!</div>
+
+    <div class="word-area">
+      <div class="word-prev" id="word-prev"></div>
+
+      <div class="word-current-wrap">
+        <div class="word-current" id="word-current"></div>
+      </div>
+
+      <div class="word-next" id="word-next"></div>
+    </div>
+
+    <div class="speed-track">
+      <div class="speed-fill" id="speed-fill"></div>
+    </div>
+
+    <div class="input-wrap">
+      <input
+        type="text"
+        class="race-input"
+        id="race-input"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Друкуй тут..."
+      >
+      <div class="input-hint">ПРОБІЛ або ENTER для підтвердження слова</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — RESULTS
+══════════════════════════════════════ -->
+<div class="screen hidden" id="screen-results">
+  <div class="results-inner">
+    <div class="results-title">Фінальний результат</div>
+
+    <div class="wpm-display">
+      <div class="wpm-big" id="res-wpm">0</div>
+      <div class="wpm-label">Words Per Minute</div>
+    </div>
+
+    <div class="rank-badge">
+      <div class="rank-emoji" id="res-rank-emoji">🚶</div>
+      <div class="rank-name" id="res-rank-name">Пішохід</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="res-acc">0%</div>
+        <div class="stat-lbl">Точність</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="res-words">0/30</div>
+        <div class="stat-lbl">Слів набрано</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="res-combo">0</div>
+        <div class="stat-lbl">Пік комбо</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="res-time">60s</div>
+        <div class="stat-lbl">Час гри</div>
+      </div>
+    </div>
+
+    <div class="xp-bar-wrap">
+      <div class="xp-header">
+        <span>XP Зароблено</span>
+        <span class="xp-val" id="res-xp">0 XP</span>
+      </div>
+      <div class="xp-track">
+        <div class="xp-fill" id="xp-fill"></div>
+      </div>
+    </div>
+
+    <div class="record-flash" id="record-flash">🏆 НОВИЙ РЕКОРД!</div>
+
+    <div class="mistakes-box" id="mistakes-box">
+      <div class="mistakes-title">Помилки</div>
+      <div id="mistakes-list"></div>
+    </div>
+
+    <div class="results-btns">
+      <button class="btn-primary" id="btn-retry">ЩЕ РАЗ!</button>
+      <button class="btn-secondary" id="btn-change-diff">ЗМІНИТИ РІВЕНЬ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── WORD BANK ───────────────────────────────────────────────────────────────
+const WORDS = {
+  easy:   ['cat','dog','run','big','fast','jump','play','read','book','home',
+            'sun','car','cup','hat','ball','fish','bird','cake','milk','tree',
+            'red','blue','hot','cold','old','new','day','sky','map','egg'],
+  medium: ['brave','climb','dream','floor','guest','happy','judge','light','magic','night',
+            'ocean','paint','queen','river','stone','think','under','visit','water','youth',
+            'again','below','catch','dance','earth','fresh','giant','heart','image','known'],
+  hard:   ['achieve','beneath','culture','dynamic','episode','fragile','genuine','horizon','inspire','journey',
+            'kingdom','language','monument','navigate','opposite','painting','question','relevant','spectrum','temporal',
+            'ultimate','vanguard','whisper','xenolith','yearning','zealotry','abstract','boundary','coherent','document']
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const state = {
+  difficulty: 'medium',
+  words: [],
+  wordIdx: 0,
+  combo: 0,
+  peakCombo: 0,
+  totalCharsTyped: 0,
+  correctChars: 0,
+  wordsCorrect: 0,
+  mistakes: [],          // {wrong, correct}
+  timeLeft: 60,
+  wpm: 0,
+  startTime: null,
+  timerInterval: null,
+  wpmInterval: null,
+  gameActive: false,
+  gameStartTimestamp: null,
+};
+
+// ─── ELEMENTS ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const screens = {
+  ready:   $('screen-ready'),
+  race:    $('screen-race'),
+  results: $('screen-results'),
+};
+
+// ─── BACKGROUND CANVAS ───────────────────────────────────────────────────────
+(function initBgCanvas() {
+  const canvas = $('canvas-bg');
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < 80; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.5 + .3,
+        speed: Math.random() * .5 + .1,
+        alpha: Math.random() * .6 + .1,
+        twinkle: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+
+  let speedMultiplier = 1;
+  function setSpeed(v) { speedMultiplier = v; }
+  window._bgSetSpeed = setSpeed;
+
+  function draw(ts) {
+    ctx.clearRect(0, 0, W, H);
+    stars.forEach(s => {
+      s.twinkle += .02;
+      const alpha = s.alpha * (.6 + .4 * Math.sin(s.twinkle));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(124,58,237,${alpha})`;
+      ctx.fill();
+      // Move stars in race mode
+      if (speedMultiplier > 1) {
+        s.x -= s.speed * speedMultiplier;
+        if (s.x < 0) { s.x = W; s.y = Math.random() * H; }
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+
+  resize();
+  initStars();
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  requestAnimationFrame(draw);
+})();
+
+// ─── SCREEN TRANSITIONS ───────────────────────────────────────────────────────
+function showScreen(name) {
+  Object.keys(screens).forEach(k => {
+    screens[k].classList.toggle('hidden', k !== name);
+  });
+}
+
+// ─── DIFFICULTY ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.difficulty = btn.dataset.diff;
+    updateRecord();
+  });
+});
+
+function updateRecord() {
+  const best = localStorage.getItem(`wordrace_best_${state.difficulty}`);
+  $('record-display').textContent = best ? `${best} WPM` : '— WPM';
+}
+updateRecord();
+
+// ─── SPEEDO ANIMATION (ready screen) ─────────────────────────────────────────
+let speedoDemo = 0, speedoDir = 1;
+setInterval(() => {
+  if (!state.gameActive) {
+    speedoDemo += speedoDir * 2;
+    if (speedoDemo >= 40 || speedoDemo <= 0) speedoDir *= -1;
+    updateSpeedometerReady(speedoDemo);
+  }
+}, 80);
+
+function updateSpeedometerReady(wpm) {
+  $('speedo-val').textContent = Math.round(wpm);
+  const t = Math.min(wpm / 100, 1);
+  // Arc from -150 to -30 degrees (120 degree range)
+  const startAngle = -150 * Math.PI / 180;
+  const endAngle = (-150 + t * 120) * Math.PI / 180;
+  const cx = 100, cy = 100, r = 72;
+  if (t <= 0) {
+    $('speedo-arc').setAttribute('d', `M 28 100 A 72 72 0 0 1 28 100`);
+    $('speedo-needle').style.transform = `rotate(-150deg)`;
+    return;
+  }
+  const x1 = cx + r * Math.cos(startAngle);
+  const y1 = cy + r * Math.sin(startAngle);
+  const x2 = cx + r * Math.cos(endAngle);
+  const y2 = cy + r * Math.sin(endAngle);
+  const large = (t * 120 > 180) ? 1 : 0;
+  $('speedo-arc').setAttribute('d', `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`);
+  const needleAngle = -150 + t * 120;
+  $('speedo-needle').style.transform = `rotate(${needleAngle}deg)`;
+  // Color gradient based on speed
+  const color = t < .4 ? '#7c3aed' : t < .7 ? '#f59e0b' : '#00ff88';
+  $('speedo-arc').setAttribute('stroke', color);
+  $('speedo-needle').setAttribute('stroke', color);
+}
+
+// ─── COUNTDOWN & START ────────────────────────────────────────────────────────
+$('start-btn').addEventListener('click', startCountdown);
+
+function startCountdown() {
+  const overlay = $('countdown-overlay');
+  const numEl = $('countdown-num');
+  overlay.classList.add('show');
+  let count = 3;
+
+  function tick() {
+    numEl.textContent = count > 0 ? count : 'GO!';
+    numEl.style.animation = 'none';
+    void numEl.offsetWidth; // reflow
+    numEl.style.animation = 'cPop .6s cubic-bezier(.34,1.56,.64,1)';
+    numEl.style.color = count > 0 ? '#f8fafc' : '#00ff88';
+    numEl.style.textShadow = count > 0
+      ? '0 0 60px rgba(124,58,237,1)'
+      : '0 0 60px rgba(0,255,136,1)';
+    if (count === 0) {
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        startGame();
+      }, 600);
+    } else {
+      count--;
+      setTimeout(tick, 800);
+    }
+  }
+  tick();
+}
+
+// ─── GAME START ───────────────────────────────────────────────────────────────
+function startGame() {
+  // Build shuffled word list
+  const pool = [...WORDS[state.difficulty]];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  state.words = pool;
+  state.wordIdx = 0;
+  state.combo = 0;
+  state.peakCombo = 0;
+  state.totalCharsTyped = 0;
+  state.correctChars = 0;
+  state.wordsCorrect = 0;
+  state.mistakes = [];
+  state.timeLeft = 60;
+  state.wpm = 0;
+  state.gameActive = true;
+  state.startTime = Date.now();
+  state.gameStartTimestamp = Date.now();
+
+  showScreen('race');
+  window._bgSetSpeed(8);
+  renderWord();
+  focusInput();
+
+  // Timer
+  state.timerInterval = setInterval(tickTimer, 1000);
+  // WPM update
+  state.wpmInterval = setInterval(updateWPM, 500);
+}
+
+function focusInput() {
+  setTimeout(() => $('race-input').focus(), 100);
+}
+
+function tickTimer() {
+  state.timeLeft--;
+  const el = $('hud-timer');
+  el.textContent = state.timeLeft;
+  if (state.timeLeft <= 10) el.classList.add('urgent');
+  if (state.timeLeft <= 0) endGame();
+}
+
+function updateWPM() {
+  if (!state.gameActive) return;
+  const elapsed = (Date.now() - state.gameStartTimestamp) / 60000; // in minutes
+  state.wpm = elapsed > 0 ? Math.round(state.wordsCorrect / elapsed) : 0;
+  $('hud-wpm').textContent = state.wpm;
+  // Update speed fill
+  const pct = Math.min(state.wpm / 100, 1) * 100;
+  $('speed-fill').style.width = pct + '%';
+  // Star speed
+  window._bgSetSpeed(1 + state.wpm / 15);
+}
+
+// ─── WORD RENDERING ───────────────────────────────────────────────────────────
+function renderWord() {
+  const cur = state.words[state.wordIdx] || '';
+  const next = state.words[state.wordIdx + 1] || '';
+
+  // Current word: all chars as 'waiting'
+  const curEl = $('word-current');
+  curEl.innerHTML = cur.split('').map(ch =>
+    `<span class="char-wait">${ch}</span>`
+  ).join('');
+
+  $('word-next').textContent = next;
+  $('race-input').value = '';
+  updateComboUI();
+}
+
+function renderTypingFeedback(typed) {
+  const cur = state.words[state.wordIdx] || '';
+  const curEl = $('word-current');
+  const spans = curEl.querySelectorAll('span');
+
+  spans.forEach((span, i) => {
+    if (i < typed.length) {
+      span.className = typed[i] === cur[i] ? 'char-correct' : 'char-wrong';
+    } else if (i === typed.length) {
+      span.className = 'char-current';
+    } else {
+      span.className = 'char-wait';
+    }
+  });
+}
+
+// ─── INPUT HANDLER ────────────────────────────────────────────────────────────
+const input = $('race-input');
+
+input.addEventListener('paste', e => e.preventDefault());
+input.addEventListener('contextmenu', e => e.preventDefault());
+
+input.addEventListener('input', function(e) {
+  if (!state.gameActive) return;
+  const typed = this.value;
+
+  // Prevent pasting long strings
+  if (typed.length > 30) { this.value = typed.slice(0, 30); return; }
+
+  const cur = state.words[state.wordIdx] || '';
+
+  // Track chars
+  if (typed.length > 0) {
+    state.totalCharsTyped++;
+    const lastChar = typed[typed.length - 1];
+    const expectedChar = cur[typed.length - 1];
+    if (lastChar === expectedChar) {
+      state.correctChars++;
+    } else {
+      shakeInput();
+    }
+  }
+
+  // Real-time feedback
+  renderTypingFeedback(typed);
+
+  // Accuracy update
+  const acc = state.totalCharsTyped > 0
+    ? Math.round((state.correctChars / state.totalCharsTyped) * 100)
+    : 100;
+  $('hud-acc').textContent = acc + '%';
+
+  // Check auto-confirm (space or the typed matches full word)
+  // Handled in keydown for space/enter
+});
+
+input.addEventListener('keydown', function(e) {
+  if (!state.gameActive) return;
+
+  if (e.key === ' ' || e.key === 'Enter') {
+    e.preventDefault();
+    const typed = this.value.trim();
+    if (typed.length === 0) return;
+    confirmWord(typed);
+  }
+});
+
+// Also allow confirming by typing past the end of the word
+input.addEventListener('keyup', function(e) {
+  if (!state.gameActive) return;
+  const typed = this.value;
+  const cur = state.words[state.wordIdx] || '';
+
+  // Auto-advance if typed word matches and is complete
+  if (typed === cur) {
+    confirmWord(typed);
+  }
+});
+
+function confirmWord(typed) {
+  const cur = state.words[state.wordIdx] || '';
+  const correct = typed === cur;
+
+  // Show previous word
+  const prevEl = $('word-prev');
+  prevEl.innerHTML = `<span class="w-status">${correct ? '✅' : '❌'}</span>${cur}`;
+
+  if (correct) {
+    state.combo++;
+    state.peakCombo = Math.max(state.peakCombo, state.combo);
+    state.wordsCorrect++;
+    spawnParticles();
+    spawnWordFlyoff(cur);
+  } else {
+    state.mistakes.push({ wrong: typed, correct: cur });
+    state.combo = 0;
+    shakeInput();
+  }
+
+  $('hud-combo').textContent = state.combo;
+  updateComboUI();
+
+  state.wordIdx++;
+  if (state.wordIdx >= state.words.length) {
+    endGame();
+    return;
+  }
+
+  renderWord();
+  input.value = '';
+  input.focus();
+}
+
+function shakeInput() {
+  input.classList.remove('wrong-shake');
+  void input.offsetWidth;
+  input.classList.add('wrong-shake');
+  setTimeout(() => input.classList.remove('wrong-shake'), 350);
+}
+
+// ─── COMBO UI ─────────────────────────────────────────────────────────────────
+function updateComboUI() {
+  const badge = $('combo-badge');
+  const inp = $('race-input');
+
+  // Remove all combo classes
+  inp.classList.remove('combo-fire', 'combo-lightning', 'combo-unstoppable', 'wrong-shake');
+  badge.classList.remove('show', 'fire', 'lightning', 'unstoppable');
+
+  if (state.combo >= 15) {
+    badge.textContent = '🌪️ UNSTOPPABLE!';
+    badge.classList.add('show', 'unstoppable');
+    inp.classList.add('combo-unstoppable');
+  } else if (state.combo >= 10) {
+    badge.textContent = '⚡ LIGHTNING!';
+    badge.classList.add('show', 'lightning');
+    inp.classList.add('combo-lightning');
+  } else if (state.combo >= 5) {
+    badge.textContent = '🔥 ON FIRE!';
+    badge.classList.add('show', 'fire');
+    inp.classList.add('combo-fire');
+  }
+}
+
+// ─── PARTICLES ────────────────────────────────────────────────────────────────
+function spawnParticles() {
+  const container = $('particles-container');
+  const wordEl = $('word-current');
+  const rect = wordEl.getBoundingClientRect();
+  const arenaRect = container.parentElement.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2 - arenaRect.left;
+  const cy = rect.top + rect.height / 2 - arenaRect.top;
+
+  const colors = ['#00ff88', '#7c3aed', '#f59e0b', '#a855f7', '#fff'];
+  for (let i = 0; i < 14; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const angle = (Math.random() * Math.PI * 2);
+    const dist = 40 + Math.random() * 60;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist;
+    p.style.cssText = `
+      left: ${cx}px; top: ${cy}px;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      --dx: ${dx}px; --dy: ${dy}px;
+    `;
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 600);
+  }
+}
+
+function spawnWordFlyoff(word) {
+  const container = $('particles-container');
+  const wordEl = $('word-current');
+  const rect = wordEl.getBoundingClientRect();
+  const arenaRect = container.parentElement.getBoundingClientRect();
+
+  const el = document.createElement('div');
+  el.className = 'word-flyoff';
+  el.textContent = word;
+  el.style.cssText = `
+    left: ${rect.left - arenaRect.left}px;
+    top: ${rect.top - arenaRect.top}px;
+  `;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 500);
+}
+
+// ─── END GAME ─────────────────────────────────────────────────────────────────
+function endGame() {
+  if (!state.gameActive) return;
+  state.gameActive = false;
+  clearInterval(state.timerInterval);
+  clearInterval(state.wpmInterval);
+  window._bgSetSpeed(2);
+  input.blur();
+
+  const elapsed = (Date.now() - state.gameStartTimestamp) / 60000;
+  const finalWpm = elapsed > 0 ? Math.round(state.wordsCorrect / elapsed) : 0;
+  const acc = state.totalCharsTyped > 0
+    ? Math.round((state.correctChars / state.totalCharsTyped) * 100)
+    : 100;
+  const xp = Math.round(finalWpm * (acc / 100));
+
+  // Check record
+  const prevBest = parseInt(localStorage.getItem(`wordrace_best_${state.difficulty}`)) || 0;
+  const isRecord = finalWpm > prevBest;
+  if (isRecord) localStorage.setItem(`wordrace_best_${state.difficulty}`, finalWpm);
+
+  // Rank
+  const rank = getRank(finalWpm);
+
+  showScreen('results');
+  $('hud-timer').classList.remove('urgent');
+
+  // Animate WPM count-up
+  animateCount($('res-wpm'), 0, finalWpm, 1200);
+  $('res-acc').textContent = acc + '%';
+  $('res-words').textContent = `${state.wordsCorrect}/30`;
+  $('res-combo').textContent = state.peakCombo;
+  $('res-time').textContent = (60 - state.timeLeft) + 's';
+  $('res-rank-emoji').textContent = rank.emoji;
+  $('res-rank-name').textContent = rank.name;
+  $('res-xp').textContent = xp + ' XP';
+  $('record-flash').classList.toggle('show', isRecord);
+
+  // XP bar
+  setTimeout(() => {
+    $('xp-fill').style.width = Math.min(xp / 5, 100) + '%';
+  }, 300);
+
+  // Mistakes
+  const mistakesBox = $('mistakes-box');
+  const mistakesList = $('mistakes-list');
+  if (state.mistakes.length > 0) {
+    mistakesBox.classList.add('show');
+    mistakesList.innerHTML = state.mistakes.slice(0, 8).map(m =>
+      `<div class="mistake-item">
+        <span class="mistake-wrong">${m.wrong || '(порожньо)'}</span>
+        <span class="mistake-arrow">→</span>
+        <span class="mistake-correct">${m.correct}</span>
+      </div>`
+    ).join('');
+  } else {
+    mistakesBox.classList.remove('show');
+  }
+
+  // Update ready screen record
+  updateRecord();
+}
+
+function getRank(wpm) {
+  if (wpm < 20) return { emoji: '🐌', name: 'Равлик' };
+  if (wpm < 35) return { emoji: '🚶', name: 'Пішохід' };
+  if (wpm < 50) return { emoji: '🚴', name: 'Велосипедист' };
+  if (wpm < 70) return { emoji: '🏎️', name: 'Гонщик' };
+  return { emoji: '🚀', name: 'Ракета' };
+}
+
+function animateCount(el, from, to, duration) {
+  const start = performance.now();
+  function step(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * ease);
+    if (p < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+// ─── RESULTS BUTTONS ─────────────────────────────────────────────────────────
+$('btn-retry').addEventListener('click', () => {
+  showScreen('ready');
+  window._bgSetSpeed(1);
+  updateRecord();
+  // Keep same difficulty, just go back to ready
+});
+
+$('btn-change-diff').addEventListener('click', () => {
+  showScreen('ready');
+  window._bgSetSpeed(1);
+  updateRecord();
+});
+
+// ─── KEEP INPUT FOCUSED DURING RACE ──────────────────────────────────────────
+document.addEventListener('click', () => {
+  if (state.gameActive) input.focus();
+});
+document.addEventListener('keypress', e => {
+  if (state.gameActive && document.activeElement !== input) {
+    input.focus();
+  }
+});
+
+// ─── MOBILE: prevent scroll on space ─────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.key === ' ' && state.gameActive) e.preventDefault();
+});
+
+</script>
+</body>
+</html>

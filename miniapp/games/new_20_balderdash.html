@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎭 BALDERDASH — Voodoo English</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #12121a;
+    --bg3: #1a1a26;
+    --purple: #7c3aed;
+    --purple-light: #9d5ff5;
+    --purple-glow: rgba(124,58,237,0.35);
+    --gold: #f59e0b;
+    --gold-light: #fbbf24;
+    --green: #10b981;
+    --red: #ef4444;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --text: #f1f0ff;
+    --text-dim: #8b85b0;
+    --card: #16162a;
+    --border: rgba(124,58,237,0.25);
+    --radius: 16px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── LAYOUT ── */
+  #app {
+    width: 100%;
+    max-width: 480px;
+    height: 100dvh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+    transition: opacity 0.35s, transform 0.35s;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(18px);
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  /* ── HEADER BAR ── */
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+    flex-shrink: 0;
+  }
+  .hud-logo { font-size: 15px; font-weight: 800; letter-spacing: 1px; color: var(--purple-light); }
+  .hud-coins {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--bg3); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 20px; padding: 5px 12px;
+    font-weight: 700; font-size: 15px; color: var(--gold);
+  }
+  .round-pip {
+    display: flex; gap: 4px;
+  }
+  .round-pip span {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bg3); border: 1.5px solid var(--purple);
+    transition: background 0.3s;
+  }
+  .round-pip span.done { background: var(--purple); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 15px 28px;
+    border-radius: 14px;
+    border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: transform 0.12s, box-shadow 0.2s, opacity 0.2s;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple), #6d28d9);
+    color: #fff;
+    box-shadow: 0 4px 24px var(--purple-glow);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 32px rgba(124,58,237,0.55); }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), #d97706);
+    color: #0a0a0f;
+    box-shadow: 0 4px 20px rgba(245,158,11,0.35);
+  }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--purple);
+    color: var(--purple-light);
+  }
+  .btn:disabled { opacity: 0.38; cursor: not-allowed; transform: none; }
+  .btn-full { width: 100%; }
+
+  /* ── WELCOME SCREEN ── */
+  #screen-welcome {
+    justify-content: center;
+    gap: 0;
+    text-align: center;
+  }
+  .welcome-icon {
+    font-size: 72px;
+    line-height: 1;
+    margin-bottom: 12px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
+  }
+  .welcome-title {
+    font-size: 42px; font-weight: 900;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, var(--purple-light), var(--pink), var(--gold));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .welcome-tag {
+    font-size: 15px; color: var(--text-dim);
+    font-style: italic; margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  .rules-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: left;
+    margin-bottom: 28px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .rule {
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 14px; line-height: 1.5; color: var(--text-dim);
+  }
+  .rule-icon {
+    width: 28px; height: 28px; flex-shrink: 0;
+    border-radius: 8px; background: var(--purple-glow);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .rule b { color: var(--text); }
+
+  /* ── WORD REVEAL SCREEN ── */
+  #screen-word { gap: 16px; }
+  .word-stage {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .word-stage::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(124,58,237,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .word-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    color: var(--purple-light); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .word-main {
+    font-size: 36px; font-weight: 900; letter-spacing: 2px;
+    background: linear-gradient(135deg, #fff, var(--purple-light));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .word-etym {
+    font-size: 12px; color: var(--text-dim); font-style: italic;
+  }
+
+  /* Timer bar */
+  .timer-bar-wrap {
+    background: var(--bg3); border-radius: 8px; overflow: hidden; height: 8px;
+  }
+  .timer-bar {
+    height: 100%; border-radius: 8px;
+    background: linear-gradient(90deg, var(--purple), var(--pink));
+    transition: width 1s linear, background 0.5s;
+  }
+  .timer-bar.low { background: linear-gradient(90deg, var(--red), #f97316); }
+  .timer-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; margin-bottom: 6px; color: var(--text-dim);
+  }
+  .timer-secs { font-weight: 700; color: var(--text); font-size: 15px; }
+
+  /* Input */
+  .input-wrap { position: relative; }
+  textarea.def-input {
+    width: 100%;
+    min-height: 110px;
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    padding: 14px 16px 36px;
+    resize: none;
+    outline: none;
+    line-height: 1.55;
+    transition: border-color 0.2s;
+  }
+  textarea.def-input:focus { border-color: var(--purple); }
+  textarea.def-input::placeholder { color: var(--text-dim); }
+  .char-counter {
+    position: absolute; bottom: 10px; right: 14px;
+    font-size: 12px; color: var(--text-dim);
+  }
+  .char-counter.limit { color: var(--red); }
+
+  /* Waiting state */
+  .waiting-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    text-align: center;
+  }
+  .typing-dots {
+    display: flex; gap: 5px;
+  }
+  .typing-dots span {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--purple-light);
+    animation: bounce 1.3s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,80%,100% { transform: scale(0.6); opacity: 0.5; }
+    40%          { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── VOTE SCREEN ── */
+  #screen-vote { gap: 14px; }
+  .vote-header { text-align: center; }
+  .vote-header h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .vote-header p { font-size: 13px; color: var(--text-dim); }
+
+  .def-cards { display: flex; flex-direction: column; gap: 10px; }
+  .def-card {
+    background: var(--card);
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+    cursor: pointer;
+    transition: border-color 0.18s, transform 0.12s, box-shadow 0.18s;
+  }
+  .def-card:hover { border-color: var(--purple); transform: translateY(-1px); }
+  .def-card.selected {
+    border-color: var(--purple-light);
+    box-shadow: 0 0 0 3px var(--purple-glow);
+    background: rgba(124,58,237,0.1);
+  }
+  .def-card:active { transform: scale(0.98); }
+  .letter-badge {
+    width: 34px; height: 34px; flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: var(--purple-light);
+  }
+  .def-card.selected .letter-badge {
+    background: var(--purple); border-color: var(--purple);
+    color: #fff;
+  }
+  .def-text { font-size: 14px; line-height: 1.55; color: var(--text); padding-top: 6px; }
+
+  /* ── RESULTS SCREEN ── */
+  #screen-results { gap: 14px; }
+  .results-header { text-align: center; margin-bottom: 4px; }
+  .results-header h2 { font-size: 20px; font-weight: 800; }
+  .results-header p { font-size: 13px; color: var(--text-dim); }
+
+  /* Card flip */
+  .flip-scene {
+    perspective: 900px;
+  }
+  .flip-card {
+    width: 100%;
+    position: relative;
+    transition: transform 0.55s cubic-bezier(.4,2,.55,.9);
+    transform-style: preserve-3d;
+  }
+  .flip-card.flipped { transform: rotateY(180deg); }
+  .flip-front, .flip-back {
+    position: absolute; width: 100%; backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .flip-front {
+    background: var(--card);
+    border: 2px solid var(--border);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .flip-back {
+    background: var(--bg3);
+    border: 2px solid var(--border);
+    transform: rotateY(180deg);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .flip-back.real { border-color: var(--green); background: rgba(16,185,129,0.08); }
+  .flip-back.my-fake { border-color: var(--pink); background: rgba(236,72,153,0.08); }
+  .flip-scene-wrapper {
+    /* Give each scene a height equal to both sides */
+  }
+
+  .result-def-text { font-size: 14px; line-height: 1.55; }
+  .result-author {
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .author-tag {
+    padding: 2px 8px; border-radius: 20px; font-size: 11px;
+  }
+  .tag-real { background: rgba(16,185,129,0.2); color: var(--green); }
+  .tag-fake { background: rgba(124,58,237,0.2); color: var(--purple-light); }
+  .tag-mine { background: rgba(236,72,153,0.2); color: var(--pink); }
+  .votes-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; color: var(--text-dim);
+  }
+  .votes-count { font-weight: 700; color: var(--gold); font-size: 14px; }
+
+  /* Score toast */
+  .score-toast {
+    position: fixed; top: 80px; left: 50%; transform: translateX(-50%) translateY(-20px);
+    background: var(--gold); color: #0a0a0f;
+    font-weight: 800; font-size: 18px;
+    padding: 10px 24px; border-radius: 40px;
+    box-shadow: 0 4px 24px rgba(245,158,11,0.5);
+    opacity: 0; z-index: 100;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .score-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── FINAL SCREEN ── */
+  #screen-final { gap: 16px; text-align: center; }
+  .final-title {
+    font-size: 28px; font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--pink));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .final-sub { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+
+  .scoreboard {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .score-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-row.you { background: rgba(124,58,237,0.12); }
+  .rank-num {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .rank-num.gold { background: var(--gold); color: #0a0a0f; }
+  .rank-num.silver { background: #94a3b8; color: #0a0a0f; }
+  .rank-num.bronze { background: #b45309; color: #fff; }
+  .score-name { flex: 1; font-weight: 600; font-size: 14px; text-align: left; }
+  .score-coins { font-weight: 700; font-size: 16px; color: var(--gold); }
+
+  .badge-row {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  }
+  .badge {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 16px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    flex: 1; min-width: 130px;
+  }
+  .badge-icon { font-size: 28px; }
+  .badge-title { font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-name { font-size: 13px; font-weight: 600; }
+
+  .glossary {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    text-align: left;
+  }
+  .glossary-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--purple-light); margin-bottom: 12px;
+  }
+  .gloss-word {
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 10px;
+  }
+  .gloss-word:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .gloss-w { font-weight: 800; font-size: 14px; color: var(--gold-light); letter-spacing: 1px; }
+  .gloss-d { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-top: 2px; }
+
+  /* ── MISC ── */
+  .spacer { flex: 1; }
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--purple-light);
+    margin-bottom: 2px;
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--purple-light);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Pulse dot */
+  .pulse-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.5); opacity: 0.5; }
+  }
+
+  /* Coin burst */
+  @keyframes coinPop {
+    0%   { transform: translateX(-50%) translateY(0) scale(0.5); opacity: 0; }
+    40%  { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1.2); }
+    100% { transform: translateX(-50%) translateY(-60px) scale(1); opacity: 0; }
+  }
+
+  /* Section divider */
+  .divider {
+    height: 1px; background: var(--border); margin: 4px 0;
+  }
+
+  /* Confirm overlay */
+  .confirm-bar {
+    position: sticky; bottom: 0;
+    background: var(--bg2); border-top: 1px solid var(--border);
+    padding: 14px 0 0;
+    margin: 0 -20px; padding: 14px 20px;
+    display: none;
+  }
+  .confirm-bar.show { display: block; }
+
+  /* Flip card height fix */
+  .flip-wrapper {
+    position: relative;
+  }
+  .flip-wrapper .flip-front,
+  .flip-wrapper .flip-back {
+    position: relative; top: auto; left: auto;
+  }
+  /* Override for actual flip */
+  .flip-scene .flip-card .flip-front { position: absolute; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @media (max-height: 700px) {
+    .welcome-icon { font-size: 50px; }
+    .welcome-title { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-logo">🎭 BALDERDASH</div>
+    <div class="round-pip" id="roundPips">
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="hud-coins">💰 <span id="hudCoins">0</span></div>
+  </div>
+
+  <!-- SCREEN 1: Welcome -->
+  <div class="screen active" id="screen-welcome">
+    <div class="spacer"></div>
+    <div class="welcome-icon">🎭</div>
+    <div class="welcome-title">BALDERDASH</div>
+    <div class="welcome-tag">Обдури всіх.<br>Або не дай себе обдурити.</div>
+    <div class="rules-box">
+      <div class="rule">
+        <div class="rule-icon">🤥</div>
+        <div><b>Бачиш незнайоме слово?</b> Придумай правдиву брехню</div>
+      </div>
+      <div class="rule">
+        <div class="rule-icon">💰</div>
+        <div><b>Якщо інші обрали ТВОЮ відповідь</b> — отримуєш монети</div>
+      </div>
+      <div class="rule">
+        <div class="rule-icon">🔍</div>
+        <div><b>Вгадав справжнє значення?</b> Ще більше монет!</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="startGame()" style="font-size:17px; padding: 18px;">
+      ПОЧАТИ БЛЕФУВАТИ
+    </button>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- SCREEN 2: Word + Input -->
+  <div class="screen" id="screen-word">
+    <div class="word-stage">
+      <div class="word-label">🔮 слово раунду</div>
+      <div class="word-main" id="wordDisplay">SNOLLYGOSTER</div>
+      <div class="word-etym" id="etymDisplay">From American English, 19th century</div>
+    </div>
+
+    <div>
+      <div class="timer-label">
+        <span>⏱ Час на відповідь</span>
+        <span class="timer-secs" id="writeTimerSecs">30</span>
+      </div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="writeTimerBar" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">Твоє визначення</div>
+      <div class="input-wrap">
+        <textarea class="def-input" id="defInput"
+          placeholder="Введи своє визначення..." maxlength="120"
+          oninput="onDefInput()"></textarea>
+        <div class="char-counter" id="charCounter">0/120</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="submitDefBtn" disabled onclick="submitDefinition()">
+      НАДІСЛАТИ
+    </button>
+
+    <div class="waiting-box" id="waitingBox" style="display:none;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="spinner"></div>
+        <span style="font-size:14px; color:var(--text-dim);">Чекаємо на інших гравців...</span>
+      </div>
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div style="font-size:16px; font-weight:700;" id="waitCount">1/4</div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: Vote -->
+  <div class="screen" id="screen-vote">
+    <div class="vote-header">
+      <h2>Яке визначення справжнє? 🕵️</h2>
+      <p id="voteWordLabel">SNOLLYGOSTER</p>
+    </div>
+
+    <div>
+      <div class="timer-label">
+        <span>⏱ Голосування</span>
+        <span class="timer-secs" id="voteTimerSecs">20</span>
+      </div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="voteTimerBar" style="width:100%"></div>
+      </div>
+    </div>
+
+    <div class="def-cards" id="defCards"></div>
+
+    <div class="confirm-bar" id="confirmBar">
+      <button class="btn btn-gold btn-full" onclick="confirmVote()">
+        ✅ ПІДТВЕРДИТИ ВИБІР
+      </button>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- SCREEN 4: Results -->
+  <div class="screen" id="screen-results">
+    <div class="results-header">
+      <h2 id="resultTitle">Розкриваємо карти! 🃏</h2>
+      <p id="resultSubtitle">Слово: SNOLLYGOSTER</p>
+    </div>
+    <div class="def-cards" id="resultCards"></div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary btn-full" id="nextRoundBtn" onclick="nextRound()" style="display:none;">
+      Наступне слово →
+    </button>
+  </div>
+
+  <!-- SCREEN 5: Final -->
+  <div class="screen" id="screen-final">
+    <div class="final-title">🏆 ГРА ЗАВЕРШЕНА!</div>
+    <div class="final-sub" id="finalSub">Твій результат за 5 раундів</div>
+
+    <div class="section-label">Таблиця лідерів</div>
+    <div class="scoreboard" id="scoreboard"></div>
+
+    <div class="section-label">Твої бейджі</div>
+    <div class="badge-row" id="badgeRow"></div>
+
+    <div class="section-label">📚 Що ти вивчив</div>
+    <div class="glossary" id="glossary"></div>
+
+    <div style="display:flex; gap:10px; margin-top:4px;">
+      <button class="btn btn-outline btn-full" onclick="shareResult()">📤 Поділитись</button>
+      <button class="btn btn-primary btn-full" onclick="restartGame()">🔄 ГРАТИ ЩЕ РАЗ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Score toast -->
+<div class="score-toast" id="scoreToast">+100 💰</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+const WORDS = [
+  {
+    word: 'SNOLLYGOSTER',
+    etym: 'From American English, 19th century',
+    real: 'A shrewd, unprincipled person, especially a politician',
+    fakes: [
+      'A type of traditional Norwegian fishing vessel used in arctic waters',
+      'The sound made by a door with a broken or rusted hinge',
+      'A small, sweet pastry filled with cream and jam from the Appalachian region',
+    ],
+    fakeAuthors: ['Bot Олена', 'Bot Максим', 'Bot Дмитро'],
+  },
+  {
+    word: 'LOLLYGAG',
+    etym: 'Origin uncertain, American slang, mid-19th century',
+    real: 'To spend time aimlessly; to dawdle or fool around',
+    fakes: [
+      'A thick, hand-knitted wool scarf worn in the Scottish Highlands',
+      'A children\'s spinning top made of painted wood',
+      'To eat noisily and with great enthusiasm',
+    ],
+    fakeAuthors: ['Bot Олена', 'Bot Максим', 'Bot Дмитро'],
+  },
+  {
+    word: 'BUMFUZZLE',
+    etym: 'American dialectal English, 19th century',
+    real: 'To confuse or perplex someone completely',
+    fakes: [
+      'A small fuzzy insect found in warm climates that resembles a bumblebee',
+      'A type of old-fashioned puzzle box made of carved bone',
+      'To walk clumsily or stumble on uneven ground',
+    ],
+    fakeAuthors: ['Bot Олена', 'Bot Максим', 'Bot Дмитро'],
+  },
+  {
+    word: 'KERFUFFLE',
+    etym: 'From Scottish Gaelic, early 19th century',
+    real: 'A commotion or fuss, especially one caused by conflicting views',
+    fakes: [
+      'A decorative ruffle or frilled collar worn on formal Victorian attire',
+      'The act of shuffling playing cards incorrectly or clumsily',
+      'A type of light woolen blanket used on horse-drawn carriages',
+    ],
+    fakeAuthors: ['Bot Олена', 'Bot Максим', 'Bot Дмитро'],
+  },
+  {
+    word: 'FLIBBERTIGIBBET',
+    etym: 'Middle English, possibly imitative of rapid chatter',
+    real: 'A frivolous, flighty, or excessively talkative person',
+    fakes: [
+      'A small bird known for its erratic flight pattern and bright plumage',
+      'An obsolete unit of measurement for fine silk fabric from 16th-century England',
+      'A type of nonsense rhyme sung to children at bedtime in Northern England',
+    ],
+    fakeAuthors: ['Bot Олена', 'Bot Максим', 'Bot Дмитро'],
+  },
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let state = {
+  round: 0,
+  coins: 0,
+  playerFake: '',
+  selectedCard: -1,
+  cardOrder: [],         // indices: 0=real, 1-3=fakes (0-indexed in WORDS.fakes)
+  writeTimer: null,
+  voteTimer: null,
+  writeTimeLeft: 30,
+  voteTimeLeft: 20,
+  submitted: false,
+  voted: false,
+  botCoins: { 'Bot Олена': 0, 'Bot Максим': 0, 'Bot Дмитро': 0 },
+  correctGuesses: 0,
+  successfulFakes: 0,
+};
+
+// ═══════════════════════════════════════════════════════
+// SCREEN MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// COIN ANIMATION
+// ═══════════════════════════════════════════════════════
+function animateCoins(from, to, duration = 800) {
+  const el = document.getElementById('hudCoins');
+  const start = performance.now();
+  const diff = to - from;
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + diff * ease);
+    if (t < 1) requestAnimationFrame(tick);
+    else el.textContent = to;
+  }
+  requestAnimationFrame(tick);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('scoreToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateHudCoins(newVal) {
+  const old = state.coins;
+  state.coins = newVal;
+  animateCoins(old, newVal);
+}
+
+// ═══════════════════════════════════════════════════════
+// ROUND PIPS
+// ═══════════════════════════════════════════════════════
+function updatePips() {
+  const pips = document.querySelectorAll('#roundPips span');
+  pips.forEach((p, i) => {
+    p.classList.toggle('done', i < state.round);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN 1 → START GAME
+// ═══════════════════════════════════════════════════════
+function startGame() {
+  state.round = 0;
+  state.coins = 0;
+  state.botCoins = { 'Bot Олена': 0, 'Bot Максим': 0, 'Bot Дмитро': 0 };
+  state.correctGuesses = 0;
+  state.successfulFakes = 0;
+  document.getElementById('hudCoins').textContent = '0';
+  updatePips();
+  startRound();
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN 2 — WORD + INPUT
+// ═══════════════════════════════════════════════════════
+function startRound() {
+  const w = WORDS[state.round];
+  state.submitted = false;
+  state.voted = false;
+  state.playerFake = '';
+  state.selectedCard = -1;
+
+  document.getElementById('wordDisplay').textContent = w.word;
+  document.getElementById('etymDisplay').textContent = w.etym;
+  document.getElementById('defInput').value = '';
+  document.getElementById('charCounter').textContent = '0/120';
+  document.getElementById('charCounter').classList.remove('limit');
+  document.getElementById('submitDefBtn').disabled = true;
+  document.getElementById('waitingBox').style.display = 'none';
+  document.getElementById('defInput').style.display = 'block';
+  document.getElementById('submitDefBtn').style.display = 'flex';
+
+  resetWriteTimer();
+  showScreen('screen-word');
+  startWriteTimer();
+}
+
+function onDefInput() {
+  const inp = document.getElementById('defInput');
+  const len = inp.value.length;
+  const counter = document.getElementById('charCounter');
+  counter.textContent = `${len}/120`;
+  counter.classList.toggle('limit', len >= 115);
+  document.getElementById('submitDefBtn').disabled = len < 10;
+}
+
+function resetWriteTimer() {
+  clearInterval(state.writeTimer);
+  state.writeTimeLeft = 30;
+  updateWriteTimer();
+}
+
+function updateWriteTimer() {
+  const secs = document.getElementById('writeTimerSecs');
+  const bar = document.getElementById('writeTimerBar');
+  secs.textContent = state.writeTimeLeft;
+  const pct = (state.writeTimeLeft / 30) * 100;
+  bar.style.width = pct + '%';
+  bar.classList.toggle('low', state.writeTimeLeft <= 8);
+}
+
+function startWriteTimer() {
+  state.writeTimer = setInterval(() => {
+    if (state.submitted) { clearInterval(state.writeTimer); return; }
+    state.writeTimeLeft--;
+    updateWriteTimer();
+    if (state.writeTimeLeft <= 0) {
+      clearInterval(state.writeTimer);
+      autoSubmit();
+    }
+  }, 1000);
+}
+
+function autoSubmit() {
+  const val = document.getElementById('defInput').value.trim();
+  state.playerFake = val.length >= 5 ? val : '(без відповіді)';
+  afterSubmit();
+}
+
+function submitDefinition() {
+  clearInterval(state.writeTimer);
+  const val = document.getElementById('defInput').value.trim();
+  state.playerFake = val;
+  afterSubmit();
+}
+
+function afterSubmit() {
+  state.submitted = true;
+  document.getElementById('defInput').disabled = true;
+  document.getElementById('submitDefBtn').style.display = 'none';
+  document.getElementById('waitingBox').style.display = 'flex';
+
+  // Simulate bots joining
+  let count = 1;
+  const waitCount = document.getElementById('waitCount');
+  waitCount.textContent = `${count}/4`;
+  const interval = setInterval(() => {
+    count++;
+    waitCount.textContent = `${count}/4`;
+    if (count >= 4) {
+      clearInterval(interval);
+      setTimeout(() => buildVoteScreen(), 700);
+    }
+  }, 700);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN 3 — VOTE
+// ═══════════════════════════════════════════════════════
+function buildVoteScreen() {
+  const w = WORDS[state.round];
+  document.getElementById('voteWordLabel').textContent = w.word;
+
+  // Build card order: shuffle real + 3 fakes
+  // indices: 0 = real, 1 = fake[0] (bot Олена), 2 = fake[1] (bot Максим), 3 = player fake
+  const items = [
+    { type: 'real', text: w.real },
+    { type: 'bot', text: w.fakes[0], author: 'Bot Олена' },
+    { type: 'bot', text: w.fakes[1], author: 'Bot Максим' },
+    { type: 'player', text: state.playerFake, author: 'Ти' },
+  ];
+
+  // Shuffle
+  for (let i = items.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  state.cardOrder = items;
+
+  const letters = ['A', 'B', 'C', 'D'];
+  const container = document.getElementById('defCards');
+  container.innerHTML = '';
+
+  items.forEach((item, idx) => {
+    const card = document.createElement('div');
+    card.className = 'def-card';
+    card.id = `vcard-${idx}`;
+    card.innerHTML = `
+      <div class="letter-badge">${letters[idx]}</div>
+      <div class="def-text">${escHtml(item.text)}</div>
+    `;
+    card.onclick = () => selectCard(idx);
+    container.appendChild(card);
+  });
+
+  document.getElementById('confirmBar').classList.remove('show');
+  state.selectedCard = -1;
+
+  resetVoteTimer();
+  showScreen('screen-vote');
+  startVoteTimer();
+}
+
+function selectCard(idx) {
+  if (state.voted) return;
+  state.selectedCard = idx;
+  document.querySelectorAll('.def-card').forEach((c, i) => {
+    c.classList.toggle('selected', i === idx);
+  });
+  document.getElementById('confirmBar').classList.add('show');
+}
+
+function confirmVote() {
+  if (state.selectedCard === -1) return;
+  clearInterval(state.voteTimer);
+  state.voted = true;
+  document.getElementById('confirmBar').classList.remove('show');
+  setTimeout(() => showResults(), 400);
+}
+
+function resetVoteTimer() {
+  clearInterval(state.voteTimer);
+  state.voteTimeLeft = 20;
+  updateVoteTimer();
+}
+
+function updateVoteTimer() {
+  document.getElementById('voteTimerSecs').textContent = state.voteTimeLeft;
+  const pct = (state.voteTimeLeft / 20) * 100;
+  const bar = document.getElementById('voteTimerBar');
+  bar.style.width = pct + '%';
+  bar.classList.toggle('low', state.voteTimeLeft <= 6);
+}
+
+function startVoteTimer() {
+  state.voteTimer = setInterval(() => {
+    state.voteTimeLeft--;
+    updateVoteTimer();
+    if (state.voteTimeLeft <= 0) {
+      clearInterval(state.voteTimer);
+      if (!state.voted) {
+        state.voted = true;
+        document.getElementById('confirmBar').classList.remove('show');
+        setTimeout(() => showResults(), 300);
+      }
+    }
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN 4 — RESULTS
+// ═══════════════════════════════════════════════════════
+function showResults() {
+  const w = WORDS[state.round];
+  const items = state.cardOrder;
+  const letters = ['A', 'B', 'C', 'D'];
+
+  document.getElementById('resultSubtitle').textContent = `Слово: ${w.word}`;
+
+  // Simulate bot votes (bots vote on player's fake sometimes)
+  // Bot Дмитро votes for real definition
+  // Others may vote for player's fake
+  const playerFakeIdx = items.findIndex(i => i.type === 'player');
+  const realIdx = items.findIndex(i => i.type === 'real');
+
+  // Random bot votes: each bot has 40% chance to pick player's fake
+  const botVotes = {};
+  items.forEach((_, i) => botVotes[i] = 0);
+
+  const botNames = ['Bot Олена', 'Bot Максим', 'Bot Дмитро'];
+  const botVoteDest = [];
+  botNames.forEach(name => {
+    const pickFake = Math.random() < 0.4;
+    const dest = pickFake ? playerFakeIdx : realIdx;
+    botVoteDest.push({ name, dest });
+    botVotes[dest]++;
+  });
+
+  const playerVotedCorrect = state.selectedCard === realIdx;
+  const myVoteIdx = state.selectedCard >= 0 ? state.selectedCard : -1;
+
+  // Calculate coins
+  const botsFooled = botVotes[playerFakeIdx] || 0;
+  let earned = 0;
+  if (playerVotedCorrect) { earned += 100; state.correctGuesses++; }
+  earned += botsFooled * 50;
+  if (botsFooled > 0) state.successfulFakes++;
+
+  // Bot coins
+  botNames.forEach((bn, bi) => {
+    if (botVoteDest[bi].dest === realIdx) {
+      state.botCoins[bn] = (state.botCoins[bn] || 0) + 100;
+    }
+  });
+
+  // Build result cards
+  const container = document.getElementById('resultCards');
+  container.innerHTML = '';
+
+  items.forEach((item, idx) => {
+    const isReal = item.type === 'real';
+    const isMine = item.type === 'player';
+    const iSelected = myVoteIdx === idx;
+    const votesHere = (botVotes[idx] || 0) + (iSelected ? 1 : 0);
+
+    // Author label
+    let authorLabel = '';
+    if (isReal) authorLabel = `<span class="author-tag tag-real">✅ СПРАВЖНЄ</span>`;
+    else if (isMine) authorLabel = `<span class="author-tag tag-mine">😈 Ти</span>`;
+    else authorLabel = `<span class="author-tag tag-fake">${item.author}</span>`;
+
+    // Vote line
+    const voteStr = votesHere === 1 ? '1 голос' : `${votesHere} голоси`;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.marginBottom = '10px';
+
+    // We use a simple reveal with class toggling instead of full 3D flip
+    // because absolute positioning makes height 0
+    wrapper.innerHTML = `
+      <div class="def-card result-def-card" id="rcard-${idx}" style="
+        background: var(--card);
+        border: 2px solid ${isReal ? 'var(--green)' : isMine ? 'var(--pink)' : 'var(--border)'};
+        ${isReal ? 'background: rgba(16,185,129,0.08);' : ''}
+        ${isMine ? 'background: rgba(236,72,153,0.08);' : ''}
+        opacity: 0; transform: scale(0.94);
+        transition: opacity 0.4s, transform 0.4s;
+        cursor: default;
+      ">
+        <div class="letter-badge" style="
+          background: ${isReal ? 'var(--green)' : isMine ? 'var(--pink)' : 'var(--bg3)'};
+          border-color: ${isReal ? 'var(--green)' : isMine ? 'var(--pink)' : 'var(--border)'};
+          color: ${isReal || isMine ? '#fff' : 'var(--purple-light)'};
+        ">${letters[idx]}</div>
+        <div style="flex:1;">
+          <div class="result-def-text">${escHtml(item.text)}</div>
+          <div style="margin-top:8px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+            <div>${authorLabel}</div>
+            <div class="votes-row">
+              🗳️ <span class="votes-count">${votesHere}</span> ${voteStr}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(wrapper);
+  });
+
+  showScreen('screen-results');
+  document.getElementById('nextRoundBtn').style.display = 'none';
+
+  // Animate cards appearing one by one
+  const cards = container.querySelectorAll('.result-def-card');
+  cards.forEach((card, i) => {
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'scale(1)';
+    }, i * 280 + 200);
+  });
+
+  // Show score after all cards revealed
+  const totalDelay = cards.length * 280 + 600;
+  setTimeout(() => {
+    updateHudCoins(state.coins + earned);
+
+    if (earned > 0) {
+      showToast(`+${earned} 💰`);
+    }
+
+    // Result title
+    if (playerVotedCorrect && botsFooled > 0) {
+      document.getElementById('resultTitle').textContent = '🎯 Детектив І блефер! 🎉';
+    } else if (playerVotedCorrect) {
+      document.getElementById('resultTitle').textContent = '🎯 Вірно! Ти детектив!';
+    } else if (botsFooled > 0) {
+      document.getElementById('resultTitle').textContent = '😈 Обдурив ботів!';
+    } else {
+      document.getElementById('resultTitle').textContent = '😅 Нікого не обдурив...';
+    }
+
+    document.getElementById('nextRoundBtn').style.display = 'flex';
+  }, totalDelay);
+
+  updatePips();
+}
+
+// ═══════════════════════════════════════════════════════
+// NEXT ROUND / FINAL
+// ═══════════════════════════════════════════════════════
+function nextRound() {
+  state.round++;
+  if (state.round >= WORDS.length) {
+    showFinal();
+  } else {
+    // Reset input
+    document.getElementById('defInput').disabled = false;
+    document.getElementById('defInput').value = '';
+    startRound();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN 5 — FINAL
+// ═══════════════════════════════════════════════════════
+function showFinal() {
+  // Build scoreboard
+  const allPlayers = [
+    { name: 'Ти', coins: state.coins, you: true },
+    ...Object.entries(state.botCoins).map(([name, coins]) => ({ name, coins, you: false })),
+  ];
+  allPlayers.sort((a, b) => b.coins - a.coins);
+
+  const rankColors = ['gold', 'silver', 'bronze', ''];
+  const rankEmojis = ['🥇', '🥈', '🥉', ''];
+  const sb = document.getElementById('scoreboard');
+  sb.innerHTML = allPlayers.map((p, i) => `
+    <div class="score-row${p.you ? ' you' : ''}">
+      <div class="rank-num ${rankColors[i] || ''}">${rankEmojis[i] || i+1}</div>
+      <div class="score-name">${p.name}${p.you ? ' 👤' : ''}</div>
+      <div class="score-coins">💰 ${p.coins}</div>
+    </div>
+  `).join('');
+
+  // Badges
+  const youRank = allPlayers.findIndex(p => p.you);
+  const badges = [];
+  if (state.correctGuesses >= 3) {
+    badges.push({ icon: '🔍', title: 'Детектив правди', name: 'Вгадав 3+ реальних!' });
+  }
+  if (state.successfulFakes >= 2) {
+    badges.push({ icon: '🤥', title: 'Найкращий блефер', name: `Обдурив ботів ${state.successfulFakes}×` });
+  }
+  if (youRank === 0) {
+    badges.push({ icon: '👑', title: 'Чемпіон раунду', name: 'Найбільше монет!' });
+  }
+  if (badges.length === 0) {
+    badges.push({ icon: '🎭', title: 'Гравець Balderdash', name: 'Будь ласка, грай ще!' });
+  }
+
+  document.getElementById('badgeRow').innerHTML = badges.map(b => `
+    <div class="badge">
+      <div class="badge-icon">${b.icon}</div>
+      <div class="badge-title">${b.title}</div>
+      <div class="badge-name">${b.name}</div>
+    </div>
+  `).join('');
+
+  // Glossary
+  document.getElementById('glossary').innerHTML = `
+    <div class="glossary-title">📖 Вивчені слова</div>
+    ${WORDS.map(w => `
+      <div class="gloss-word">
+        <div class="gloss-w">${w.word}</div>
+        <div class="gloss-d">${w.real}</div>
+      </div>
+    `).join('')}
+  `;
+
+  document.getElementById('finalSub').textContent =
+    `Зароблено: 💰${state.coins} монет за 5 раундів`;
+
+  showScreen('screen-final');
+  updatePips();
+}
+
+// ═══════════════════════════════════════════════════════
+// SHARE & RESTART
+// ═══════════════════════════════════════════════════════
+function shareResult() {
+  const text = `🎭 BALDERDASH на Voodoo English!\nМої монети: 💰${state.coins}\nВгаданих слів: ${state.correctGuesses}/5\nОбдурених ботів: ${state.successfulFakes}/5\n\nГрай на Voodoo English! 🇺🇦`;
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('Скопійовано! 📋'));
+  }
+}
+
+function restartGame() {
+  state.round = 0;
+  state.coins = 0;
+  state.botCoins = { 'Bot Олена': 0, 'Bot Максим': 0, 'Bot Дмитро': 0 };
+  state.correctGuesses = 0;
+  state.successfulFakes = 0;
+  document.getElementById('hudCoins').textContent = '0';
+  updatePips();
+  showScreen('screen-welcome');
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Init pips
+updatePips();
+</script>
+</body>
+</html>
