@@ -127,6 +127,27 @@ async def create_approval_for_improvement(proposal: str) -> None:
         log.error("Failed to create approval: %s", e)
 
 
+async def run_weekly_league_reset() -> None:
+    """Mon 00:05 Kyiv — promote/demote players between leagues, reset weekly_xp."""
+    log.info("Starting weekly league reset...")
+    try:
+        import httpx
+        MINIAPP_PORT = os.getenv("MINIAPP_PORT", "8001")
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(f"http://127.0.0.1:{MINIAPP_PORT}/api/leagues/reset")
+            data = resp.json()
+        msg = (
+            f"🏆 <b>Weekly League Reset</b>\n\n"
+            f"⬆️ Promoted: {data.get('promoted', 0)}\n"
+            f"⬇️ Demoted: {data.get('demoted', 0)}\n"
+            f"📅 Date: {data.get('date')}"
+        )
+        await post_to_group("ops", msg)
+        log.info("League reset complete: %s", data)
+    except Exception as e:
+        log.error("League reset failed: %s", e)
+
+
 async def run_outreach_cycle(market_code: str | None = None) -> None:
     """10:00 and 16:00 — Autonomous outreach to target groups."""
     log.info("Starting outreach cycle (market=%s)...", market_code or "all")
@@ -223,6 +244,12 @@ async def main_loop() -> None:
         if weekday == 6 and hour == 22 and key_weekly not in sent:
             await run_weekly_improvement()
             sent.add(key_weekly)
+
+        # Weekly league reset Monday 00:05 Kyiv
+        key_league = f"league_{day_key}"
+        if weekday == 0 and hour == 0 and key_league not in sent:
+            await run_weekly_league_reset()
+            sent.add(key_league)
 
         # Weekly podcast Monday 09:00 Kyiv
         key_podcast = f"podcast_{day_key}"

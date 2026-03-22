@@ -571,6 +571,16 @@ main#main {
 
 .lb-name { flex: 1; font-size: 15px; font-weight: 600; }
 .lb-xp { color: var(--text2); font-size: 13px; }
+.lb-gap {
+  text-align: center;
+  color: var(--text2);
+  font-size: 13px;
+  padding: 6px 0;
+  letter-spacing: 2px;
+  border-top: 1px dashed rgba(255,255,255,0.08);
+  border-bottom: 1px dashed rgba(255,255,255,0.08);
+  margin: 4px 0;
+}
 
 /* ===== PROFILE ===== */
 .profile-section { padding-bottom: 32px; }

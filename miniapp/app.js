@@ -569,6 +569,13 @@ async function initUser() {
     }
     state.isPremium = !!result.is_premium;
     state.premiumExpires = result.premium_expires || null;
+    state.streakFreeze = result.streak_freeze || 0;
+    // Notify user if freeze was auto-applied to protect streak
+    if (result.freeze_applied) {
+      setTimeout(function() {
+        showToast('🧊 Заморозка захистила твою серію! Залишилось: ' + result.streak_freeze, 'success');
+      }, 1500);
+    }
     // Restore pet stage from server XP (don't let it go backwards)
     if (result.xp > 0) {
       const serverStage = computeLexiStage();
@@ -815,6 +822,16 @@ function renderHome() {
 
     // ── DAILY TASKS ──
     buildDailyChecklist() +
+
+    // ── AD REWARD ──
+    (ADSGRAM_BLOCK_ID !== 'YOUR_ADSGRAM_BLOCK_ID'
+      ? '<div class="ad-reward-block">' +
+          '<button class="btn-ad-reward" onclick="watchRewardedAd()" id="adRewardBtn">' +
+            '📺 Дивись рекламу → +15 XP' +
+          '</button>' +
+          '<div style="font-size:10px;color:var(--text2);text-align:center;margin-top:4px">1 раз на день безкоштовно</div>' +
+        '</div>'
+      : '') +
 
     // ── MONTH COMPETITION ──
     '<div class="premium-comp">' +
@@ -1432,10 +1449,50 @@ async function renderLeaderboard(mode) {
     myXpLabel = 'Твій XP цього тижня: ' + myWeekly;
     subtitle = 'Скидається щопонеділка';
   } else {
-    const data = await apiCall('/api/leaderboard?tg_id=' + tgId, {}, []);
-    list = (data && data.length) ? data : [{rank:1, first_name:'Будь першим!', xp:0, streak:0, is_me:false}];
-    myXpLabel = 'Твій XP: ' + state.xp;
+    // Context leaderboard: top 5 + user's neighbors
+    const ctx = await apiCall('/api/leaderboard/context?tg_id=' + tgId, {}, {top5:[], neighbors:[], my_rank:null, total_users:0});
+    const top5 = (ctx && ctx.top5) || [];
+    const neighbors = (ctx && ctx.neighbors) || [];
+    const myRank = ctx && ctx.my_rank;
+    const total = ctx && ctx.total_users;
+
+    function lbRow(u) {
+      const rankClass = u.rank===1?'gold':u.rank===2?'silver':u.rank===3?'bronze':'';
+      const rankDisplay = medals[u.rank] || '#' + u.rank;
+      return '<div class="lb-item ' + (u.is_me ? 'is-me' : '') + '">' +
+        '<div class="lb-rank ' + rankClass + '">' + rankDisplay + '</div>' +
+        '<div class="lb-name">' + (u.first_name || '?') + (u.is_me ? ' 👈' : '') + '</div>' +
+        '<div class="lb-xp">⭐' + (u.xp||0) + ' | 🔥' + (u.streak||0) + '</div>' +
+      '</div>';
+    }
+
+    const top5HTML = top5.map(lbRow).join('');
+    const gapHTML = (neighbors.length && myRank > 5)
+      ? '<div class="lb-gap">· · · · · · <span style="font-size:10px;color:var(--text2)">позиція #' + myRank + ' з ' + total + '</span> · · · · · ·</div>'
+      : '';
+    const neighborsHTML = neighbors.map(lbRow).join('');
+
+    list = top5; // keep for fallback
+    myXpLabel = myRank ? 'Твоя позиція: <b>#' + myRank + '</b> з ' + total + ' | XP: ' + state.xp : 'Твій XP: ' + state.xp;
     subtitle = 'Загальний рейтинг';
+
+    document.getElementById('main').innerHTML =
+      '<div class="section-title">🏆 Топ гравців</div>' +
+      '<div class="leaderboard-tabs">' +
+        '<button class="lb-tab ' + (lbMode==='all'?'active':'') + '" onclick="renderLeaderboard(\'all\')">🏅 Всі часи</button>' +
+        '<button class="lb-tab ' + (lbMode==='weekly'?'active':'') + '" onclick="renderLeaderboard(\'weekly\')">📅 Тиждень</button>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text2);text-align:center;margin-bottom:8px">' + subtitle + '</div>' +
+      '<div class="lb-list">' + top5HTML + gapHTML + neighborsHTML + '</div>' +
+      '<div style="font-size:12px;text-align:center;color:var(--accent2);margin-top:8px">' + myXpLabel + '</div>' +
+      '<div class="premium-banner" style="margin-top:16px">' +
+        '<div class="p-star">🏆</div>' +
+        '<div class="p-content">' +
+          '<div class="p-title">Перше місце = Telegram Premium</div>' +
+          '<div class="p-sub">Нараховується щомісяця.</div>' +
+        '</div>' +
+      '</div>';
+    return;
   }
 
   const itemsHTML = list.map(function(u) {

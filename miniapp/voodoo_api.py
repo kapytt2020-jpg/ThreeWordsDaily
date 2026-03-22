@@ -416,12 +416,22 @@ async def user_init(body: UserInitBody):
     last = user.get("last_lesson_date")
     streak = user.get("streak", 0)
 
+    freeze_applied = False
     if last != today:
         if last == yesterday:
             streak += 1
         elif last is None:
             streak = 0
-        # Don't reset streak on login, only on lesson events
+        else:
+            # User missed at least one day — auto-apply streak freeze if available
+            if streak > 0 and (user.get("streak_freeze") or 0) > 0:
+                new_freeze = user["streak_freeze"] - 1
+                await db_update_user(tg_id, streak_freeze=new_freeze, last_lesson_date=yesterday)
+                user["streak_freeze"] = new_freeze
+                freeze_applied = True
+                # Streak stays the same — freeze protected it
+            else:
+                streak = 0  # no freeze available, reset streak
         await db_update_user(tg_id, streak=streak)
         user["streak"] = streak
 
@@ -452,6 +462,8 @@ async def user_init(body: UserInitBody):
         "pet_name": user.get("pet_name"),
         "is_premium": bool(user.get("is_premium", 0)),
         "premium_expires": user.get("premium_expires"),
+        "streak_freeze": user.get("streak_freeze", 0),
+        "freeze_applied": freeze_applied,
     }
 
 
@@ -1049,6 +1061,119 @@ async def weekly_leaderboard(tg_id: int):
                   "weekly_xp": r["weekly_xp"] or 0, "streak": r["streak"] or 0} for i, r in enumerate(rows)]
 
         return {"board": board, "my_weekly_xp": caller["weekly_xp"] if caller else 0}
+
+
+# ===== LEADERBOARD CONTEXT (proximity) =====
+
+@app.get("/api/leaderboard/context")
+async def leaderboard_context(tg_id: int = Query(0)):
+    """
+    Returns top 5 users + caller's neighborhood (±2 ranks).
+    Used for proximity leaderboard: you see leaders AND your neighbors.
+    """
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+
+        # Full ranked list (enough to find neighbors)
+        rows = await (await conn.execute(
+            "SELECT tg_id, first_name, xp, streak, weekly_xp, league "
+            "FROM users ORDER BY xp DESC LIMIT 200"
+        )).fetchall()
+
+    ranked = [dict(r) for r in rows]
+    for i, u in enumerate(ranked):
+        u["rank"] = i + 1
+        u["is_me"] = (u["tg_id"] == tg_id)
+
+    top5 = ranked[:5]
+
+    # Find user position
+    my_idx = next((i for i, u in enumerate(ranked) if u["tg_id"] == tg_id), None)
+
+    neighbors = []
+    if my_idx is not None and my_idx >= 5:
+        lo = max(5, my_idx - 2)
+        hi = min(len(ranked), my_idx + 3)
+        neighbors = ranked[lo:hi]
+
+    return {
+        "top5": top5,
+        "neighbors": neighbors,
+        "my_rank": (my_idx + 1) if my_idx is not None else None,
+        "total_users": len(ranked),
+    }
+
+
+# ===== WEEKLY LEAGUE RESET WITH PROMOTION/DEMOTION =====
+
+LEAGUES_ORDER = ["bronze", "silver", "gold", "diamond"]
+PROMOTE_PCT   = 0.30   # top 30% get promoted
+DEMOTE_PCT    = 0.30   # bottom 30% get demoted
+
+
+@app.post("/api/leagues/reset")
+async def reset_leagues_endpoint():
+    """
+    Monday weekly reset:
+    - Within each league: top 30% promoted, bottom 30% demoted
+    - weekly_xp reset to 0
+    - Returns summary of changes
+    """
+    return await _do_league_reset()
+
+
+async def _do_league_reset() -> dict:
+    from zoneinfo import ZoneInfo
+    from datetime import datetime
+    today = datetime.now(ZoneInfo("Europe/Kyiv")).strftime("%Y-%m-%d")
+
+    promoted = demoted = 0
+
+    async with aiosqlite.connect(CLOUD_DB_PATH) as conn:
+        conn.row_factory = aiosqlite.Row
+
+        for league in LEAGUES_ORDER:
+            rows = await (await conn.execute(
+                "SELECT tg_id, weekly_xp FROM users WHERE league=? ORDER BY weekly_xp DESC",
+                (league,)
+            )).fetchall()
+
+            if len(rows) < 3:
+                continue  # not enough players to rank
+
+            n = len(rows)
+            promote_n = max(1, int(n * PROMOTE_PCT))
+            demote_n  = max(1, int(n * DEMOTE_PCT))
+
+            league_idx = LEAGUES_ORDER.index(league)
+
+            # Promote top players (except already in Diamond)
+            if league_idx < len(LEAGUES_ORDER) - 1:
+                new_league = LEAGUES_ORDER[league_idx + 1]
+                for row in rows[:promote_n]:
+                    await conn.execute(
+                        "UPDATE users SET league=? WHERE tg_id=?",
+                        (new_league, row["tg_id"])
+                    )
+                    promoted += 1
+
+            # Demote bottom players (except already in Bronze)
+            if league_idx > 0:
+                new_league = LEAGUES_ORDER[league_idx - 1]
+                for row in rows[-demote_n:]:
+                    await conn.execute(
+                        "UPDATE users SET league=? WHERE tg_id=?",
+                        (new_league, row["tg_id"])
+                    )
+                    demoted += 1
+
+        # Reset all weekly_xp
+        await conn.execute(
+            "UPDATE users SET weekly_xp=0, weekly_reset_date=?", (today,)
+        )
+        await conn.commit()
+
+    return {"ok": True, "promoted": promoted, "demoted": demoted, "date": today}
 
 
 # ===== STATIC FILES =====
