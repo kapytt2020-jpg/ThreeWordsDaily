@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import re
@@ -89,25 +90,25 @@ def save_state(data: dict):
 
 def get_or_create_ssh_key() -> str:
     """Upload SSH pub key to Vultr, return key ID."""
-    pub_paths = [Path.home() / ".ssh/id_ed25519.pub", Path.home() / ".ssh/id_rsa.pub"]
-    pub_key = None
-    for p in pub_paths:
-        if p.exists():
-            pub_key = p.read_text().strip()
-            print(f"  Using SSH key: {p.name}")
-            break
+    kp = Path.home() / ".ssh/voodoo_deploy"
 
-    if not pub_key:
+    # Use or generate dedicated deploy key (never overwrite existing)
+    if not kp.exists():
         print("  Generating SSH keypair...")
-        kp = Path.home() / ".ssh/voodoo_deploy"
-        subprocess.run(["ssh-keygen", "-t", "ed25519", "-f", str(kp), "-N", "", "-C", "voodoobot"], check=True)
-        pub_key = kp.with_suffix(".pub").read_text().strip()
+        subprocess.run(
+            ["ssh-keygen", "-t", "ed25519", "-f", str(kp), "-N", "", "-C", "voodoobot"],
+            check=True, capture_output=True
+        )
 
-    # Check existing keys
+    pub_key = kp.with_suffix(".pub").read_text().strip()
+    print(f"  Using SSH key: {kp.name}")
+
+    # Compare full public key body (not just prefix) with Vultr stored keys
+    pub_body = pub_key.split()[1]  # base64 key material
     existing = api("GET", "ssh-keys").get("ssh_keys", [])
-    key_fprint = pub_key.split()[1][:20] if len(pub_key.split()) > 1 else ""
     for k in existing:
-        if key_fprint and key_fprint in k.get("ssh_key", ""):
+        stored_body = k.get("ssh_key", "").split()[1] if len(k.get("ssh_key", "").split()) > 1 else ""
+        if stored_body == pub_body:
             print(f"  SSH key already in Vultr: {k['name']}")
             return k["id"]
 
@@ -122,14 +123,16 @@ def create_startup_script() -> str:
     existing = api("GET", "startup-scripts").get("startup_scripts", [])
     for s in existing:
         if s["name"] == "voodoobot-init":
-            api("PATCH", f"startup-scripts/{s['id']}", json={"script": STARTUP_SCRIPT})
+            encoded = base64.b64encode(STARTUP_SCRIPT.encode()).decode()
+            api("PATCH", f"startup-scripts/{s['id']}", json={"script": encoded})
             print(f"  Startup script updated (id={s['id']})")
             return s["id"]
 
+    encoded = base64.b64encode(STARTUP_SCRIPT.encode()).decode()
     result = api("POST", "startup-scripts", json={
         "name": "voodoobot-init",
         "type": "boot",
-        "script": STARTUP_SCRIPT,
+        "script": encoded,
     })
     sid = result["startup_script"]["id"]
     print(f"  Startup script created (id={sid})")
