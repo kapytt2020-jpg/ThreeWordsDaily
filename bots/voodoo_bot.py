@@ -15,11 +15,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from datetime import datetime, timedelta
+
 from dotenv import load_dotenv
 from telegram import (
     BotCommand,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    LabeledPrice,
     Update,
     WebAppInfo,
 )
@@ -379,6 +382,158 @@ async def cmd_leaderboard(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> Non
     )
 
 
+async def cmd_curr(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show current week's 3 words from the 9-month curriculum."""
+    try:
+        from content_plan_9months import CURRICULUM
+        now = datetime.now()
+        # Match by month + week-of-month
+        month = now.month
+        week  = (now.day - 1) // 7 + 1
+        plan  = next(
+            (p for p in CURRICULUM if p["month"] == month and p["week"] == week),
+            None,
+        )
+        if not plan:
+            # Fall back to first available plan for this month
+            plan = next((p for p in CURRICULUM if p["month"] == month), None)
+        if not plan:
+            await update.message.reply_text("📅 Розклад на цей місяць ще не додано. Ось слово дня:")
+            await cmd_word(update, ctx)
+            return
+
+        # Show today's 3 words (day-of-week index 0-4)
+        day_idx = min(now.weekday(), 4)  # Mon-Fri
+        words   = plan["words"][day_idx * 3 : day_idx * 3 + 3]
+        if not words:
+            words = plan["words"][:3]
+
+        lines = [
+            f"📅 <b>Тиждень {plan['week']} — {plan['theme']}</b>\n",
+            f"📐 Граматика: <i>{plan['grammar']}</i>\n",
+        ]
+        for w in words:
+            lines.append(f"• <b>{w['en']}</b> — {w['ua']}")
+            lines.append(f"  💬 <i>{w['example']}</i>\n")
+
+        lines.append(f"🗣 Ідіома: <b>{plan['idiom']}</b>")
+        lines.append(f"    <i>{plan['idiom_meaning']}</i>")
+
+        await update.message.reply_html(
+            "\n".join(lines),
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🎮 Практикувати в App",
+                                     web_app=WebAppInfo(url=MINIAPP_URL)),
+            ]]),
+        )
+    except Exception as e:
+        log.error("cmd_curr: %s", e)
+        await cmd_word(update, ctx)
+
+
+async def cmd_subscribe(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Telegram Stars payment — Premium 30 days."""
+    user = update.effective_user
+    u = await db.get_user(user.id)
+
+    if u.get("is_premium"):
+        exp = u.get("premium_expires", "")
+        await update.message.reply_html(
+            f"💎 <b>Voodoo Premium вже активний!</b>\n\nДійсний до: <b>{exp}</b>\n\n"
+            "Продовжити після закінчення:\n",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("💎 Продовжити Premium", callback_data="buy_premium"),
+            ]]),
+        )
+        return
+
+    await ctx.bot.send_invoice(
+        chat_id=update.effective_chat.id,
+        title="💎 Voodoo Premium — 30 днів",
+        description=(
+            "✅ 2× XP за кожен урок\n"
+            "✅ Преміум персонажі (Vex, Seraph)\n"
+            "✅ 🏆 Значок у Leaderboard\n"
+            "✅ Ексклюзивний контент"
+        ),
+        payload="premium_30",
+        currency="XTR",
+        prices=[LabeledPrice("Voodoo Premium 30 дн.", 75)],
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("💎 Оплатити 75 ⭐", pay=True),
+        ]]),
+    )
+
+
+async def cmd_freeze(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Telegram Stars payment — Streak Freeze."""
+    user = update.effective_user
+    u = await db.get_user(user.id)
+    current = u.get("streak_freeze", 0)
+
+    await ctx.bot.send_invoice(
+        chat_id=update.effective_chat.id,
+        title="❄️ Streak Freeze",
+        description=(
+            f"Захищає твою серію на 1 пропущений день.\n"
+            f"Зараз у тебе: {current} заморожень\n\n"
+            f"🔥 Серія: {u.get('streak', 0)} дн. — не втрать її!"
+        ),
+        payload="streak_freeze_1",
+        currency="XTR",
+        prices=[LabeledPrice("Streak Freeze ×1", 15)],
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("❄️ Купити 15 ⭐", pay=True),
+        ]]),
+    )
+
+
+async def pre_checkout(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Accept all pre-checkout queries."""
+    await update.pre_checkout_query.answer(ok=True)
+
+
+async def successful_payment(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle successful Stars payment."""
+    user    = update.effective_user
+    payment = update.message.successful_payment
+    payload = payment.invoice_payload
+    stars   = payment.total_amount
+
+    u = await db.get_user(user.id)
+    new_stars = u.get("stars_spent", 0) + stars
+
+    if payload == "premium_30":
+        expires = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")
+        await db.update_user(
+            user.id,
+            is_premium=1,
+            premium_expires=expires,
+            stars_spent=new_stars,
+        )
+        await update.message.reply_html(
+            "🎉 <b>Voodoo Premium активовано!</b>\n\n"
+            f"✅ 2× XP за уроки — починаючи зараз!\n"
+            f"✅ Розблоковані преміум персонажі\n"
+            f"✅ Дійсний до: <b>{expires}</b>\n\n"
+            "Відкрий App — обери нового персонажа 👇",
+            reply_markup=InlineKeyboardMarkup([[
+                InlineKeyboardButton("🎮 Відкрити App", web_app=WebAppInfo(url=MINIAPP_URL)),
+            ]]),
+        )
+        log.info("Premium activated for user %d (75 Stars)", user.id)
+
+    elif payload == "streak_freeze_1":
+        new_freeze = u.get("streak_freeze", 0) + 1
+        await db.update_user(user.id, streak_freeze=new_freeze, stars_spent=new_stars)
+        await update.message.reply_html(
+            f"❄️ <b>Streak Freeze додано!</b>\n\n"
+            f"У тебе тепер <b>{new_freeze}</b> заморожень серії.\n"
+            f"Використається автоматично якщо пропустиш день.",
+        )
+        log.info("Streak freeze +1 for user %d", user.id)
+
+
 async def cb_generic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
@@ -410,6 +565,8 @@ async def cb_generic(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 InlineKeyboardButton("🔊 VoodooSpeakBot", url="https://t.me/VoodooSpeakBot"),
             ]]),
         )
+    elif data == "buy_premium":
+        await cmd_subscribe(update, ctx)
 
 
 # ── Setup commands ────────────────────────────────────────────────────────────
@@ -424,9 +581,10 @@ async def post_init(app: Application) -> None:
         BotCommand("profile",     "👤 Профіль"),
         BotCommand("leaderboard", "🏆 Рейтинг"),
         BotCommand("play",        "🎮 Відкрити Mini App"),
+        BotCommand("curr",        "📅 Слова поточного тижня"),
         BotCommand("invite",      "👥 Запросити друга (+50 XP)"),
         BotCommand("freeze",      "❄️ Заморожувач серії (15 ⭐)"),
-        BotCommand("subscribe",   "💎 Voodoo Premium"),
+        BotCommand("subscribe",   "💎 Voodoo Premium (75 ⭐)"),
         BotCommand("podcast",     "🎙 Персональний подкаст"),
         BotCommand("help",        "❓ Допомога"),
     ])
@@ -455,6 +613,11 @@ async def main() -> None:
     app.add_handler(CommandHandler("lessons",     cmd_play))
     app.add_handler(CommandHandler("invite",      cmd_invite))
     app.add_handler(CommandHandler("podcast",     cmd_podcast))
+    app.add_handler(CommandHandler("curr",        cmd_curr))
+    app.add_handler(CommandHandler("subscribe",   cmd_subscribe))
+    app.add_handler(CommandHandler("freeze",      cmd_freeze))
+    app.add_handler(PreCheckoutQueryHandler(pre_checkout))
+    app.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment))
 
     app.add_handler(CallbackQueryHandler(cb_level,   pattern=r"^level_"))
     app.add_handler(CallbackQueryHandler(cb_quiz,    pattern=r"^quiz_"))

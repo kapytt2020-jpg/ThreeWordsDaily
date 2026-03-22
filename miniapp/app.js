@@ -577,6 +577,73 @@ function updateHeader() {
 }
 
 // ===== HOME TAB: LEXI SPIRIT =====
+// ── Daily Task Checklist ──────────────────────────────────────────────────────
+
+var DAILY_TASKS = [
+  { id: 'open',   icon: '📱', label: 'Відкрити Voodoo',       xp: 5 },
+  { id: 'lesson', icon: '📚', label: 'Пройти урок дня',       xp: 15 },
+  { id: 'game',   icon: '🎮', label: 'Зіграти в гру',         xp: 10 },
+  { id: 'word',   icon: '📖', label: 'Вивчити 3 слова',       xp: 10 },
+  { id: 'invite', icon: '👥', label: 'Поділитись посиланням', xp: 5  },
+];
+
+function getDailyProgress() {
+  var today = new Date().toISOString().slice(0,10);
+  var saved = JSON.parse(localStorage.getItem('voodoo_daily_tasks') || '{}');
+  if (saved.date !== today) {
+    saved = { date: today, done: { open: true } }; // 'open' auto-done on load
+    localStorage.setItem('voodoo_daily_tasks', JSON.stringify(saved));
+  }
+  return saved;
+}
+
+function markTaskDone(taskId) {
+  var prog = getDailyProgress();
+  if (!prog.done[taskId]) {
+    prog.done[taskId] = true;
+    localStorage.setItem('voodoo_daily_tasks', JSON.stringify(prog));
+
+    var task = DAILY_TASKS.find(function(t) { return t.id === taskId; });
+    var allDone = DAILY_TASKS.every(function(t) { return prog.done[t.id]; });
+
+    if (task) showXPFloat('+' + task.xp + ' XP за задачу!');
+    if (allDone) {
+      setTimeout(function() {
+        showXPFloat('🎉 +25 XP — всі задачі виконано!');
+        apiCall('/api/progress', { method:'POST', body: JSON.stringify({ tg_id: tgId, xp: 25 }) });
+      }, 800);
+    }
+    if (apiCall && tgId) {
+      apiCall('/api/progress', { method:'POST', body: JSON.stringify({ tg_id: tgId, xp: task ? task.xp : 0 }) });
+    }
+    // Re-render checklist in-place if home is active
+    var el = document.getElementById('daily-checklist');
+    if (el) el.outerHTML = buildDailyChecklist();
+  }
+}
+
+function buildDailyChecklist() {
+  var prog = getDailyProgress();
+  var doneCnt = DAILY_TASKS.filter(function(t) { return prog.done[t.id]; }).length;
+  var pct = Math.round(doneCnt / DAILY_TASKS.length * 100);
+
+  var items = DAILY_TASKS.map(function(t) {
+    var done = !!prog.done[t.id];
+    return '<div class="task-row ' + (done ? 'task-done' : '') + '">' +
+      '<span class="task-icon">' + (done ? '✅' : t.icon) + '</span>' +
+      '<span class="task-label">' + t.label + '</span>' +
+      '<span class="task-xp">+' + t.xp + ' XP</span>' +
+    '</div>';
+  }).join('');
+
+  return '<div id="daily-checklist" class="daily-checklist">' +
+    '<div class="section-title">✅ Щоденні задачі · ' + doneCnt + '/' + DAILY_TASKS.length + '</div>' +
+    '<div class="task-progress-bar"><div class="task-progress-fill" style="width:' + pct + '%"></div></div>' +
+    items +
+    (pct === 100 ? '<div class="task-all-done">🎉 Всі задачі виконано! +25 XP бонус</div>' : '') +
+  '</div>';
+}
+
 function renderHome() {
   const stage = LEXI_STAGES[state.lexiStage] || LEXI_STAGES[0];
   const nextStage = LEXI_STAGES[state.lexiStage + 1];
@@ -628,6 +695,7 @@ function renderHome() {
     '</div>' +
     '<div class="section-title">📅 Streak цього тижня</div>' +
     '<div class="streak-cal">' + calHTML + '</div>' +
+    buildDailyChecklist() +
     '<div class="premium-comp">' +
       '<div class="premi-head">' +
         '<div class="premi-icon-big">⭐</div>' +
@@ -887,6 +955,13 @@ async function feedWordToLexi(word) {
   if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
   showToast('"' + word + '" → Лексик з\'їв! +5 XP ✨', 'success');
   updateHeader();
+  // Track words learned today for daily task
+  var wToday = JSON.parse(localStorage.getItem('voodoo_words_today') || '{"date":"","count":0}');
+  var today = new Date().toISOString().slice(0,10);
+  if (wToday.date !== today) wToday = { date: today, count: 0 };
+  wToday.count++;
+  localStorage.setItem('voodoo_words_today', JSON.stringify(wToday));
+  if (wToday.count >= 3) markTaskDone('word');
 
   await checkEvolution();
 
@@ -1101,6 +1176,7 @@ function renderQuizResult() {
   state.lessonDoneToday = true;
   saveLocal();
   updateHeader();
+  markTaskDone('lesson');
 
   const stars = '⭐'.repeat(score) + '☆'.repeat(total - score);
   const msgs = {3:'Ідеально! 🎉', 2:'Добре! 💪', 1:'Майже! Ще раз?', 0:'Не засмучуйся, спробуй ще!'};
@@ -2292,6 +2368,7 @@ window.addEventListener('message', function(event) {
   if (data.type === 'GAME_OVER' || data.type === 'GAME_DONE' || data.type === 'VOODOO_XP') {
     var overlay = document.getElementById('gameOverlay');
     var awardXP = data.xp || parseInt(overlay.dataset.xp) || 0;
+    markTaskDone('game');
     var gameName = overlay.dataset.gameName || 'гри';
     closeGameIframe();
     if (awardXP > 0) {

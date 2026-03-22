@@ -181,6 +181,92 @@ async def handle_voice(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         await msg.edit_text(f"❌ Помилка обробки голосу: {e}")
 
 
+VOODOO_BOT_TOKEN = os.getenv("VOODOO_BOT_TOKEN", "")
+NUDGE_INTERVAL   = 3600   # check every hour
+INACTIVE_HOURS   = 24     # nudge after 24h without activity
+
+PET_NUDGES = [
+    "🦊 {name} сумує без тебе!\n\nТвій пет чекає на урок 📚",
+    "😴 {name} вже задрімав від нудьги...\n\nЗайди хоч на 5 хвилин! 🪄",
+    "🌙 {name} питає: а де ти?\n\nСерія чекає — не розривай її! 🔥",
+    "👀 {name} дивиться на двері вже {hours}г...\n\nОдне слово — і він знову щасливий! ✨",
+]
+
+
+async def _pet_nudge_loop() -> None:
+    """Background job: nudge inactive users via @v00dooBot."""
+    import httpx
+    from datetime import datetime, timedelta
+
+    if not VOODOO_BOT_TOKEN:
+        return
+
+    log.info("Pet nudge loop started (every %dh check, nudge after %dh inactive)", NUDGE_INTERVAL // 3600, INACTIVE_HOURS)
+    await asyncio.sleep(300)  # wait 5 min after startup
+
+    while True:
+        try:
+            conn = db._connect()
+            cutoff = (datetime.utcnow() - timedelta(hours=INACTIVE_HOURS)).strftime("%Y-%m-%dT%H:%M")
+            rows = conn.execute(
+                """SELECT tg_id, first_name, pet_name, pet_character, last_active, streak
+                   FROM users
+                   WHERE last_active != '' AND last_active < ?
+                   AND tg_id NOT IN (
+                       SELECT tg_id FROM nudge_log
+                       WHERE sent_at > datetime('now', '-23 hours')
+                   )
+                   LIMIT 50""",
+                (cutoff,),
+            ).fetchall()
+            conn.close()
+        except Exception as e:
+            log.warning("Nudge query failed: %s", e)
+            rows = []
+
+        if rows:
+            import random
+            async with httpx.AsyncClient(timeout=10) as client:
+                for row in rows:
+                    tg_id    = row[0]
+                    fname    = row[1] or "друже"
+                    pet_name = row[2] or row[3] or "Лексик"
+                    last_act = row[4] or ""
+                    try:
+                        if last_act:
+                            from datetime import datetime as dt
+                            diff = datetime.utcnow() - dt.fromisoformat(last_act.replace("Z", ""))
+                            hours = int(diff.total_seconds() // 3600)
+                        else:
+                            hours = INACTIVE_HOURS
+                    except Exception:
+                        hours = INACTIVE_HOURS
+
+                    template = random.choice(PET_NUDGES)
+                    text = template.format(name=pet_name, hours=hours)
+
+                    try:
+                        await client.post(
+                            f"https://api.telegram.org/bot{VOODOO_BOT_TOKEN}/sendMessage",
+                            json={"chat_id": tg_id, "text": text, "parse_mode": "HTML"},
+                        )
+                        # Log to avoid re-nudging
+                        c = db._connect()
+                        c.execute(
+                            "CREATE TABLE IF NOT EXISTS nudge_log (tg_id INTEGER, sent_at TEXT)"
+                        )
+                        c.execute(
+                            "INSERT INTO nudge_log VALUES (?, datetime('now'))", (tg_id,)
+                        )
+                        c.commit(); c.close()
+                        log.info("Nudged user %d (%s)", tg_id, pet_name)
+                        await asyncio.sleep(0.1)  # avoid flood
+                    except Exception as e:
+                        log.debug("Nudge failed for %d: %s", tg_id, e)
+
+        await asyncio.sleep(NUDGE_INTERVAL)
+
+
 async def main() -> None:
     db.init_db()
     app = Application.builder().token(TOKEN).build()
@@ -193,7 +279,8 @@ async def main() -> None:
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)
     log.info("VoodooSpeakBot online")
-    await asyncio.Event().wait()
+
+    await asyncio.gather(asyncio.Event().wait(), _pet_nudge_loop())
 
 
 if __name__ == "__main__":
