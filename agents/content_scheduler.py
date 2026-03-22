@@ -44,13 +44,16 @@ log = logging.getLogger("content_scheduler")
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-BOT_TOKEN        = os.getenv("VOODOO_OPS_BOT_TOKEN", "")
-INTERNAL_GROUP_ID = int(os.getenv("INTERNAL_GROUP_ID", "0"))
-DB_PATH          = Path(os.getenv("DB_PATH", Path(__file__).parent.parent / "database" / "voodoo.db"))
-STATE_FILE       = Path(__file__).parent.parent / "group_state.json"
-CONTENT_STATE    = Path(__file__).parent.parent / "content_state.json"
-API_BASE         = f"https://api.telegram.org/bot{BOT_TOKEN}"
-KYIV_TZ          = ZoneInfo("Europe/Kyiv")
+BOT_TOKEN          = os.getenv("VOODOO_OPS_BOT_TOKEN", "")
+PUB_TOKEN          = os.getenv("VOODOO_PUBLISHER_BOT_TOKEN", BOT_TOKEN)
+INTERNAL_GROUP_ID  = int(os.getenv("INTERNAL_GROUP_ID", "0"))
+PUBLIC_CHANNEL_ID  = int(os.getenv("PUBLIC_CHANNEL_ID", "0"))   # @VoodooEnglish
+DB_PATH            = Path(os.getenv("DB_PATH", Path(__file__).parent.parent / "database" / "voodoo.db"))
+STATE_FILE         = Path(__file__).parent.parent / "group_state.json"
+CONTENT_STATE      = Path(__file__).parent.parent / "content_state.json"
+API_BASE           = f"https://api.telegram.org/bot{BOT_TOKEN}"
+PUB_API_BASE       = f"https://api.telegram.org/bot{PUB_TOKEN}"
+KYIV_TZ            = ZoneInfo("Europe/Kyiv")
 
 # Topic thread IDs (loaded from group_state.json, with hardcoded fallbacks)
 TOPIC_TEACHING   = 71
@@ -149,6 +152,30 @@ async def send_message(
         parse_mode=parse_mode,
     )
     return r.get("ok", False)
+
+
+async def send_public(
+    session: aiohttp.ClientSession,
+    text: str,
+    parse_mode: str = "HTML",
+) -> bool:
+    """Post to @VoodooEnglish public channel via publisher bot."""
+    if not PUBLIC_CHANNEL_ID:
+        return False
+    url = f"{PUB_API_BASE}/sendMessage"
+    try:
+        async with session.post(url, json={
+            "chat_id": PUBLIC_CHANNEL_ID,
+            "text": text[:4096],
+            "parse_mode": parse_mode,
+        }, timeout=aiohttp.ClientTimeout(total=15)) as r:
+            data = await r.json()
+            if not data.get("ok"):
+                log.warning("Public post failed: %s", data.get("description"))
+            return data.get("ok", False)
+    except Exception as exc:
+        log.warning("Public post error: %s", exc)
+        return False
 
 
 async def send_poll(
@@ -471,6 +498,7 @@ async def post_word_of_day(session: aiohttp.ClientSession, force: bool = False) 
     if ok:
         _mark_posted("word_of_day")
         log.info("Word of the Day posted: %s", word_data.get("word", "?"))
+        await send_public(session, text)
     return ok
 
 
@@ -502,6 +530,7 @@ async def post_fun_fact(session: aiohttp.ClientSession, force: bool = False) -> 
     if ok:
         _mark_posted("fun_fact")
         log.info("Fun Fact posted (idx=%d)", idx)
+        await send_public(session, text)
     return ok
 
 
@@ -573,6 +602,7 @@ async def post_motivation(session: aiohttp.ClientSession, force: bool = False) -
     if ok:
         _mark_posted("motivation")
         log.info("Motivation posted (idx=%d)", idx)
+        await send_public(session, text)
     return ok
 
 

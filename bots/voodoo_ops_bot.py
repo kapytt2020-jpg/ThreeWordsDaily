@@ -892,6 +892,471 @@ async def cmd_raffle(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_html("\n".join(lines))
 
 
+# ── SSH / Server helpers ──────────────────────────────────────────────────────
+
+def _load_ssh_ip() -> str:
+    state_file = Path(__file__).parent.parent / "deploy" / "vultr_state.json"
+    try:
+        return json.loads(state_file.read_text()).get("ip", "")
+    except Exception:
+        return ""
+
+SSH_IP  = _load_ssh_ip()
+SSH_KEY = Path.home() / ".ssh" / "voodoo_deploy"
+
+# Patterns that must never be executed remotely
+_DESTRUCTIVE_RE = [
+    r"rm\s+-[rRf]+\s+/",
+    r"dd\s+if=",
+    r"mkfs",
+    r">\s*/dev/",
+    r"shutdown",
+    r"halt",
+    r"reboot",
+    r":()\{",          # fork bomb
+]
+
+
+def _sanitize_cmd(cmd: str) -> str | None:
+    """Return None if the command looks destructive, else the cmd itself."""
+    import re
+    for pat in _DESTRUCTIVE_RE:
+        if re.search(pat, cmd):
+            return None
+    return cmd
+
+
+def _ssh(cmd: str, timeout: int = 30) -> tuple[str, str, int]:
+    """Run a command on the Vultr server. Returns (stdout, stderr, returncode)."""
+    if not SSH_IP:
+        return "", "SSH_IP not configured (deploy/vultr_state.json missing?)", 1
+    r = subprocess.run(
+        ["ssh", "-o", "StrictHostKeyChecking=no", "-i", str(SSH_KEY),
+         f"root@{SSH_IP}", cmd],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    return r.stdout, r.stderr, r.returncode
+
+
+# ── New commands ───────────────────────────────────────────────────────────────
+
+PUBLIC_CHANNEL = "@VoodooEnglish"
+
+SERVER_BOTS = [
+    "voodoo_bot",
+    "voodoo_speak_bot",
+    "voodoo_teacher_bot",
+    "voodoo_publisher_bot",
+    "voodoo_analyst_bot",
+    "voodoo_growth_bot",
+    "voodoo_ops_bot",
+    "voodoo_group_manager",
+    "voodoo_content_scheduler",
+]
+
+
+async def cmd_sh(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Run an arbitrary bash command on the Vultr production server."""
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_html(
+            "Використання: <code>/sh &lt;command&gt;</code>\n"
+            "Приклад: <code>/sh uptime</code>"
+        )
+        return
+    raw_cmd = " ".join(ctx.args)
+    if _sanitize_cmd(raw_cmd) is None:
+        await update.message.reply_html("🚫 <b>Заблоковано:</b> деструктивна команда.")
+        return
+    msg = await update.message.reply_html("💻 Виконую на сервері...")
+    try:
+        stdout, stderr, rc = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _ssh(raw_cmd)
+        )
+    except subprocess.TimeoutExpired:
+        await msg.edit_text("⏱ Timeout (30 s)")
+        return
+    except Exception as e:
+        await msg.edit_text(f"❌ SSH error: {e}")
+        return
+
+    output = (stdout + stderr).strip()
+    if len(output) > 3900:
+        output = output[:3900] + "\n…(truncated)"
+    if not output:
+        output = f"(no output, exit code {rc})"
+    await msg.edit_text(
+        f"💻 <b>SSH output:</b>\n<code>{output}</code>",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_deploy(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/deploy [bot_name] — git pull + systemctl restart on server."""
+    if not _is_admin(update):
+        return
+    bot_arg = ctx.args[0] if ctx.args else None
+    if bot_arg:
+        restart_cmd = f"systemctl restart {bot_arg}"
+        label = bot_arg
+    else:
+        restart_cmd = "systemctl restart " + " ".join(SERVER_BOTS)
+        label = "all bots"
+
+    msg = await update.message.reply_html(
+        f"🚀 Deploying <b>{label}</b>…"
+    )
+    full_cmd = f"cd /opt/voodoo && git pull origin voodoo && {restart_cmd}"
+    try:
+        stdout, stderr, rc = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _ssh(full_cmd, timeout=60)
+        )
+    except subprocess.TimeoutExpired:
+        await msg.edit_text("⏱ Deploy timeout (60 s)")
+        return
+    except Exception as e:
+        await msg.edit_text(f"❌ SSH error: {e}")
+        return
+
+    output = (stdout + stderr).strip()
+    if len(output) > 3500:
+        output = "..." + output[-3500:]
+    icon = "✅" if rc == 0 else "❌"
+    await msg.edit_text(
+        f"{icon} <b>Deploy {label}</b>\n<code>{output or 'OK'}</code>",
+        parse_mode="HTML",
+    )
+    await deploy_report(f"{icon} Deploy <b>{label}</b> — rc={rc}")
+
+
+async def cmd_serverlogs(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/serverlogs [bot] [n] — tail error log from /opt/voodoo/logs/."""
+    if not _is_admin(update):
+        return
+    args = ctx.args or []
+    bot_name = args[0] if args else "voodoo_bot"
+    n = 20
+    if len(args) >= 2 and args[1].isdigit():
+        n = int(args[1])
+    log_path = f"/opt/voodoo/logs/{bot_name}_error.log"
+    cmd = f"tail -n {n} {log_path} 2>&1"
+    msg = await update.message.reply_html(
+        f"📋 Отримую <code>{log_path}</code> ({n} рядків)…"
+    )
+    try:
+        stdout, stderr, rc = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _ssh(cmd)
+        )
+    except Exception as e:
+        await msg.edit_text(f"❌ SSH error: {e}")
+        return
+    output = (stdout + stderr).strip()
+    if len(output) > 3800:
+        output = "..." + output[-3800:]
+    if not output:
+        output = "(лог порожній або файл не існує)"
+    await msg.edit_text(
+        f"📋 <b>{bot_name} error log</b>\n<pre>{output}</pre>",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_srvstatus(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/srvstatus — systemctl status + uptime/free/df on Vultr server."""
+    if not _is_admin(update):
+        return
+    bots_str = " ".join(SERVER_BOTS)
+    cmd = (
+        f"systemctl is-active {bots_str} ; "
+        "echo '---' ; uptime && free -m && df -h /opt/voodoo"
+    )
+    msg = await update.message.reply_html("🖥 Запитую сервер…")
+    try:
+        stdout, stderr, rc = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _ssh(cmd)
+        )
+    except Exception as e:
+        await msg.edit_text(f"❌ SSH error: {e}")
+        return
+    output = (stdout + stderr).strip()
+    if len(output) > 3800:
+        output = "..." + output[-3800:]
+    await msg.edit_text(
+        f"🖥 <b>Server status ({SSH_IP})</b>\n<pre>{output}</pre>",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_srvrestart(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/srvrestart <bot> — restart a systemd service on the Vultr server."""
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_html(
+            "Використання: <code>/srvrestart &lt;bot_name&gt;</code>\n"
+            "Наприклад: <code>/srvrestart voodoo_bot</code>"
+        )
+        return
+    svc = ctx.args[0]
+    await update.message.reply_html(
+        f"⚠️ Перезапустити <b>{svc}</b> на сервері?",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("✅ Так", callback_data=f"srvrestart_confirm_{svc}"),
+            InlineKeyboardButton("❌ Ні",  callback_data="srvrestart_cancel"),
+        ]]),
+    )
+
+
+async def cb_srvrestart(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not _is_admin(update):
+        await query.answer("Access denied")
+        return
+    await query.answer()
+    if query.data == "srvrestart_cancel":
+        await query.edit_message_text("❌ Скасовано.")
+        return
+    svc = query.data.replace("srvrestart_confirm_", "")
+    try:
+        stdout, stderr, rc = await asyncio.get_event_loop().run_in_executor(
+            None, lambda: _ssh(f"systemctl restart {svc}")
+        )
+    except Exception as e:
+        await query.edit_message_text(f"❌ SSH error: {e}")
+        return
+    icon = "✅" if rc == 0 else "❌"
+    output = (stdout + stderr).strip() or "OK"
+    await query.edit_message_text(
+        f"{icon} <b>srvrestart {svc}</b>\n<code>{output}</code>",
+        parse_mode="HTML",
+    )
+    await deploy_report(f"{icon} Server restart <b>{svc}</b> — rc={rc}")
+
+
+async def cmd_public(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/public <text> — post text to @VoodooEnglish public channel."""
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_html(
+            "Використання: <code>/public Текст повідомлення</code>"
+        )
+        return
+    text = " ".join(ctx.args)
+    pub_token = os.getenv("VOODOO_PUBLISHER_BOT_TOKEN") or TOKEN
+    try:
+        import urllib.request
+        payload = json.dumps({"chat_id": PUBLIC_CHANNEL, "text": text}).encode()
+        req = urllib.request.Request(
+            f"https://api.telegram.org/bot{pub_token}/sendMessage",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            result = json.loads(r.read())
+        if result.get("ok"):
+            await update.message.reply_html(
+                f"✅ Опубліковано в {PUBLIC_CHANNEL}:\n<i>{text[:200]}</i>"
+            )
+        else:
+            await update.message.reply_html(
+                f"❌ Telegram error: {result.get('description', '?')}"
+            )
+    except Exception as e:
+        await update.message.reply_html(f"❌ Помилка: {e}")
+
+
+async def cmd_env(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/env [KEY] — show .env keys with masked values."""
+    if not _is_admin(update):
+        return
+    env_path = Path(__file__).parent.parent / ".env"
+    if not env_path.exists():
+        await update.message.reply_html("❌ .env файл не знайдено.")
+        return
+
+    lines_raw = env_path.read_text(errors="replace").splitlines()
+
+    def _mask(line: str) -> str:
+        if "=" not in line or line.strip().startswith("#"):
+            return line
+        key, _, val = line.partition("=")
+        preview = val[:3] if val else ""
+        return f"{key}={preview}{'*' * max(0, len(val) - 3)}"
+
+    key_filter = ctx.args[0].upper() if ctx.args else None
+    if key_filter:
+        matched = [_mask(l) for l in lines_raw if l.startswith(key_filter + "=")]
+        if matched:
+            await update.message.reply_html(
+                f"🔑 <code>{'<br>'.join(matched)}</code>"
+            )
+        else:
+            await update.message.reply_html(f"❌ Ключ <code>{key_filter}</code> не знайдено.")
+        return
+
+    masked = "\n".join(_mask(l) for l in lines_raw)
+    if len(masked) > 3800:
+        masked = masked[:3800] + "\n…"
+    await update.message.reply_html(
+        f"🔑 <b>.env (masked)</b>\n<pre>{masked}</pre>"
+    )
+
+
+async def cmd_backup(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/backup — SCP voodoo.db from server to /tmp and send as document."""
+    if not _is_admin(update):
+        return
+    date_str = datetime.now().strftime("%Y%m%d")
+    tmp_path = f"/tmp/voodoo_backup_{date_str}.db"
+    msg = await update.message.reply_html("📦 Завантажую резервну копію БД…")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "scp", "-o", "StrictHostKeyChecking=no",
+            "-i", str(SSH_KEY),
+            f"root@{SSH_IP}:/opt/voodoo/database/voodoo.db",
+            tmp_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=60)
+        rc = proc.returncode
+    except asyncio.TimeoutError:
+        await msg.edit_text("⏱ SCP timeout (60 s)")
+        return
+    except Exception as e:
+        await msg.edit_text(f"❌ SCP error: {e}")
+        return
+
+    if rc != 0:
+        err = stderr_b.decode(errors="replace").strip()
+        await msg.edit_text(f"❌ SCP failed (rc={rc}):\n{err[:500]}")
+        return
+
+    await msg.edit_text("✅ Резервну копію отримано. Надсилаю файл…")
+    try:
+        await update.message.reply_document(
+            document=open(tmp_path, "rb"),
+            filename=f"voodoo_backup_{date_str}.db",
+            caption=f"📦 Backup voodoo.db — {date_str}",
+        )
+    except Exception as e:
+        await update.message.reply_html(f"❌ Не вдалося надіслати файл: {e}")
+    finally:
+        try:
+            Path(tmp_path).unlink(missing_ok=True)
+        except Exception:
+            pass
+
+
+async def cmd_localrun(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/localrun — start all bots locally via run.sh."""
+    if not _is_admin(update):
+        return
+    run_sh = Path(__file__).parent.parent / "run.sh"
+    if not run_sh.exists():
+        await update.message.reply_html("❌ <code>run.sh</code> не знайдено.")
+        return
+    msg = await update.message.reply_html("🚀 Запускаю боти локально…")
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "bash", str(run_sh), "all",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd=str(run_sh.parent),
+        )
+        try:
+            stdout_b, stderr_b = await asyncio.wait_for(proc.communicate(), timeout=15)
+            output = (stdout_b + stderr_b).decode(errors="replace").strip()
+        except asyncio.TimeoutError:
+            output = "Boти запущено у фоні (timeout 15 s — це нормально)."
+    except Exception as e:
+        await msg.edit_text(f"❌ Помилка запуску: {e}")
+        return
+    if len(output) > 3800:
+        output = output[:3800] + "\n…"
+    await msg.edit_text(
+        f"🚀 <b>Local run output:</b>\n<code>{output or 'OK'}</code>",
+        parse_mode="HTML",
+    )
+
+
+async def cmd_localstop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/localstop — kill all local bot processes."""
+    if not _is_admin(update):
+        return
+    patterns = [
+        "voodoo_bot.py",
+        "voodoo_speak_bot.py",
+        "voodoo_teacher_bot.py",
+        "voodoo_publisher_bot.py",
+        "voodoo_analyst_bot.py",
+        "voodoo_growth_bot.py",
+        "voodoo_ops_bot.py",
+        "voodoo_group_manager.py",
+        "voodoo_content_scheduler.py",
+    ]
+    results = []
+    for pat in patterns:
+        r = subprocess.run(["pkill", "-f", pat], capture_output=True)
+        icon = "✅" if r.returncode == 0 else "—"
+        results.append(f"{icon} {pat}")
+    await update.message.reply_html(
+        "🛑 <b>Local stop results:</b>\n" + "\n".join(results)
+    )
+
+
+async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/menu — inline keyboard with all available commands grouped by category."""
+    if not _is_admin(update):
+        return
+    keyboard = [
+        [
+            InlineKeyboardButton("📊 Dashboard",   switch_inline_query_current_chat="/dashboard"),
+            InlineKeyboardButton("📈 Stats",        switch_inline_query_current_chat="/stats"),
+        ],
+        [
+            InlineKeyboardButton("🖥 Status (local)",  switch_inline_query_current_chat="/status"),
+            InlineKeyboardButton("🖥 Status (server)", switch_inline_query_current_chat="/srvstatus"),
+        ],
+        [
+            InlineKeyboardButton("📋 Logs (local)",    switch_inline_query_current_chat="/logs ops_bot"),
+            InlineKeyboardButton("📋 Logs (server)",   switch_inline_query_current_chat="/serverlogs voodoo_bot 30"),
+        ],
+        [
+            InlineKeyboardButton("🚀 Deploy all",   switch_inline_query_current_chat="/deploy"),
+            InlineKeyboardButton("💻 SSH shell",    switch_inline_query_current_chat="/sh uptime"),
+        ],
+        [
+            InlineKeyboardButton("📦 Backup DB",    switch_inline_query_current_chat="/backup"),
+            InlineKeyboardButton("📢 Post public",  switch_inline_query_current_chat="/public "),
+        ],
+        [
+            InlineKeyboardButton("🔑 Show .env",    switch_inline_query_current_chat="/env"),
+            InlineKeyboardButton("⏳ Approvals",     switch_inline_query_current_chat="/approvals"),
+        ],
+        [
+            InlineKeyboardButton("🤖 AI Analyze",   switch_inline_query_current_chat="/analyze"),
+            InlineKeyboardButton("📅 Plan week",     switch_inline_query_current_chat="/plan"),
+        ],
+        [
+            InlineKeyboardButton("☁️ Cloud",        switch_inline_query_current_chat="/cloud"),
+            InlineKeyboardButton("🔄 Failover",      switch_inline_query_current_chat="/failover"),
+        ],
+        [
+            InlineKeyboardButton("▶️ Local run",    switch_inline_query_current_chat="/localrun"),
+            InlineKeyboardButton("⏹ Local stop",    switch_inline_query_current_chat="/localstop"),
+        ],
+    ]
+    await update.message.reply_html(
+        "🎛 <b>VoodooOpsBot — Menu</b>\n\n"
+        "Вибери команду або набери її вручну:",
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 async def main() -> None:
@@ -923,12 +1388,26 @@ async def main() -> None:
     app.add_handler(CommandHandler("cloudnew",   cmd_cloudnew,   filters=admin_filter))
     app.add_handler(CommandHandler("failover",   cmd_failover,   filters=admin_filter))
 
-    app.add_handler(CallbackQueryHandler(cb_restart,   pattern=r"^restart_"))
-    app.add_handler(CallbackQueryHandler(cb_approval,  pattern=r"^(approve|reject)_"))
-    app.add_handler(CallbackQueryHandler(cb_broadcast, pattern=r"^broadcast_"))
-    app.add_handler(CallbackQueryHandler(cb_cloudstop, pattern=r"^cloudstop_"))
-    app.add_handler(CallbackQueryHandler(cb_cloudnew,  pattern=r"^cloudnew_"))
-    app.add_handler(CallbackQueryHandler(cb_failover,  pattern=r"^failover_"))
+    # ── New server/ops commands ────────────────────────────────────────────────
+    app.add_handler(CommandHandler("sh",           cmd_sh,          filters=admin_filter))
+    app.add_handler(CommandHandler("deploy",       cmd_deploy,      filters=admin_filter))
+    app.add_handler(CommandHandler("serverlogs",   cmd_serverlogs,  filters=admin_filter))
+    app.add_handler(CommandHandler("srvstatus",    cmd_srvstatus,   filters=admin_filter))
+    app.add_handler(CommandHandler("srvrestart",   cmd_srvrestart,  filters=admin_filter))
+    app.add_handler(CommandHandler("public",       cmd_public,      filters=admin_filter))
+    app.add_handler(CommandHandler("env",          cmd_env,         filters=admin_filter))
+    app.add_handler(CommandHandler("backup",       cmd_backup,      filters=admin_filter))
+    app.add_handler(CommandHandler("localrun",     cmd_localrun,    filters=admin_filter))
+    app.add_handler(CommandHandler("localstop",    cmd_localstop,   filters=admin_filter))
+    app.add_handler(CommandHandler("menu",         cmd_menu,        filters=admin_filter))
+
+    app.add_handler(CallbackQueryHandler(cb_restart,    pattern=r"^restart_"))
+    app.add_handler(CallbackQueryHandler(cb_approval,   pattern=r"^(approve|reject)_"))
+    app.add_handler(CallbackQueryHandler(cb_broadcast,  pattern=r"^broadcast_"))
+    app.add_handler(CallbackQueryHandler(cb_cloudstop,  pattern=r"^cloudstop_"))
+    app.add_handler(CallbackQueryHandler(cb_cloudnew,   pattern=r"^cloudnew_"))
+    app.add_handler(CallbackQueryHandler(cb_failover,   pattern=r"^failover_"))
+    app.add_handler(CallbackQueryHandler(cb_srvrestart, pattern=r"^srvrestart_"))
 
     await app.initialize()
     await app.start()
