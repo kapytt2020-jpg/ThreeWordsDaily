@@ -148,6 +148,18 @@ async def run_weekly_league_reset() -> None:
         log.error("League reset failed: %s", e)
 
 
+async def run_reengagement() -> None:
+    """11:00 daily — Send smart re-engagement notifications to inactive users."""
+    log.info("Starting re-engagement cycle...")
+    try:
+        from agents.reengagement_agent import run_reengagement as _reengage
+        stats = await _reengage()
+        total = sum(v for k, v in stats.items() if k not in ("skipped", "errors"))
+        log.info("Re-engagement done: %d messages sent", total)
+    except Exception as e:
+        log.error("Re-engagement failed: %s", e)
+
+
 async def run_outreach_cycle(market_code: str | None = None) -> None:
     """10:00 and 16:00 — Autonomous outreach to target groups."""
     log.info("Starting outreach cycle (market=%s)...", market_code or "all")
@@ -256,6 +268,12 @@ async def main_loop() -> None:
         if weekday == 0 and hour == 9 and key_podcast not in sent:
             await run_weekly_podcast()
             sent.add(key_podcast)
+
+        # Re-engagement notifications at 11:00 Kyiv
+        key_reengage = f"reengage_{day_key}"
+        if hour == 11 and key_reengage not in sent:
+            await run_reengagement()
+            sent.add(key_reengage)
 
         # Outreach cycle at 10:00 and 16:00 Kyiv
         for outreach_hour in (10, 16):

@@ -661,21 +661,134 @@ async def post_motivation(session: aiohttp.ClientSession, force: bool = False) -
     return ok
 
 
+# ── Multi-language content ─────────────────────────────────────────────────────
+
+LANG_CONFIGS_PATH = Path(__file__).parent.parent / "data" / "language_configs.json"
+
+
+def _load_lang_configs() -> dict:
+    try:
+        return json.loads(LANG_CONFIGS_PATH.read_text())
+    except Exception:
+        return {"markets": {}}
+
+
+async def _generate_word_for_lang(
+    session: aiohttp.ClientSession,
+    word_data: dict,
+    language: str,
+) -> str | None:
+    """Use GPT to create a word-of-day post in the target language."""
+    if not OPENAI_API_KEY:
+        return None
+    word    = word_data.get("word", "")
+    ipa     = word_data.get("ipa", "")
+    example = word_data.get("example_en", "")
+    level   = word_data.get("level", "A2")
+    now     = datetime.now(KYIV_TZ).strftime("%d.%m.%Y")
+
+    prompt = (
+        f"Create a 'Word of the Day' post for English learners who speak {language}.\n"
+        f"Word: {word}\nIPA: {ipa}\nLevel: {level}\nExample: {example}\n\n"
+        f"Format (use Telegram HTML, {language} language):\n"
+        f"📖 <b>Word of the Day</b> — {now}\n\n"
+        f"<b>{word.upper()}</b>\n"
+        f"<i>{ipa}</i>\n\n"
+        f"[Translation in {language}]\n"
+        f"📊 [Level]\n\n"
+        f"💬 <i>[Example in English]</i>\n"
+        f"   <i>[Translation of example in {language}]</i>\n\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📚 @VoodooEnglishBot | [Tagline in {language}]\n\n"
+        f"Return ONLY the formatted post text, nothing else."
+    )
+    try:
+        async with session.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 400,
+            },
+            timeout=aiohttp.ClientTimeout(total=20),
+        ) as resp:
+            data = await resp.json()
+            return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        log.warning("GPT translation failed: %s", e)
+        return None
+
+
+async def post_multilang_word_of_day(session: aiohttp.ClientSession) -> None:
+    """Post word of day to all active non-UA markets (RU, PL, DE...)."""
+    configs = _load_lang_configs()
+    word_data = _get_random_word()
+    if not word_data:
+        word_data = random.choice(FALLBACK_WORDS)
+
+    for code, market in configs.get("markets", {}).items():
+        if code == "ua":
+            continue  # UA already handled by main scheduler
+        if market.get("status") != "active":
+            continue
+        group_id = market.get("group_id", 0)
+        if not group_id:
+            continue
+
+        language  = market["language"]
+        topic_wod = market.get("topics", {}).get("word_of_day", 0)
+
+        text = await _generate_word_for_lang(session, word_data, language)
+        if not text:
+            # Fallback: use UA post with language marker
+            text = _format_word_of_day(word_data)
+
+        # Post to market group
+        url = f"{API_BASE}/sendMessage"
+        params: dict = {"chat_id": group_id, "text": text[:4096], "parse_mode": "HTML"}
+        if topic_wod:
+            params["message_thread_id"] = topic_wod
+        try:
+            async with session.post(url, json=params, timeout=aiohttp.ClientTimeout(total=15)) as r:
+                result = await r.json()
+                if result.get("ok"):
+                    log.info("Multi-lang word posted to %s (%s)", language, group_id)
+                else:
+                    log.warning("Multi-lang post failed for %s: %s", language, result.get("description"))
+        except Exception as e:
+            log.warning("Multi-lang post error for %s: %s", language, e)
+
+        # Post TTS voice
+        word = word_data.get("word", "")
+        if word and OPENAI_API_KEY:
+            tts = f"{word}. {word_data.get('example_en', '')}"
+            await send_voice_tts(session, topic_wod or 0, tts, f"🔊 <b>{word}</b>", "group")
+
+        await asyncio.sleep(3)  # between markets
+
+
 # ── Scheduler ──────────────────────────────────────────────────────────────────
 
 SCHEDULE = [
     # (hour, minute, coroutine_name, label)
-    (9,  0,  "word_of_day", "Word of the Day"),
-    (13, 0,  "fun_fact",    "Fun Fact"),
-    (18, 0,  "mini_quiz",   "Mini Quiz"),
-    (21, 0,  "motivation",  "Motivation"),
+    (9,  0,  "word_of_day",       "Word of the Day"),
+    (9,  30, "multilang_word",    "Multi-lang Word of the Day"),
+    (13, 0,  "fun_fact",          "Fun Fact"),
+    (18, 0,  "mini_quiz",         "Mini Quiz"),
+    (21, 0,  "motivation",        "Motivation"),
 ]
 
+async def _post_multilang_word(session: aiohttp.ClientSession, force: bool = False) -> bool:
+    await post_multilang_word_of_day(session)
+    return True
+
 POSTER_MAP = {
-    "word_of_day": post_word_of_day,
-    "fun_fact":    post_fun_fact,
-    "mini_quiz":   post_mini_quiz,
-    "motivation":  post_motivation,
+    "word_of_day":    post_word_of_day,
+    "multilang_word": _post_multilang_word,
+    "fun_fact":       post_fun_fact,
+    "mini_quiz":      post_mini_quiz,
+    "motivation":     post_motivation,
 }
 
 

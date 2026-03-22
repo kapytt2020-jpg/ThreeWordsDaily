@@ -117,13 +117,17 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
                 await db.update_user(user.id, referrer_id=ref_id)
                 # Reward referrer
                 ref = await db.get_user(ref_id)
-                new_xp = (ref.get("xp") or 0) + 50
-                await db.update_user(ref_id, xp=new_xp, referral_count=(ref.get("referral_count") or 0) + 1)
+                new_xp      = (ref.get("xp") or 0) + 50
+                new_ref_cnt = (ref.get("referral_count") or 0) + 1
+                await db.update_user(ref_id, xp=new_xp, referral_count=new_ref_cnt)
                 try:
                     await ctx.bot.send_message(ref_id,
-                        f"🎉 Новий учень прийшов по твоєму запрошенню!\n+50 XP тобі!")
+                        f"🎉 Новий учень прийшов по твоєму запрошенню!\n"
+                        f"👥 Всього запрошено: {new_ref_cnt}\n+50 XP тобі!")
                 except Exception:
                     pass
+                # Check referral milestones
+                await _check_referral_milestones(ctx.bot, ref_id, ref, new_ref_cnt)
         except ValueError:
             pass
 
@@ -319,6 +323,76 @@ async def cmd_profile(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         reply_markup=InlineKeyboardMarkup([[
             InlineKeyboardButton("🎮 Відкрити App",
                                  web_app=WebAppInfo(url=MINIAPP_URL)),
+        ]]),
+    )
+
+
+REFERRAL_MILESTONES = {
+    5:  {"xp": 200,  "reward": "❄️ Заморозка ×2",         "freeze": 2, "premium_days": 0},
+    10: {"xp": 500,  "reward": "💎 7 днів Premium",        "freeze": 0, "premium_days": 7},
+    25: {"xp": 1000, "reward": "🏆 30 днів Premium",       "freeze": 0, "premium_days": 30},
+    50: {"xp": 2000, "reward": "🌟 Lifetime badge + 60д",  "freeze": 0, "premium_days": 60},
+}
+
+async def _check_referral_milestones(bot, tg_id: int, user: dict, new_count: int) -> None:
+    """Award milestone bonuses at 5/10/25/50 referrals."""
+    for threshold, reward in REFERRAL_MILESTONES.items():
+        old_count = new_count - 1
+        if old_count < threshold <= new_count:
+            # Grant XP
+            await db.update_user(tg_id, xp=(user.get("xp", 0) + 50 + reward["xp"]))
+            # Grant freeze
+            if reward["freeze"]:
+                await db.update_user(tg_id, streak_freeze=(user.get("streak_freeze", 0) + reward["freeze"]))
+            # Grant premium
+            if reward["premium_days"]:
+                from datetime import datetime, timedelta
+                expires = (datetime.now() + timedelta(days=reward["premium_days"])).strftime("%Y-%m-%d")
+                await db.update_user(tg_id, is_premium=1, premium_expires=expires)
+            try:
+                await bot.send_message(
+                    tg_id,
+                    f"🎊 <b>Milestone {threshold} запрошень!</b>\n\n"
+                    f"Ти запросив {new_count} друзів і отримуєш:\n"
+                    f"• +{reward['xp']} XP\n"
+                    f"• {reward['reward']}\n\n"
+                    f"Дякуємо що розвиваєш Voodoo! 🪄",
+                    parse_mode="HTML",
+                )
+            except Exception:
+                pass
+            break
+
+
+async def cmd_referrals(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/referrals — show referral stats, leaderboard, and milestones."""
+    user = update.effective_user
+    u    = await db.get_user(user.id, user.first_name or "", user.username or "")
+    count = u.get("referral_count", 0) or 0
+    link  = f"https://t.me/v00dooBot?start=ref_{user.id}"
+
+    # Find next milestone
+    next_ms = next((t for t in sorted(REFERRAL_MILESTONES) if t > count), None)
+    next_text = ""
+    if next_ms:
+        left = next_ms - count
+        r    = REFERRAL_MILESTONES[next_ms]
+        next_text = f"\n🎯 До наступного милстоуну: <b>{left} запрошень</b> → {r['reward']}"
+
+    # Milestone progress bar
+    all_thresholds = sorted(REFERRAL_MILESTONES.keys())
+    done = [f"✅ {t} — {REFERRAL_MILESTONES[t]['reward']}" for t in all_thresholds if count >= t]
+    todo = [f"🔒 {t} — {REFERRAL_MILESTONES[t]['reward']}" for t in all_thresholds if count < t]
+    milestones_text = "\n".join(done + todo[:2])
+
+    await update.message.reply_html(
+        f"👥 <b>Твої запрошення</b>\n\n"
+        f"Запрошено: <b>{count} друзів</b>{next_text}\n\n"
+        f"<b>Милстоуни:</b>\n{milestones_text}\n\n"
+        f"<b>Твоє посилання:</b>\n<code>{link}</code>",
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("📤 Поділитись",
+                url=f"https://t.me/share/url?url={link}&text=Вчи+англійську+з+Voodoo+🪄"),
         ]]),
     )
 
@@ -583,6 +657,7 @@ async def post_init(app: Application) -> None:
         BotCommand("play",        "🎮 Відкрити Mini App"),
         BotCommand("curr",        "📅 Слова поточного тижня"),
         BotCommand("invite",      "👥 Запросити друга (+50 XP)"),
+        BotCommand("referrals",   "🏅 Мої запрошення та бонуси"),
         BotCommand("freeze",      "❄️ Заморожувач серії (15 ⭐)"),
         BotCommand("subscribe",   "💎 Voodoo Premium (75 ⭐)"),
         BotCommand("podcast",     "🎙 Персональний подкаст"),
@@ -612,6 +687,7 @@ async def main() -> None:
     app.add_handler(CommandHandler("play",        cmd_play))
     app.add_handler(CommandHandler("lessons",     cmd_play))
     app.add_handler(CommandHandler("invite",      cmd_invite))
+    app.add_handler(CommandHandler("referrals",   cmd_referrals))
     app.add_handler(CommandHandler("podcast",     cmd_podcast))
     app.add_handler(CommandHandler("curr",        cmd_curr))
     app.add_handler(CommandHandler("subscribe",   cmd_subscribe))
