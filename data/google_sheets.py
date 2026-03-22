@@ -75,7 +75,7 @@ def sync_users_to_sheet(sheet_id: str = None) -> int:
     con.row_factory = sqlite3.Row
     cur = con.execute("""
         SELECT tg_id, first_name, username, level, xp, streak,
-               total_lessons, referral_count, created_at
+               total_lessons, referral_count, registered_at
         FROM users ORDER BY xp DESC
     """)
     users = [dict(r) for r in cur.fetchall()]
@@ -98,12 +98,12 @@ def sync_users_to_sheet(sheet_id: str = None) -> int:
             u["streak"] or 0,
             u["total_lessons"] or 0,
             u.get("referral_count") or 0,
-            u["created_at"] or "—",
+            u["registered_at"] or "—",
             now,
         ])
 
     ws.clear()
-    ws.update("A1", rows)
+    ws.update(rows, "A1")
 
     # Format header row
     ws.format("A1:K1", {
@@ -139,7 +139,7 @@ def sync_words_to_sheet(sheet_id: str = None) -> int:
     rows = [header] + [[w["word"], w["translation"], w["level"], w["theme"], w["example_en"]] for w in words]
 
     ws.clear()
-    ws.update("A1", rows)
+    ws.update(rows, "A1")
     log.info("Synced %d words to Google Sheets", len(words))
     return len(words)
 
@@ -179,7 +179,7 @@ def create_dashboard(sheet_id: str = None) -> None:
     ]
 
     ws.clear()
-    ws.update("A1", data)
+    ws.update(data, "A1")
     log.info("Dashboard updated")
 
 

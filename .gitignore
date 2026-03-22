@@ -20,4 +20,6 @@ add_bot_v3.py
 content_state.json
 group_state.json
 data/promo_state.json
+data/google_credentials.json
+data/user_drive_token.json
 com.voodoo.*.plist
