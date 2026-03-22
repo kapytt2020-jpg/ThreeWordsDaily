@@ -204,3 +204,11 @@ def spawn_subagent(agent_name: str, system_prompt: str, task: str, **kwargs) -> 
 def run_agent(system_prompt: str, user_message: str, tools: list = None, **kwargs) -> str:
     """Sync helper used by bots that need a quick AI response."""
     return run_agent_anthropic(system_prompt, user_message)
+
+
+# ── Compatibility shim ────────────────────────────────────────────────────────
+def register_tool(name: str, description: str, input_schema: dict):
+    """No-op decorator — tools used directly in tools.py functions."""
+    def decorator(fn):
+        return fn
+    return decorator

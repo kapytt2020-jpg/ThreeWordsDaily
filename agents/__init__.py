@@ -4,10 +4,11 @@ from .base import (
     ask_agent,
     spawn_subagent,
     spawn_subagent_async,
-    register_tool,
     PLANNER_SYSTEM,
     ANALYST_SYSTEM,
     CONTENT_SYSTEM,
     OPS_SYSTEM,
     TEACHER_SYSTEM,
 )
+
+from .base import register_tool
