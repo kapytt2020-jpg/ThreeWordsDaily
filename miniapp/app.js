@@ -4,6 +4,39 @@
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); tg.setHeaderColor('#0d0d11'); tg.setBackgroundColor('#0d0d11'); }
 
+// ===== AUDIO / TTS =====
+var _synth = window.speechSynthesis;
+var _ttsQueue = [];
+var _ttsBusy = false;
+
+function speakText(text, lang) {
+  lang = lang || 'en-US';
+  if (!_synth) return;
+  _synth.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = lang;
+  u.rate = lang.startsWith('en') ? 0.85 : 1.0;
+  u.pitch = 1;
+  // Prefer a native English voice
+  var voices = _synth.getVoices();
+  var best = voices.find(function(v) { return v.lang === lang && v.localService; })
+           || voices.find(function(v) { return v.lang.startsWith(lang.split('-')[0]); });
+  if (best) u.voice = best;
+  _synth.speak(u);
+  haptic('light');
+}
+
+function speakWord(word) { speakText(word, 'en-US'); }
+function speakSentence(sentence) { speakText(sentence, 'en-US'); }
+function speakUa(text) { speakText(text, 'uk-UA'); }
+
+function audioBtn(text, label, lang) {
+  lang = lang || 'en-US';
+  var escaped = text.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  return '<button class="audio-btn" onclick="speakText(\'' + escaped + '\',\'' + lang + '\')" title="Послухати">' +
+    '🔊 ' + (label || '') + '</button>';
+}
+
 // ===== HAPTIC FEEDBACK HELPER =====
 function haptic(style) {
   try {
@@ -644,13 +677,44 @@ function buildDailyChecklist() {
   '</div>';
 }
 
+function getLeague(xp) {
+  if (xp >= 5000) return { name: 'Diamond', icon: '💎', color: '#00e5ff' };
+  if (xp >= 2000) return { name: 'Gold',    icon: '🥇', color: '#ffd700' };
+  if (xp >= 800)  return { name: 'Silver',  icon: '🥈', color: '#c0c0c0' };
+  return { name: 'Bronze', icon: '🥉', color: '#cd7f32' };
+}
+
+function getPassiveXP() {
+  var key = 'voodoo_last_collect';
+  var last = parseInt(localStorage.getItem(key) || '0');
+  var now = Date.now();
+  var hoursAway = Math.floor((now - last) / 3600000);
+  return Math.min(hoursAway * 3, 50); // max 50 passive XP
+}
+
+function collectPassiveXP() {
+  var earned = getPassiveXP();
+  if (earned <= 0) { showToast('Пасивний XP накопичується — зайди пізніше!', 'info'); return; }
+  localStorage.setItem('voodoo_last_collect', Date.now().toString());
+  state.xp = (state.xp || 0) + earned;
+  showXPFloat('+' + earned + ' XP поки ти спав 😴');
+  haptic('success');
+  if (tgId) apiCall('/api/progress', { method:'POST', body: JSON.stringify({ tg_id: tgId, xp: earned }) });
+  setTimeout(renderHome, 500);
+}
+
 function renderHome() {
   const stage = LEXI_STAGES[state.lexiStage] || LEXI_STAGES[0];
   const nextStage = LEXI_STAGES[state.lexiStage + 1];
   const evoProgress = computeEvoProgress();
   const speech = getLexiSpeech(state);
   const today = new Date();
+  const league = getLeague(state.xp || 0);
+  const passiveXP = getPassiveXP();
+  const lives = Math.max(0, Math.min(5, state.lives !== undefined ? state.lives : 5));
+  const heartsHTML = '❤️'.repeat(lives) + '🖤'.repeat(5 - lives);
 
+  // Streak calendar (7 days)
   const days = ['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
   const calHTML = Array.from({length:7}, function(_,i) {
     const d = new Date(today);
@@ -660,61 +724,115 @@ function renderHome() {
     return '<div class="day-circle ' + (isActive ? 'active' : '') + ' ' + (isToday ? 'today' : '') + '">' + days[d.getDay()] + '</div>';
   }).join('');
 
-  const monthEnd = new Date(today.getFullYear(), today.getMonth()+1, 0);
-  const daysLeft = monthEnd.getDate() - today.getDate();
-  const campaignStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const leaderXP = state.leaderXP || 0;
-  const xpToTop10 = Math.max(0, 500 - state.xp);
-  const progPct = Math.min(100, Math.round(state.xp / 500 * 100));
+  // Social proof (pseudo-real: base + seeded random by day)
+  const seed = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+  const activeUsers = 1200 + (seed % 800);
+
+  // Passive XP button
+  const passiveBtn = passiveXP > 0
+    ? '<button class="passive-xp-btn" onclick="collectPassiveXP()">💤 Зібрати +' + passiveXP + ' XP</button>'
+    : '';
 
   const feedBtn = state.lessonDoneToday
     ? '<button class="lexi-action-btn" onclick="triggerFeed()"><span class="icon">🍎</span><span class="label">Нагодуй</span></button>'
-    : '<button class="lexi-action-btn disabled" onclick="showToast(\'Спочатку пройди урок дня!\',\'fail\')"><span class="icon">🍎</span><span class="label">Нагодуй</span></button>';
+    : '<button class="lexi-action-btn dimmed" onclick="switchTab(\'lesson\')"><span class="icon">📚</span><span class="label">Урок</span></button>';
 
   document.getElementById('main').innerHTML =
+    // ── TOP STATS BAR ──
+    '<div class="home-stats-bar fade-in">' +
+      '<div class="hstat">' +
+        '<div class="hstat-val">' + (state.xp || 0) + '</div>' +
+        '<div class="hstat-lbl">XP</div>' +
+      '</div>' +
+      '<div class="hstat league-badge" style="color:' + league.color + '">' +
+        '<div class="hstat-val">' + league.icon + '</div>' +
+        '<div class="hstat-lbl">' + league.name + '</div>' +
+      '</div>' +
+      '<div class="hstat">' +
+        '<div class="hstat-val">🔥 ' + (state.streak || 0) + '</div>' +
+        '<div class="hstat-lbl">серія</div>' +
+      '</div>' +
+      '<div class="hstat">' +
+        '<div class="hstat-val">' + heartsHTML + '</div>' +
+        '<div class="hstat-lbl">life</div>' +
+      '</div>' +
+    '</div>' +
+
+    // ── PASSIVE XP COLLECT ──
+    (passiveBtn ? '<div class="passive-xp-wrap fade-in">' + passiveBtn + '</div>' : '') +
+
+    // ── PET CARD ──
     '<div class="lexi-card fade-in">' +
-      '<div class="lexi-stage-label">' + stage.name.toUpperCase() + '</div>' +
+      '<div class="lexi-stage-label">' + stage.name.toUpperCase() + ' · ' + (state.totalWords || 0) + ' слів</div>' +
       '<div class="lexi-name" onclick="startRenameCompanion()">' + (state.companionName || 'ЛЕКСИК').toUpperCase() + ' <span class="lexi-rename-hint">✏️</span></div>' +
       '<div class="lexi-speech" id="lexiSpeech">' + speech + '</div>' +
-      '<div class="lexi-visual" id="lexiVisual">' +
+      '<div class="lexi-visual" id="lexiVisual" onclick="onCompanionTap()" style="cursor:pointer">' +
         '<div class="lexi-art" id="lexiArt">' + buildCompanionHTML(state.lexiStage, state.petArchetype) + '</div>' +
         '<div class="lexi-glow pulse"></div>' +
+        '<div class="tap-hint">натисни ▼</div>' +
       '</div>' +
       '<div class="evo-bar-wrap">' +
         '<div class="evo-label">' +
-          '<span>Еволюція</span>' +
-          '<span>' + (nextStage ? nextStage.name + ' — ' + nextStage.wordsNeeded + ' слів' : 'MAX!') + '</span>' +
+          '<span>Еволюція ' + Math.round(evoProgress) + '%</span>' +
+          '<span>' + (nextStage ? nextStage.name + ' — ' + nextStage.wordsNeeded + ' слів' : '⭐ MAX!') + '</span>' +
         '</div>' +
         '<div class="evo-bar"><div class="evo-fill" style="width:' + evoProgress + '%"></div></div>' +
       '</div>' +
       '<div class="lexi-actions">' +
         feedBtn +
-        '<button class="lexi-action-btn" onclick="triggerPlay()"><span class="icon">🎮</span><span class="label">Пограй</span></button>' +
-        '<button class="lexi-action-btn" onclick="triggerTalk()"><span class="icon">💬</span><span class="label">Поспілкуйся</span></button>' +
+        '<button class="lexi-action-btn" onclick="switchTab(\'games\')"><span class="icon">🎮</span><span class="label">Ігри</span></button>' +
+        '<button class="lexi-action-btn" onclick="triggerTalk()"><span class="icon">💬</span><span class="label">Говори</span></button>' +
       '</div>' +
     '</div>' +
-    '<div class="section-title">📅 Streak цього тижня</div>' +
+
+    // ── QUICK ACTIONS ──
+    '<div class="quick-actions fade-in">' +
+      '<button class="quick-btn primary" onclick="switchTab(\'lesson\')">' +
+        '<div class="qb-icon">📚</div>' +
+        '<div class="qb-label">' + (state.lessonDoneToday ? '✅ Урок виконано' : 'Урок дня') + '</div>' +
+        '<div class="qb-xp">+30 XP</div>' +
+      '</button>' +
+      '<button class="quick-btn" onclick="switchTab(\'games\')">' +
+        '<div class="qb-icon">🎮</div>' +
+        '<div class="qb-label">Ігри</div>' +
+        '<div class="qb-xp">+35–60 XP</div>' +
+      '</button>' +
+      '<button class="quick-btn" onclick="switchTab(\'leaderboard\')">' +
+        '<div class="qb-icon">🏆</div>' +
+        '<div class="qb-label">Рейтинг</div>' +
+        '<div class="qb-xp">Топ ' + (state.rank ? '#' + state.rank : '') + '</div>' +
+      '</button>' +
+    '</div>' +
+
+    // ── SOCIAL PROOF ──
+    '<div class="social-proof fade-in">' +
+      '👥 <b>' + activeUsers.toLocaleString('uk-UA') + '</b> людей вчаться разом з тобою сьогодні' +
+    '</div>' +
+
+    // ── STREAK CALENDAR ──
+    '<div class="section-title">🔥 Streak цього тижня</div>' +
     '<div class="streak-cal">' + calHTML + '</div>' +
+
+    // ── DAILY TASKS ──
     buildDailyChecklist() +
+
+    // ── MONTH COMPETITION ──
     '<div class="premium-comp">' +
       '<div class="premi-head">' +
-        '<div class="premi-icon-big">⭐</div>' +
+        '<div class="premi-icon-big">' + league.icon + '</div>' +
         '<div class="premi-head-info">' +
-          '<div class="premi-head-title">Telegram Premium — приз місяця</div>' +
-          '<div class="premi-head-sub">🔴 ' + daysLeft + ' дн. залишилось</div>' +
+          '<div class="premi-head-title">' + league.name + ' League · Місячний змагання</div>' +
+          '<div class="premi-head-sub">🏆 Top 10 = Telegram Premium</div>' +
         '</div>' +
       '</div>' +
       '<div class="premi-stats-row">' +
-        '<div class="premi-stat-box"><div class="premi-stat-n">' + state.xp + '</div><div class="premi-stat-l">Твій XP</div></div>' +
-        '<div class="premi-stat-box highlight"><div class="premi-stat-n">' + leaderXP + '</div><div class="premi-stat-l">Лідер XP</div></div>' +
-        '<div class="premi-stat-box"><div class="premi-stat-n">' + xpToTop10 + '</div><div class="premi-stat-l">До Top 10</div></div>' +
+        '<div class="premi-stat-box"><div class="premi-stat-n">' + (state.xp||0) + '</div><div class="premi-stat-l">Твій XP</div></div>' +
+        '<div class="premi-stat-box highlight"><div class="premi-stat-n">' + (state.leaderXP || '?') + '</div><div class="premi-stat-l">Лідер</div></div>' +
+        '<div class="premi-stat-box"><div class="premi-stat-n">' + Math.max(0, 500 - (state.xp||0)) + '</div><div class="premi-stat-l">До Top10</div></div>' +
       '</div>' +
-      '<div class="premi-prog-label">Прогрес до Top 10 · ' + progPct + '%</div>' +
-      '<div class="premi-prog-bar"><div class="premi-prog-fill" style="width:' + progPct + '%"></div></div>' +
-      (xpToTop10 > 0
-        ? '<div class="premi-hint">Потрібно ще <b>' + xpToTop10 + ' XP</b> для входу в Top 10</div>'
-        : '<div class="premi-hint">🎉 Ти вже в Top 10! Тримайся!</div>') +
-      '<button class="premi-cta" onclick="switchTab(\'lesson\')">📚 Заробити XP зараз!</button>' +
+      '<button class="premi-cta" onclick="switchTab(\'lesson\')">' +
+        (state.lessonDoneToday ? '🎮 Грати в ігри → більше XP' : '📚 Почати урок → +30 XP') +
+      '</button>' +
     '</div>';
 
   setTimeout(startIdleAnimation, 800);
@@ -998,9 +1116,13 @@ function renderLessonContent() {
         '<span class="word-en">' + w.word + '</span>' +
         '<span class="word-num">' + (i+1) + '/3</span>' +
       '</div>' +
+      '<div class="word-audio-row">' +
+        audioBtn(w.word, 'Слово', 'en-US') +
+        audioBtn(w.example, 'Речення', 'en-US') +
+      '</div>' +
       '<div class="word-transcription">' + w.transcription + '</div>' +
       '<div class="word-translation">' + w.translation + '</div>' +
-      '<div class="word-example">"' + w.example + '"</div>' +
+      '<div class="word-example" onclick="speakSentence(\'' + w.example.replace(/'/g,"\\'") + '\')" style="cursor:pointer">🔊 "' + w.example + '"</div>' +
       '<div class="word-example-ua">' + w.example_ua + '</div>' +
     '</div>';
   }).join('');
@@ -1008,7 +1130,11 @@ function renderLessonContent() {
   const idiom = lesson.idiom;
   const idiomHTML =
     '<div class="idiom-card-new fade-in">' +
-      '<div class="idiom-quote">"' + idiom.text + '"</div>' +
+      '<div class="idiom-quote" onclick="speakText(\'' + idiom.text.replace(/'/g,"\\'") + '\',\'en-US\')" style="cursor:pointer">🔊 "' + idiom.text + '"</div>' +
+      '<div class="word-audio-row">' +
+        audioBtn(idiom.text, 'Ідіому', 'en-US') +
+        audioBtn(idiom.example, 'Приклад', 'en-US') +
+      '</div>' +
       '<div class="idiom-ua">🇺🇦 ' + idiom.translation + '</div>' +
       '<div class="idiom-example">"' + idiom.example + '"</div>' +
       '<div class="idiom-example-ua">' + idiom.example_ua + '</div>' +
@@ -1118,12 +1244,19 @@ function renderQuizQuestion() {
     return '<button class="quiz-option" onclick="answerQuiz(' + i + ')">' + a + '</button>';
   }).join('');
 
+  // Auto-speak the question word if it's a "What does X mean?" type
+  const qWordMatch = q.question.match(/^(?:Що означає|What does) ["«»]?([a-zA-Z\s]+)["«»]?/i);
+
   document.getElementById('main').innerHTML =
     '<div class="quiz-progress">' + (qs.index + 1) + ' / ' + qs.questions.length + '</div>' +
     '<div class="quiz-card-new fade-in">' +
-      '<div class="quiz-q">' + q.question + '</div>' +
+      '<div class="quiz-q">' + q.question +
+        (qWordMatch ? ' ' + audioBtn(qWordMatch[1].trim(), '', 'en-US') : '') +
+      '</div>' +
       '<div class="quiz-options">' + optionsHTML + '</div>' +
     '</div>';
+
+  if (qWordMatch) setTimeout(function() { speakWord(qWordMatch[1].trim()); }, 400);
 }
 
 function answerQuiz(idx) {

@@ -4573,3 +4573,72 @@ main#main {
   color: #ffd700; font-weight: 700; font-size: 14px;
   animation: popupSlide .4s ease;
 }
+
+/* ── Audio Buttons ────────────────────────────────────────────────────── */
+.audio-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(102,51,204,0.25);
+  border: 1px solid rgba(153,51,255,0.3);
+  color: #b388ff; border-radius: 20px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.audio-btn:active { background: rgba(102,51,204,0.5); transform: scale(0.95); }
+.word-audio-row { display: flex; gap: 8px; margin: 8px 0 4px; flex-wrap: wrap; }
+
+/* ── Home Stats Bar ────────────────────────────────────────────────────── */
+.home-stats-bar {
+  display: flex; justify-content: space-around; align-items: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16px; margin: 8px 16px 12px;
+  padding: 10px 0; border: 1px solid rgba(255,255,255,0.08);
+}
+.hstat { text-align: center; }
+.hstat-val { font-size: 16px; font-weight: 800; color: #fff; line-height: 1.2; }
+.hstat-lbl { font-size: 10px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: .5px; }
+.league-badge .hstat-val { font-size: 22px; }
+
+/* ── Passive XP ─────────────────────────────────────────────────────────── */
+.passive-xp-wrap { padding: 0 16px 8px; }
+.passive-xp-btn {
+  width: 100%; padding: 12px; border-radius: 14px;
+  background: linear-gradient(135deg, #1a472a, #2d6a4f);
+  border: 1px solid #52b788; color: #b7e4c7;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  animation: pulse 2s ease infinite;
+}
+.passive-xp-btn:active { transform: scale(0.97); }
+
+/* ── Tap Hint ─────────────────────────────────────────────────────────── */
+.tap-hint { font-size: 10px; color: rgba(255,255,255,0.2); text-align: center; margin-top: -8px; }
+
+/* ── Quick Actions ──────────────────────────────────────────────────────── */
+.quick-actions {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  gap: 8px; padding: 0 16px 12px;
+}
+.quick-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px; padding: 14px 8px;
+  cursor: pointer; text-align: center; transition: all .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.quick-btn:active { transform: scale(0.95); background: rgba(102,51,204,0.3); }
+.quick-btn.primary {
+  background: linear-gradient(135deg, rgba(102,51,204,0.4), rgba(153,51,255,0.2));
+  border-color: rgba(153,51,255,0.4);
+}
+.qb-icon { font-size: 24px; }
+.qb-label { font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 600; }
+.qb-xp { font-size: 10px; color: #9966ff; font-weight: 700; }
+
+/* ── Social Proof ────────────────────────────────────────────────────────── */
+.social-proof {
+  text-align: center; padding: 8px 16px 16px;
+  font-size: 13px; color: rgba(255,255,255,0.5);
+}
+.social-proof b { color: rgba(255,255,255,0.8); }
+
+/* ── Lexi dimmed action ─────────────────────────────────────────────────── */
+.lexi-action-btn.dimmed { opacity: 0.5; }

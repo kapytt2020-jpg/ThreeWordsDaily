@@ -58,6 +58,7 @@ CONTENT_STATE      = Path(__file__).parent.parent / "content_state.json"
 API_BASE           = f"https://api.telegram.org/bot{BOT_TOKEN}"
 PUB_API_BASE       = f"https://api.telegram.org/bot{PUB_TOKEN}"
 KYIV_TZ            = ZoneInfo("Europe/Kyiv")
+OPENAI_API_KEY     = os.getenv("OPENAI_API_KEY", "")
 
 # Topic thread IDs (loaded from group_state.json, with hardcoded fallbacks)
 TOPIC_TEACHING   = 71
@@ -139,6 +140,49 @@ async def _tg_post(
     except Exception as exc:
         log.error("Telegram request failed [%s]: %s", method, exc)
         return {"ok": False}
+
+
+async def send_voice_tts(
+    session: aiohttp.ClientSession,
+    thread_id: int,
+    text_to_speak: str,
+    caption: str = "",
+    target: str = "group",  # "group" or "public"
+) -> bool:
+    """Generate TTS audio via OpenAI and send as voice message to group or channel."""
+    if not OPENAI_API_KEY:
+        return False
+    try:
+        # Generate audio via OpenAI TTS
+        async with session.post(
+            "https://api.openai.com/v1/audio/speech",
+            headers={"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"},
+            json={"model": "tts-1", "voice": "nova", "input": text_to_speak, "response_format": "ogg_opus"},
+            timeout=aiohttp.ClientTimeout(total=30),
+        ) as resp:
+            if resp.status != 200:
+                log.warning("TTS failed: HTTP %d", resp.status)
+                return False
+            audio_bytes = await resp.read()
+
+        # Send as voice message via Telegram
+        import io
+        data = aiohttp.FormData()
+        data.add_field("chat_id", str(INTERNAL_GROUP_ID if target == "group" else PUBLIC_CHANNEL_ID))
+        if target == "group":
+            data.add_field("message_thread_id", str(thread_id))
+        if caption:
+            data.add_field("caption", caption)
+            data.add_field("parse_mode", "HTML")
+        data.add_field("voice", io.BytesIO(audio_bytes), filename="word.ogg", content_type="audio/ogg")
+
+        base = API_BASE if target == "group" else PUB_API_BASE
+        async with session.post(f"{base}/sendVoice", data=data, timeout=aiohttp.ClientTimeout(total=20)) as r:
+            result = await r.json()
+            return result.get("ok", False)
+    except Exception as exc:
+        log.warning("send_voice_tts error: %s", exc)
+        return False
 
 
 async def send_message(
@@ -501,8 +545,15 @@ async def post_word_of_day(session: aiohttp.ClientSession, force: bool = False) 
     ok = await send_message(session, thread_id, text)
     if ok:
         _mark_posted("word_of_day")
-        log.info("Word of the Day posted: %s", word_data.get("word", "?"))
+        word = word_data.get("word", "")
+        example = word_data.get("example_en", "")
+        log.info("Word of the Day posted: %s", word)
         await send_public(session, text)
+        # Send TTS pronunciation
+        if word:
+            tts_text = f"{word}. {example}" if example else word
+            await send_voice_tts(session, thread_id, tts_text, f"🔊 <b>{word}</b>", "group")
+            await send_voice_tts(session, thread_id, tts_text, f"🔊 <b>{word}</b>", "public")
     return ok
 
 
