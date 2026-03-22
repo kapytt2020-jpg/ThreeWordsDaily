@@ -1,0 +1,16 @@
+{
+  "mode": "soft",
+  "paused_until": null,
+  "cooldown_hours": 48,
+  "delay_min": 15,
+  "delay_max": 45,
+  "max_groups_per_run": 8,
+  "markets": {
+    "ua": { "enabled": true, "mode": "soft", "paused_until": null },
+    "ru": { "enabled": true, "mode": "soft", "paused_until": null },
+    "pl": { "enabled": false, "mode": "soft", "paused_until": null },
+    "de": { "enabled": false, "mode": "soft", "paused_until": null }
+  },
+  "last_updated": null,
+  "updated_by": null
+}

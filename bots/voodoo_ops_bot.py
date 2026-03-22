@@ -1308,6 +1308,307 @@ async def cmd_localstop(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# OUTREACH CONTROL COMMANDS
+# ══════════════════════════════════════════════════════════════════════════════
+
+async def cmd_outreach(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outreach — inline dashboard for the outreach agent."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import get_stats_text
+    try:
+        text = get_stats_text()
+    except Exception as e:
+        text = f"❌ Cannot load stats: {e}"
+
+    keyboard = [
+        [
+            InlineKeyboardButton("🟢 SOFT mode",       callback_data="out_mode_soft"),
+            InlineKeyboardButton("🟡 AGGR mode",        callback_data="out_mode_aggressive"),
+        ],
+        [
+            InlineKeyboardButton("▶️ Run now (all)",    callback_data="out_run_all"),
+            InlineKeyboardButton("▶️ Run UA",           callback_data="out_run_ua"),
+            InlineKeyboardButton("▶️ Run RU",           callback_data="out_run_ru"),
+        ],
+        [
+            InlineKeyboardButton("⏸ Pause 6h",         callback_data="out_pause_6"),
+            InlineKeyboardButton("⏸ Pause 24h",        callback_data="out_pause_24"),
+            InlineKeyboardButton("▶️ Resume",           callback_data="out_resume"),
+        ],
+        [
+            InlineKeyboardButton("🎓 Learning",         callback_data="out_learn"),
+            InlineKeyboardButton("🚫 Blacklist",        callback_data="out_blacklist"),
+            InlineKeyboardButton("🔄 Reset learn",      callback_data="out_resetlearn"),
+        ],
+        [
+            InlineKeyboardButton("🌍 Markets",          callback_data="out_markets"),
+            InlineKeyboardButton("⚙️ Settings",         callback_data="out_settings"),
+        ],
+    ]
+    await update.message.reply_html(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+    )
+
+
+async def cmd_outmode(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outmode soft|aggressive [market] — switch outreach mode."""
+    if not _is_admin(update):
+        return
+    args = ctx.args or []
+    if not args:
+        await update.message.reply_html(
+            "Використання:\n"
+            "<code>/outmode soft</code>\n"
+            "<code>/outmode aggressive</code>\n"
+            "<code>/outmode soft ru</code> — тільки для ринку"
+        )
+        return
+    from agents.outreach_agent import set_mode
+    mode   = args[0].lower()
+    market = args[1] if len(args) > 1 else None
+    await update.message.reply_html(set_mode(mode, market))
+
+
+async def cmd_outpause(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outpause [hours] [market] — pause outreach."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import set_pause
+    args   = ctx.args or []
+    hours  = float(args[0]) if args else 6.0
+    market = args[1] if len(args) > 1 else None
+    await update.message.reply_html(set_pause(hours, market))
+
+
+async def cmd_outresume(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outresume [market] — resume outreach."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import set_resume
+    market = ctx.args[0] if ctx.args else None
+    await update.message.reply_html(set_resume(market))
+
+
+async def cmd_outrun(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outrun [market] — trigger outreach cycle now."""
+    if not _is_admin(update):
+        return
+    market = ctx.args[0] if ctx.args else None
+    msg = await update.message.reply_html(
+        f"📣 Запускаю outreach{' для '+market if market else ''}…"
+    )
+    from agents.outreach_agent import run_outreach_cycle
+    try:
+        await run_outreach_cycle(market)
+        await msg.edit_text("✅ Outreach цикл завершено. Дивись звіт вище.")
+    except Exception as e:
+        await msg.edit_text(f"❌ Помилка: {e}")
+
+
+async def cmd_outstats(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outstats — full outreach stats."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import get_stats_text
+    try:
+        await update.message.reply_html(get_stats_text())
+    except Exception as e:
+        await update.message.reply_html(f"❌ {e}")
+
+
+async def cmd_outlearn(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outlearn — show what the agent has learned (ban patterns, best times, etc.)."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import LearningEngine
+    engine = LearningEngine()
+    await update.message.reply_html(engine.summary_text())
+
+
+async def cmd_outcooldown(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outcooldown [hours] — set cooldown between posts to same group."""
+    if not _is_admin(update):
+        return
+    if not ctx.args or not ctx.args[0].isdigit():
+        await update.message.reply_html("Використання: <code>/outcooldown 48</code>")
+        return
+    from agents.outreach_agent import set_cooldown
+    await update.message.reply_html(set_cooldown(float(ctx.args[0])))
+
+
+async def cmd_outdelay(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outdelay [min] [max] — set delay in seconds between posts."""
+    if not _is_admin(update):
+        return
+    args = ctx.args or []
+    if len(args) < 2:
+        await update.message.reply_html("Використання: <code>/outdelay 20 60</code>")
+        return
+    from agents.outreach_agent import set_delay
+    await update.message.reply_html(set_delay(float(args[0]), float(args[1])))
+
+
+async def cmd_outblacklist(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/outblacklist [reset|reset all|reset group_id] — manage blacklist."""
+    if not _is_admin(update):
+        return
+    from agents.outreach_agent import LearningEngine, reset_blacklist
+    args = ctx.args or []
+
+    if args and args[0] == "reset":
+        gid = args[1] if len(args) > 1 else None
+        await update.message.reply_html(reset_blacklist(gid))
+        return
+
+    engine = LearningEngine()
+    banned = engine.data["banned_groups"]
+    if not banned:
+        await update.message.reply_html("🚫 Blacklist порожній")
+        return
+    lines = ["🚫 <b>Чорний список груп:</b>\n"]
+    for gid in banned[:30]:
+        lines.append(f"• <code>{gid}</code>")
+    if len(banned) > 30:
+        lines.append(f"… та ще {len(banned)-30}")
+    lines.append("\n<code>/outblacklist reset [group_id]</code> — видалити")
+    lines.append("<code>/outblacklist reset all</code> — очистити все")
+    await update.message.reply_html("\n".join(lines))
+
+
+async def cmd_markets(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/markets — show market status + scaling controls."""
+    if not _is_admin(update):
+        return
+    from agents.scaling_manager import load_configs
+    cfg = load_configs()
+
+    lines = ["🌍 <b>Voodoo Markets</b>\n"]
+    keyboard = []
+    for code, m in cfg["markets"].items():
+        status = m["status"]
+        gid    = m.get("group_id", 0)
+        icon   = {"active": "✅", "pending": "⏳", "planned": "📋"}.get(status, "❓")
+        lines.append(f"{icon} {m['flag']} <b>{m['language']}</b> [{code}]")
+        lines.append(f"   Status: {status} | Group: {'<code>'+str(gid)+'</code>' if gid else '—'}")
+        if status == "pending":
+            keyboard.append([InlineKeyboardButton(
+                f"🚀 Bootstrap {m['flag']} {code.upper()}",
+                callback_data=f"scale_{code}",
+            )])
+
+    lines.append("\n💡 <code>/scale ru</code> — bootstrap новий ринок")
+
+    await update.message.reply_html(
+        "\n".join(lines),
+        reply_markup=InlineKeyboardMarkup(keyboard) if keyboard else None,
+    )
+
+
+async def cmd_scale(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """/scale [market] — bootstrap a new language market."""
+    if not _is_admin(update):
+        return
+    if not ctx.args:
+        await update.message.reply_html("Використання: <code>/scale ru</code>")
+        return
+    market = ctx.args[0].lower()
+    msg = await update.message.reply_html(f"🚀 Bootstrapping <b>{market}</b> market…")
+    from agents.scaling_manager import bootstrap_market
+    try:
+        await bootstrap_market(market)
+        await msg.edit_text(f"✅ Market <b>{market}</b> bootstrapped! Перевір OpsBot для деталей.")
+    except Exception as e:
+        await msg.edit_text(f"❌ Bootstrap failed: {e}")
+
+
+# ── Callbacks for outreach inline buttons ─────────────────────────────────────
+
+async def cb_outreach(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+    data  = query.data
+
+    from agents.outreach_agent import (
+        set_mode, set_pause, set_resume,
+        LearningEngine, get_stats_text, run_outreach_cycle, save_learning, load_learning,
+    )
+    from agents.scaling_manager import load_configs
+
+    if data == "out_mode_soft":
+        await query.edit_message_text(set_mode("soft"), parse_mode="HTML")
+
+    elif data == "out_mode_aggressive":
+        await query.edit_message_text(set_mode("aggressive"), parse_mode="HTML")
+
+    elif data.startswith("out_run_"):
+        market = data.split("out_run_")[1]
+        market = None if market == "all" else market
+        await query.edit_message_text(f"📣 Запускаю outreach{' для '+market if market else ''}…", parse_mode="HTML")
+        asyncio.get_event_loop().create_task(run_outreach_cycle(market))
+
+    elif data.startswith("out_pause_"):
+        hours = float(data.split("out_pause_")[1])
+        await query.edit_message_text(set_pause(hours), parse_mode="HTML")
+
+    elif data == "out_resume":
+        await query.edit_message_text(set_resume(), parse_mode="HTML")
+
+    elif data == "out_learn":
+        engine = LearningEngine()
+        await query.edit_message_text(engine.summary_text(), parse_mode="HTML")
+
+    elif data == "out_blacklist":
+        engine = LearningEngine()
+        banned = engine.data["banned_groups"]
+        text = f"🚫 В чорному списку: {len(banned)} груп"
+        if banned:
+            text += "\n" + "\n".join(f"• <code>{g}</code>" for g in banned[:20])
+        await query.edit_message_text(text, parse_mode="HTML")
+
+    elif data == "out_resetlearn":
+        l = load_learning()
+        l["hourly_stats"] = {}
+        l["template_stats"] = {}
+        l["current_delays"] = {"min": 15, "max": 45}
+        l["adaptations"] = []
+        save_learning(l)
+        await query.edit_message_text("✅ Learning статистика скинута (blacklist збережено)", parse_mode="HTML")
+
+    elif data == "out_markets":
+        cfg = load_configs()
+        lines = ["🌍 <b>Markets:</b>"]
+        for code, m in cfg["markets"].items():
+            status = m["status"]
+            icon   = {"active": "✅", "pending": "⏳", "planned": "📋"}.get(status, "❓")
+            lines.append(f"{icon} {m['flag']} {code}: {status}")
+        await query.edit_message_text("\n".join(lines), parse_mode="HTML")
+
+    elif data == "out_settings":
+        from agents.outreach_agent import load_runtime
+        rt   = load_runtime()
+        text = (
+            f"⚙️ <b>Outreach Settings</b>\n\n"
+            f"Mode: <b>{rt.get('mode')}</b>\n"
+            f"Cooldown: <b>{rt.get('cooldown_hours')}h</b>\n"
+            f"Delay: <b>{rt.get('delay_min')}–{rt.get('delay_max')}s</b>\n"
+            f"Max posts/cycle: <b>{rt.get('max_groups_per_run')}</b>\n\n"
+            f"Змінити:\n"
+            f"<code>/outmode soft|aggressive</code>\n"
+            f"<code>/outcooldown 24</code>\n"
+            f"<code>/outdelay 20 60</code>"
+        )
+        await query.edit_message_text(text, parse_mode="HTML")
+
+    elif data.startswith("scale_"):
+        market = data.split("scale_")[1]
+        await query.edit_message_text(f"🚀 Bootstrapping {market}…", parse_mode="HTML")
+        from agents.scaling_manager import bootstrap_market
+        asyncio.get_event_loop().create_task(bootstrap_market(market))
+
+
 async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """/menu — inline keyboard with all available commands grouped by category."""
     if not _is_admin(update):
@@ -1324,6 +1625,14 @@ async def cmd_menu(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
         [
             InlineKeyboardButton("📋 Logs (local)",    switch_inline_query_current_chat="/logs ops_bot"),
             InlineKeyboardButton("📋 Logs (server)",   switch_inline_query_current_chat="/serverlogs voodoo_bot 30"),
+        ],
+        [
+            InlineKeyboardButton("📣 Outreach Panel", switch_inline_query_current_chat="/outreach"),
+            InlineKeyboardButton("🌍 Markets",         switch_inline_query_current_chat="/markets"),
+        ],
+        [
+            InlineKeyboardButton("🎓 Outreach Learn", switch_inline_query_current_chat="/outlearn"),
+            InlineKeyboardButton("📊 Outreach Stats", switch_inline_query_current_chat="/outstats"),
         ],
         [
             InlineKeyboardButton("🚀 Deploy all",   switch_inline_query_current_chat="/deploy"),
@@ -1401,6 +1710,20 @@ async def main() -> None:
     app.add_handler(CommandHandler("localstop",    cmd_localstop,   filters=admin_filter))
     app.add_handler(CommandHandler("menu",         cmd_menu,        filters=admin_filter))
 
+    # ── Outreach control commands ──────────────────────────────────────────────
+    app.add_handler(CommandHandler("outreach",     cmd_outreach,     filters=admin_filter))
+    app.add_handler(CommandHandler("outmode",      cmd_outmode,      filters=admin_filter))
+    app.add_handler(CommandHandler("outpause",     cmd_outpause,     filters=admin_filter))
+    app.add_handler(CommandHandler("outresume",    cmd_outresume,    filters=admin_filter))
+    app.add_handler(CommandHandler("outrun",       cmd_outrun,       filters=admin_filter))
+    app.add_handler(CommandHandler("outstats",     cmd_outstats,     filters=admin_filter))
+    app.add_handler(CommandHandler("outlearn",     cmd_outlearn,     filters=admin_filter))
+    app.add_handler(CommandHandler("outcooldown",  cmd_outcooldown,  filters=admin_filter))
+    app.add_handler(CommandHandler("outdelay",     cmd_outdelay,     filters=admin_filter))
+    app.add_handler(CommandHandler("outblacklist", cmd_outblacklist, filters=admin_filter))
+    app.add_handler(CommandHandler("markets",      cmd_markets,      filters=admin_filter))
+    app.add_handler(CommandHandler("scale",        cmd_scale,        filters=admin_filter))
+
     app.add_handler(CallbackQueryHandler(cb_restart,    pattern=r"^restart_"))
     app.add_handler(CallbackQueryHandler(cb_approval,   pattern=r"^(approve|reject)_"))
     app.add_handler(CallbackQueryHandler(cb_broadcast,  pattern=r"^broadcast_"))
@@ -1408,6 +1731,7 @@ async def main() -> None:
     app.add_handler(CallbackQueryHandler(cb_cloudnew,   pattern=r"^cloudnew_"))
     app.add_handler(CallbackQueryHandler(cb_failover,   pattern=r"^failover_"))
     app.add_handler(CallbackQueryHandler(cb_srvrestart, pattern=r"^srvrestart_"))
+    app.add_handler(CallbackQueryHandler(cb_outreach,   pattern=r"^(out_|scale_)"))
 
     await app.initialize()
     await app.start()
