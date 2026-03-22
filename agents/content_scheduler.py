@@ -31,6 +31,8 @@ from datetime import datetime, date
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import aiohttp
 from dotenv import load_dotenv
 
