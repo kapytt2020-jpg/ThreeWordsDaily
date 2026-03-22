@@ -977,6 +977,7 @@ function showResultsScreen() {
   const known = swipeResults.filter(r => r.direction === 'right');
   const knownCount = known.length;
   const xp = knownCount * 15 + maxCombo * 5;
+  window.parent.postMessage({ type: 'GAME_OVER', xp: Math.max(xp, 30) }, '*');
 
   // Determine level
   const avgLevel = computeLevel(known);

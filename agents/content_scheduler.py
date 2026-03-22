@@ -42,6 +42,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("content_scheduler")
 
+from agents.interbot_bus import BusClient  # noqa: E402
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 
 BOT_TOKEN          = os.getenv("VOODOO_OPS_BOT_TOKEN", "")
@@ -624,6 +626,27 @@ POSTER_MAP = {
 }
 
 
+def _make_bus() -> BusClient:
+    bus = BusClient("scheduler", BOT_TOKEN)
+
+    @bus.on("ping")
+    async def _ping(data, reply):
+        await reply({"status": "ok", "name": "content_scheduler"})
+
+    @bus.on("post_now")
+    async def _post_now(data, reply):
+        content_type = data.get("type", "word_of_day")
+        async with aiohttp.ClientSession() as s:
+            fn = POSTER_MAP.get(content_type)
+            if fn:
+                ok = await fn(s, force=True)
+                await reply({"ok": ok, "type": content_type})
+            else:
+                await reply({"ok": False, "error": "unknown type"})
+
+    return bus
+
+
 async def run_scheduler() -> None:
     """Infinite loop that checks schedule every 30 seconds and posts at the right times."""
     log.info("Content Scheduler started. Group: %d", INTERNAL_GROUP_ID)
@@ -701,8 +724,9 @@ async def _main() -> None:
         elif "--motive" in args:
             await post_motivation(session, force=True)
         else:
-            # Default: run scheduler
-            await run_scheduler()
+            # Default: run scheduler + bus listener in parallel
+            bus = _make_bus()
+            await asyncio.gather(run_scheduler(), bus.listen())
 
 
 if __name__ == "__main__":

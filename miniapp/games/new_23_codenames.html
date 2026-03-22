@@ -1483,6 +1483,7 @@ function triggerAssassin(i) {
 function triggerWin(team, byAssassin = false) {
   state.gameOver = true;
   state.winner = team;
+  if (team === 'purple') window.parent.postMessage({ type: 'GAME_OVER', xp: 50 }, '*');
 
   const purpleFound = 9 - state.purpleRemaining;
   const goldFound   = 8 - state.goldRemaining;

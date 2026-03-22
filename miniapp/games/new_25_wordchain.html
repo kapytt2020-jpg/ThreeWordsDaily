@@ -1933,6 +1933,7 @@ function endGame() {
   clearInterval(state.wordTimer);
   clearInterval(state.totalTimer);
   clearInterval(state.botTimer);
+  window.parent.postMessage({ type: 'GAME_OVER', xp: 35 }, '*');
 
   // Save high score
   const hs = parseInt(localStorage.getItem('wc_hs_' + state.mode) || '0');

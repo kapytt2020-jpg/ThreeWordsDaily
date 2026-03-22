@@ -1740,6 +1740,7 @@ function showWinScreen() {
   const accuracy = Math.round((state.totalCorrect / state.totalDocs) * 100);
   const coins    = state.totalCorrect * 20;
   const xp       = state.totalCorrect * 15;
+  window.parent.postMessage({ type: 'GAME_OVER', xp: Math.max(xp, 55) }, '*');
 
   const rank =
     accuracy >= 95 ? 'Chief Inspector' :

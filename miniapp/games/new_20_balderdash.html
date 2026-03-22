@@ -1153,6 +1153,7 @@ function showFinal() {
     ...Object.entries(state.botCoins).map(([name, coins]) => ({ name, coins, you: false })),
   ];
   allPlayers.sort((a, b) => b.coins - a.coins);
+  if (allPlayers[0] && allPlayers[0].you) window.parent.postMessage({ type: 'GAME_OVER', xp: 40 }, '*');
 
   const rankColors = ['gold', 'silver', 'bronze', ''];
   const rankEmojis = ['🥇', '🥈', '🥉', ''];

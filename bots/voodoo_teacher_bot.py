@@ -27,6 +27,7 @@ from telegram.ext import (
 
 from database import db
 from agents import run_agent
+from agents.interbot_bus import BusClient
 
 load_dotenv()
 
@@ -158,6 +159,30 @@ async def handle_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
         await msg.edit_text(f"❌ Помилка: {e}")
 
 
+def _make_bus() -> BusClient:
+    bus = BusClient("teacher", TOKEN)
+
+    @bus.on("ping")
+    async def _ping(data, reply):
+        await reply({"status": "ok", "name": "teacher_bot"})
+
+    @bus.on("get_word")
+    async def _get_word(data, reply):
+        level = data.get("level", "B2")
+        conn = db._connect()
+        row = conn.execute(
+            "SELECT word, translation, ipa, example_en FROM words WHERE level=? ORDER BY RANDOM() LIMIT 1",
+            (level,)
+        ).fetchone()
+        conn.close()
+        if row:
+            await reply({"word": row[0], "translation": row[1], "ipa": row[2] or "", "example": row[3] or ""})
+        else:
+            await reply({"error": "no words"})
+
+    return bus
+
+
 async def main() -> None:
     db.init_db()
     app = Application.builder().token(TOKEN).build()
@@ -172,7 +197,9 @@ async def main() -> None:
     await app.start()
     await app.updater.start_polling(drop_pending_updates=True)
     log.info("VoodooTeacherBot online")
-    await asyncio.Event().wait()
+
+    bus = _make_bus()
+    await asyncio.gather(asyncio.Event().wait(), bus.listen())
 
 
 if __name__ == "__main__":

@@ -1917,6 +1917,7 @@ function showResults(){
   const chain = CHAINS[selectedChain];
   const correct = answers.filter(Boolean).length;
   const pct = Math.round((correct/5)*100);
+  if (correct >= 3) window.parent.postMessage({ type: 'GAME_OVER', xp: 40 }, '*');
 
   // Save completed
   if(correct >= 3 && !completed.includes(selectedChain)){

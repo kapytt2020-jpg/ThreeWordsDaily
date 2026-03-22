@@ -1490,6 +1490,8 @@ function showFinalScreen() {
     ...state.bots.map(b => ({ name: `🤖 ${b.name.replace('Bot ','')}`, coins: b.coins, isYou: false }))
   ];
   players.sort((a, b) => b.coins - a.coins);
+  const playerRank = players.findIndex(p => p.isYou);
+  if (playerRank === 0) window.parent.postMessage({ type: 'GAME_OVER', xp: 45 }, '*');
 
   const rankIcons = ['🥇', '🥈', '🥉', '4️⃣'];
   const xpMap = [100, 75, 50, 25];
