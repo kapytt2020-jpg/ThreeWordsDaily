@@ -127,6 +127,17 @@ async def create_approval_for_improvement(proposal: str) -> None:
         log.error("Failed to create approval: %s", e)
 
 
+async def run_outreach_cycle(market_code: str | None = None) -> None:
+    """10:00 and 16:00 — Autonomous outreach to target groups."""
+    log.info("Starting outreach cycle (market=%s)...", market_code or "all")
+    try:
+        from agents.outreach_agent import run_outreach_cycle as _outreach
+        await _outreach(market_code)
+        log.info("Outreach cycle complete")
+    except Exception as e:
+        log.error("Outreach cycle failed: %s", e)
+
+
 async def run_weekly_podcast() -> None:
     """Mon 09:00 — Generate and post weekly podcast to group topic."""
     log.info("Starting weekly podcast generation...")
@@ -218,6 +229,13 @@ async def main_loop() -> None:
         if weekday == 0 and hour == 9 and key_podcast not in sent:
             await run_weekly_podcast()
             sent.add(key_podcast)
+
+        # Outreach cycle at 10:00 and 16:00 Kyiv
+        for outreach_hour in (10, 16):
+            key_outreach = f"outreach_{day_key}_{outreach_hour}"
+            if hour == outreach_hour and key_outreach not in sent:
+                await run_outreach_cycle()
+                sent.add(key_outreach)
 
         # Cleanup old keys daily at midnight
         if hour == 0:

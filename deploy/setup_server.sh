@@ -104,8 +104,11 @@ BOTS=(
     "voodoo_analyst_bot:bots/voodoo_analyst_bot.py"
     "voodoo_growth_bot:bots/voodoo_growth_bot.py"
     "voodoo_ops_bot:bots/voodoo_ops_bot.py"
+    "voodoo_promo_bot:bots/voodoo_promo_bot.py"
     "voodoo_group_manager:group_manager.py"
     "voodoo_content_scheduler:agents/content_scheduler.py"
+    "voodoo_autonomous_loop:agents/autonomous_loop.py"
+    "voodoo_outreach_agent:agents/outreach_agent.py"
 )
 
 for entry in "${BOTS[@]}"; do
@@ -136,6 +139,10 @@ SVCEOF
 
 done
 
+# Fix outreach agent to run in daemon mode
+sed -i "s|python3 ${INSTALL_DIR}/agents/outreach_agent.py$|python3 ${INSTALL_DIR}/agents/outreach_agent.py --daemon|" \
+    /etc/systemd/system/voodoo_outreach_agent.service
+
 systemctl daemon-reload
 log "systemd services installed."
 
@@ -149,9 +156,12 @@ echo "Next steps:"
 echo "  1. Edit tokens:    nano /opt/voodoo/.env"
 echo "  2. Start all bots: systemctl start voodoo_bot voodoo_speak_bot voodoo_teacher_bot"
 echo "                     systemctl start voodoo_publisher_bot voodoo_analyst_bot"
-echo "                     systemctl start voodoo_growth_bot voodoo_ops_bot"
+echo "                     systemctl start voodoo_growth_bot voodoo_ops_bot voodoo_promo_bot"
 echo "                     systemctl start voodoo_group_manager voodoo_content_scheduler"
+echo "                     systemctl start voodoo_autonomous_loop voodoo_outreach_agent"
 echo "  3. Enable on boot: systemctl enable voodoo_bot voodoo_speak_bot ..."
+echo "  3b. Scale markets: python3 agents/scaling_manager.py --market ru"
+echo "  3c. Outreach now:  python3 agents/outreach_agent.py --run"
 echo "  4. Check status:   systemctl status voodoo_bot"
 echo "  5. View logs:      tail -f /opt/voodoo/logs/voodoo_bot.log"
 echo ""

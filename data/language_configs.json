@@ -1,0 +1,115 @@
+{
+  "markets": {
+    "ua": {
+      "language": "Ukrainian",
+      "language_code": "uk",
+      "flag": "🇺🇦",
+      "status": "active",
+      "group_id": -1003810539363,
+      "channel_id": -1002349047532,
+      "channel_username": "@VoodooEnglish",
+      "bot_username": "@VoodooEnglishBot",
+      "timezone": "Europe/Kyiv",
+      "target_keywords": [
+        "англійська", "вчу англійську", "english ua", "английский украинцы",
+        "вивчення мов", "мови для переселенців", "english ukraine"
+      ],
+      "soft_templates": [
+        "Всім привіт! Знайшов крутий безкоштовний бот для вивчення англійської через ігри.\n\nТам є: словниковий квест, вимовні тренування, щоденні уроки.\n\nСпробуй: @VoodooEnglishBot",
+        "Якщо вчите англійську — зверніть увагу на @VoodooEnglishBot\n\nТам не нудні вправи, а ігри: swipe-слова, аукціон, детективні місії.",
+        "Безкоштовна альтернатива Duolingo на українській мові\n\n@VoodooEnglishBot — навчання через Telegram без реєстрації"
+      ],
+      "aggressive_templates": [
+        "@VoodooEnglishBot — топовий бот для англійської\n\n12 ігор · Голосові тренування · Щоденні уроки · Безкоштовно",
+        "VOODOO ENGLISH — навчання через гру\n\nПерестань читати нудні підручники. Починай грати!\n\n@VoodooEnglishBot — /start"
+      ],
+      "topics": {
+        "word_of_day": 11,
+        "lessons": 13,
+        "podcast": 76,
+        "bot_bus": 1275
+      }
+    },
+    "ru": {
+      "language": "Russian",
+      "language_code": "ru",
+      "flag": "🇷🇺",
+      "status": "pending",
+      "group_id": 0,
+      "channel_id": 0,
+      "channel_username": "",
+      "bot_username": "@VoodooEnglishBot",
+      "timezone": "Europe/Moscow",
+      "target_keywords": [
+        "английский язык", "учу английский", "english русские", "изучение языков",
+        "английский для начинающих", "английский разговорный", "english russian speakers"
+      ],
+      "soft_templates": [
+        "Всем привет! Нашёл крутой бесплатный бот для изучения английского через игры.\n\nЕсть: словарный квест, тренировки произношения, ежедневные уроки.\n\nПопробуй: @VoodooEnglishBot",
+        "Если учите английский — обратите внимание на @VoodooEnglishBot\n\nТам не скучные упражнения, а игры: свайп-слова, аукцион, детективные миссии.",
+        "Бесплатная альтернатива Duolingo\n\n@VoodooEnglishBot — учёба через Telegram без регистрации, просто /start"
+      ],
+      "aggressive_templates": [
+        "@VoodooEnglishBot — топовый бот для английского\n\n12 игр · Голосовые тренировки · Ежедневные уроки · Бесплатно",
+        "VOODOO ENGLISH — учёба через игру\n\nПерестань читать скучные учебники. Начни играть!\n\n@VoodooEnglishBot — /start"
+      ],
+      "topics": {}
+    },
+    "pl": {
+      "language": "Polish",
+      "language_code": "pl",
+      "flag": "🇵🇱",
+      "status": "planned",
+      "group_id": 0,
+      "channel_id": 0,
+      "channel_username": "",
+      "bot_username": "@VoodooEnglishBot",
+      "timezone": "Europe/Warsaw",
+      "target_keywords": [
+        "angielski", "nauka angielskiego", "english polska", "języki obce",
+        "angielski dla początkujących", "english polish speakers"
+      ],
+      "soft_templates": [
+        "Cześć! Znalazłem świetny darmowy bot do nauki angielskiego przez gry.\n\nMa: quizy słownikowe, trening wymowy, codzienne lekcje.\n\nSpróbuj: @VoodooEnglishBot",
+        "Jeśli uczysz się angielskiego — sprawdź @VoodooEnglishBot\n\nNie nudne ćwiczenia, tylko gry: swipe słów, aukcja, misje detektywistyczne.",
+        "Darmowa alternatywa dla Duolingo\n\n@VoodooEnglishBot — nauka przez Telegram bez rejestracji, po prostu /start"
+      ],
+      "aggressive_templates": [
+        "@VoodooEnglishBot — najlepszy bot do angielskiego\n\n12 gier · Trening wymowy · Codzienne lekcje · Za darmo",
+        "VOODOO ENGLISH — nauka przez grę\n\nPrzestań czytać nudne podręczniki. Zacznij grać!\n\n@VoodooEnglishBot — /start"
+      ],
+      "topics": {}
+    },
+    "de": {
+      "language": "German",
+      "language_code": "de",
+      "flag": "🇩🇪",
+      "status": "planned",
+      "group_id": 0,
+      "channel_id": 0,
+      "channel_username": "",
+      "bot_username": "@VoodooEnglishBot",
+      "timezone": "Europe/Berlin",
+      "target_keywords": [
+        "englisch lernen", "english deutsch", "englisch für anfänger",
+        "englisch sprechen", "sprachkurs englisch", "english german speakers"
+      ],
+      "soft_templates": [
+        "Hallo! Ich habe einen tollen kostenlosen Bot zum Englischlernen durch Spiele gefunden.\n\nHat: Wortschatzquiz, Aussprachetraining, tägliche Lektionen.\n\nProbier es: @VoodooEnglishBot",
+        "Wenn du Englisch lernst — schau dir @VoodooEnglishBot an\n\nKeine langweiligen Übungen, nur Spiele: Wort-Swipe, Auktion, Detektiv-Missionen."
+      ],
+      "aggressive_templates": [
+        "@VoodooEnglishBot — Top-Bot für Englisch\n\n12 Spiele · Aussprachetraining · Tägliche Lektionen · Kostenlos",
+        "VOODOO ENGLISH — Lernen durch Spiel\n\nHör auf, langweilige Lehrbücher zu lesen. Fang an zu spielen!\n\n@VoodooEnglishBot — /start"
+      ],
+      "topics": {}
+    }
+  },
+  "global": {
+    "cooldown_hours": 48,
+    "rate_limit_per_hour": 15,
+    "send_delay_sec": 5,
+    "max_groups_per_run": 10,
+    "outreach_schedule_cron": "0 10,16 * * *"
+  }
+}
